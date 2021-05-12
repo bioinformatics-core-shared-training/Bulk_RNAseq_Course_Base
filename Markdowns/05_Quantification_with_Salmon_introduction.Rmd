@@ -1,0 +1,132 @@
+---
+title: "Quantification of Gene Expression with Salmon"
+date: "March 2021"
+output:
+  ioslides_presentation:
+    css: css/stylesheet.css
+    logo: images/CRUK_Cambridge_Institute.png
+    smaller: yes
+    widescreen: yes
+  beamer_presentation: default
+  slidy_presentation: default
+bibliography: ref.bib
+---
+
+## Differential Gene Expression Analysis Workflow {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/workflow_3Day.svg" class="centerimg" style="width: 60%; margin-top: 60px;">
+
+## A Simple Counting Approach
+
+We now have the locations of our reads on the genome.
+
+We also know the locations of exons of genes on the genome.
+
+So the simplest approach is to count how many reads overlap each gene.
+
+
+<img src="images/Read_counting_1.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
+
+
+## A Simple Counting Approach
+
+We now have the locations of our reads on the genome.
+
+We also know the locations of exons of genes on the genome.
+
+So the simplest approach is to count how many reads overlap each gene.
+
+
+<img src="images/Read_counting_2.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
+
+e.g. featureCounts or HTSeq
+
+
+## Problems with the Simple Counting Approach
+
+* Genes have multiple transcripts, alternative splicing introduces ambiguity
+* Traditional alignment is (relatively) slow and computationally intensive
+* Read sampling is not uniform, there are biases
+
+## Problems with the Simple Counting Approach
+
+* Genes have multiple transcripts, alternative splicing introduces ambiguity
+* Traditional alignment is (relatively) slow and computationally intensive
+* Read sampling is not uniform, there are biases
+
+More sophisticated approaches:
+
+* CuffLinks - Trapnell *et al.* (2010) Nature Biotechnology doi:10.1038/nbt.1621
+* RSEM - Li and Dewey (2011) BMC Bioinformatics doi:10.1186/1471-2105-12-323
+* Sailfish - Patro *et al.* (2014) Nature Biotechnology doi:10.1038/nbt.2862
+* Kallisto - Bary *et al.* (2016) Nature Biotechnology doi:10.1038/nbt.3519
+* **Salmon** - Patro *et al.* (2017) Nature Methods doi:10.1038/nmeth.4197
+
+
+## Problems with the Simple Counting Approach
+
+* Genes have multiple transcripts, alternative splicing introduces ambiguity
+
+Count against the transcriptome instead. 
+
+Summarise to gene level for differential gene expression analysis.
+
+## Quasi-mapping/Pseudo-alignment
+
+* Traditional alignment is (relatively) slow and computationally intensive
+
+Switch to *quasi-mapping* or *pseudo-alignment* to transcriptome
+    
+<img src="images/quasi_mapping_1.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+
+## Quasi-mapping/Pseudo-alignment
+
+* Traditional alignment is (relatively) slow and computationally intensive
+        
+Switch to *quasi-mapping* or *pseudo-alignment*
+    
+<img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+
+## Quasi-mapping/Pseudo-alignment
+
+* Traditional alignment is (relatively) slow and computationally intensive
+
+Switch to *quasi-mapping* or *pseudo-alignment*
+    
+<img src="images/quasi_mapping_3.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+
+## Bias models
+
+* Read sampling is not uniform, there are biases
+
+Include modelling for GC bias, positional bias and sequence bias in the 
+quantification algorithm
+
+<img src="images/GC_Bias.png" class="centerimg" style="width: 70%; margin-top: 10px;">
+
+<div style="text-align: right">
+  Love *et al.* (2016) Nature Biotechnology doi:10.1038/nbt.3682
+</div>
+
+## Salmon workflow
+
+<img src="images/Salmon_workflow_1.png" class="centerimg" style="width: 57%;">
+
+<div style="text-align: right">
+  Patro *et al.* (2017) Nature Methods doi:10.1038/nmeth.4197
+</div>
+
+## Salmon workflow
+
+<img src="images/Salmon_workflow_2.png" class="centerimg" style="width: 55%;">
+
+<div style="text-align: right">
+  Patro *et al.* (2017) Nature Methods doi:10.1038/nmeth.4197
+</div>
+
+## Practical
+
+1. Create and index to the transcriptome with Salmon
+2. Quantify transcript expression using Salmon

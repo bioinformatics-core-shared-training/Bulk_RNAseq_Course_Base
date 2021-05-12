@@ -1,0 +1,294 @@
+---
+title: "Additional Data Exploration"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output: html_document
+bibliography: ref.bib
+---
+
+# Introduction
+
+In [session 07 - Initial exploration of RNA-seq 
+data](07_Data_Exploration.html) we looked at how we could use 
+principle component analysis to explore patterns in the samples related to the
+variation in the gene expression, and how these could inform us about how well
+our results conform to the experimental design.
+
+The document shows some additional visualisations that should be run to further
+explore our data.
+
+# Load the data
+
+First let's load the data and create the raw counts matrix as before. For the
+visualizations we will add a new column called `SampleGroup` to the sample meta
+data table that combines the Status and Time Point. This will allow us to
+visualise the four sample groups.
+
+```{r prepareData, message=FALSE}
+library(DESeq2)
+library(tidyverse)
+library(patchwork)
+
+# Read the sample information into R
+sampleinfo <- read_tsv("data/samplesheet_corrected.tsv", col_types="cccc") %>% 
+                   mutate(Status = fct_relevel(Status, "Uninfected")) %>% 
+                   mutate(SampleGroup = str_c(Status, ".", TimePoint))
+                   
+# Read the data into R
+txi <- readRDS("RObjects/txi.rds")
+
+rawCounts <- round(txi$counts, 0)
+
+# create colour vectors for plots
+statusCols <- c(Infected="#FF7F00", Uninfected="#33A02C")
+samgrpCols <- c(Infected.d11="#FDBF6F", Infected.d33="#FF7F00", 
+                Uninfected.d11="#B2DF8A", Uninfected.d33="#33A02C")
+```
+
+# Samples
+
+```{r}
+sampleinfo
+```
+
+# Count density
+
+In session 7 we looked at the distribution of the counts using a box plot. 
+Another useful visualisation is to look at the density distribution of the 
+counts.
+
+Let's take a look at the count density for one sample using the `density` 
+function from the base `stats` package.
+
+```{r}
+dens <- density(rawCounts[,1])
+plot(dens, main = colnames(rawCounts)[1])
+```
+
+The data contains the very large range of counts (0 t0 >60,000), with most genes
+having relatively low counts and a few with very high counts. As a consequence
+this visualization is not very helpful. We need to transform the data so that we
+can resolve the entire distribution. The most common way to do this is to log
+transform the data. We will need to add a small value to the counts before log
+transforming as we have zeros in the data set. The log of 0 is -Infinity.
+
+```{r}
+logCounts <- log2(rawCounts + 1)
+dens <- density(logCounts[,1])
+plot(dens, main = colnames(logCounts)[1])
+abline(v=0)
+```
+
+This is better, but we can see that we have a very large peak at 0, which is 
+dominating the distribution pattern. As in session 7 we will remove genes with
+low read counts; these are likely unexpressed genes and the associated read
+counts are likely to be noise.
+
+```{r}
+keep <- rowSums(rawCounts) > 5
+logCounts <- log2(rawCounts[keep, ] + 1)
+dens <- density(logCounts[,1])
+plot(dens, main = colnames(logCounts)[1])
+abline(v=0)
+```
+
+We still have some noise at the lower end of the count distribution, but we can 
+now assess the read count distribution for expressed genes. We could be more
+aggressive with the filtering, but this will suffice.
+
+It would be more useful if we could plot all the samples together. We would
+usually expect that the overall distribution of read counts should be similar
+across all the samples. We could do this with the base R plotting functions, but
+it is a rather cumbersome process, so instead we will use ggplot, as introduced
+in [session 11](Markdowns/11_Annotation_and_Visualisation.html). 
+
+`ggplot` requires the data to be in "tidy" format (also known as a "long
+formatted data frame"), so we will need to transform our data matrix using the
+`dplyr` function `pivot_longer`. `ggplot` has built in density plot, so won't
+have to calculate the density first.
+
+```{r}
+logCounts %>% 
+    as.data.frame() %>% 
+    pivot_longer(names_to = "SampleName", values_to = "logCounts", everything()) %>% 
+    ggplot(aes(x=logCounts, group = SampleName)) +
+        geom_density(aes(colour = SampleName)) +
+        labs(x = "log2(Counts)", title = "Raw count density")
+```
+
+We can add some information about the experiment by including the samplesheet
+and colouring by "Status".
+
+```{r, message=FALSE}
+logCounts %>% 
+    as.data.frame() %>% 
+    pivot_longer(names_to = "SampleName", values_to = "logCounts", everything()) %>% 
+    left_join(sampleinfo) %>% 
+    ggplot(aes(x=logCounts, group = SampleName)) +
+        geom_density(aes(colour = SampleGroup)) +
+        scale_colour_manual(values = samgrpCols) +
+        labs(x = "log2(Counts)", title = "Raw count density")
+```
+
+We can see that all the samples have roughly similar distribution profiles, but
+that the infected samples show more variation in the distributions. We can
+now have a look to see how normalisation would effect the count density.
+We will use the `rlog` function from 
+`DESeq2`.
+
+```{r plotDat, message=FALSE}
+rlogCnts <- rlog(rawCounts[keep, ])
+rlogCnts %>% 
+    as.data.frame() %>% 
+    pivot_longer(names_to = "SampleName", values_to = "logCounts", everything()) %>% 
+    left_join(sampleinfo) %>% 
+    ggplot(aes(x=logCounts, group = SampleName)) +
+       geom_density(aes(colour = SampleGroup)) +
+        scale_colour_manual(values = samgrpCols) +
+        labs(x = "log2(Counts)", title = "Raw count density")
+```
+
+From this we can see that the `rlog` normalisation for overall library size has
+brought the density distributions into similar ranges. We can see that it has
+smoothed out the wide variations in the noise level counts at the left of the
+plot. Furthermore, we can now observe that distribution of infected samples 
+indicates that, relative to the uninfected samples, there are more genes in the 
+2^10 range and less in the 2^5 range. This would indicate a general pattern of 
+upregulation.
+
+# Hierachical clustering
+
+In session 7 we used principle component analysis to assess sources of variation
+in the data set and the relationship between the samples. Another method for
+looking at the relationship between the samples can be to run hierarchical 
+clustering based on the Euclidean distance between the samples. Hierarchical
+clustering can often provide a clearer view of the clustering of the different
+sample groups than other methods such as PCA.
+
+We will use the package `ggdendro` to plot the clustering results using the
+function `ggdendrogram`.
+
+```{r}
+library(ggdendro)
+hclDat <-  t(rlogCnts) %>%
+   dist(method = "euclidean") %>%
+   hclust()
+ggdendrogram(hclDat, rotate=TRUE)
+```
+
+We really need to add some information about the sample groups. The simplest way
+to do this would be to replace the `labels` in the `hclust` object. Conveniently
+the labels are stored in the `hclust` object in the same order as the columns
+in our counts matrix, and therefore the same as the order of the rows in our
+sample meta data table. We can just substitute in columns from the metadata.
+
+```{r}
+hclDat2 <- hclDat
+hclDat2$labels <- sampleinfo$SampleGroup
+ggdendrogram(hclDat2, rotate=TRUE)
+```
+
+We can see from this that the infected and uninfected samples cluster separately.
+For the infected samples, the replicates from the time points also cluster
+separately, but for the uninfected samples there is no clear clustering by 
+time point.
+
+If we want to have more control over the look of the plot, we need to extract
+the dendrogram plotting information and create the plot manually using ggplot.
+We need to use two commands for this: `as.dendrogram` builds a dendrogram from
+the hierachical clustering results, then `dendro.data` extracts the details for
+plotting the dendrogram. The extracted object is a list with two tables:
+`segment` contains the x and y coordinates for drawing the lines of the
+dendrogram, `labels` contains the labels (sample names) and the x and y
+coordinates for plotting them. We can add additional meta data to the `labels`
+data frame.
+
+In section below we've added a number of `theme` elements to the ggplot in order
+to remove the axes, the bounding box and the background grid. Please see the
+ggplot help pages for more information on themes.
+
+```{r}
+dendro.dat <-as.dendrogram(hclDat) %>% dendro_data()
+
+dendro.dat$labels <- dendro.dat$labels %>%
+    left_join(sampleinfo, by = c(label = "SampleName"))
+
+ggplot(dendro.dat$segment) +
+    geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+    geom_label(data = dendro.dat$labels,
+              aes(x = x,
+                  y = y,
+                  label = label,
+                  fill = SampleGroup),
+                  hjust = 0,
+                  nudge_y = 1) +
+    scale_fill_manual(values = samgrpCols) +
+    coord_flip() +
+    labs(x = NULL, y = "Distance", title = NULL, fill = "Sample Group") +
+    scale_y_reverse(expand = c(0.3, 0)) +
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          panel.background = element_blank())
+```
+
+# Correlation plot
+
+Another useful way to assess the relationships between our samples is to look
+at the pairwise correlations. 
+
+We will use the package `corrplot` to visualise the pairwise correlations.
+
+```{r, fig.width=8, fig.height=8, message=FALSE}
+library(corrplot)
+corDat <- cor(rlogCnts)
+rownames(corDat) <- sampleinfo$SampleGroup
+colnames(corDat) <- sampleinfo$SampleGroup
+col <- colorRampPalette(c("#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(corDat, 
+         method = "color", 
+         addCoef.col = "black", 
+         number.digits= 3,
+         order = "hclust",
+         is.corr = FALSE)
+```
+
+We can start to see the structure in our data set, but from the correlation
+coefficients it would appear that all of the samples are very similar. Indeed,
+this is true, most of the genes in the count matrix do not vary greatly in
+expression across the samples and so the pairwise correlations using all genes
+are very high.
+
+To get a more useful impression of the data set it is best to restrict our
+correlations to just the genes that are biologically informative, i.e. those
+that have varying expression levels across our samples. As we intend to carry
+out unsupervised clustering, we should not select genes based on differential
+expression between the sample groups, but we can select genes based on variance
+across all samples. We will select the top 1000 genes by variance.
+
+```{r, fig.width=8, fig.height=8}
+vars <- rowVars(rlogCnts)
+ord <- order(-vars)
+corDat <- cor(rlogCnts[ord[1:500],])
+rownames(corDat) <- str_c(sampleinfo$SampleGroup, ".", sampleinfo$Replicate)
+colnames(corDat) <- str_c(sampleinfo$SampleGroup, ".", sampleinfo$Replicate)
+corrplot(corDat, 
+         method = "color", 
+         addCoef.col = "black", 
+         number.digits= 3,
+         order = "hclust",
+         is.corr = FALSE)
+```
+
+We can see from this that for highly variable genes, the day 11 and day 33 
+uninfected samples are more closely correlation to one another than the day 11 
+and day 33 infected samples.
+
+# Coda
+
+It may not seem that we have learned much more about the data set from the
+clustering and correlation plots than we did from the principle component
+analysis, however, this is a very simple data set. In more complex situations
+with more nuanced relationships between sample groups, these additional plots
+can prove very informative.
+
+------------------------------------------------------------------------------

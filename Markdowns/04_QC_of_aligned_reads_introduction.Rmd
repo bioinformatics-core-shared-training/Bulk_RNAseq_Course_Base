@@ -1,0 +1,66 @@
+---
+title: "QC of Aligned Reads"
+date: "March 2021"
+output:
+  ioslides_presentation:
+    css: css/stylesheet.css
+    logo: images/CRUK_Cambridge_Institute.png
+    smaller: yes
+    widescreen: yes
+  beamer_presentation: default
+  slidy_presentation: default
+---
+
+## Differential Gene Expression Analysis Workflow {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+
+## QC of aligned reads
+
+* Alignment Rate
+* Duplication Rate
+* Insert Size
+* Genomic location of reads
+* Transcript coverage
+
+## QC of aligned reads - Alignment Rate
+
+* Depends on:
+    * Quality of Reference Genome
+    * Quality of library prep and sequencing
+    * For human and mouse > 95%
+
+## QC of aligned reads - Duplication Rate
+
+* Human exome is ~30 Mb therefore there are < 30 million possible reads
+* Duplication rates in RNAseq can be > 40%
+
+## QC of aligned reads - Insert Size
+
+* Insert size is the length of the fragment of mRNA from which the reads are
+derived
+
+<img src="images/Insert_Size_QC.svg" class="centerimg">
+<img src="images/Insert_Size.svg" class="centerimg" style="width: 80%">
+
+## QC of aligned reads - Genomic location of reads
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/GenomicLocations.svg" class="centerimg" style="margin-top: 70px">
+
+## QC of aligned reads - Transcript coverage
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/TranscriptCoverage.svg" class="centerimg" style="width: 80%">
+
+## QC Goals 
+ 
+ * Ensure the experiment generated the expected data
+ * Check is the sequencing depth and alignment rates are similar across samples 
+ * Identify poor alignment parameters (sample quality, library prep ?)
+ * Discover contamination from another organism or from DNA 
+ * Identify biases present in the data 

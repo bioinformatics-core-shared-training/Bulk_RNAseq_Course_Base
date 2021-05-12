@@ -1,0 +1,241 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: Annotation Differential Expression Results with biomaRt
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+layout: page
+bibliography: ref.bib
+---
+
+```{r setup, message=FALSE}
+library(biomaRt)
+library(tidyverse)
+```
+
+```{r knitrOpts, echo=FALSE}
+knitr::opts_knit$set(cache=TRUE)
+```
+
+# Overview
+
+- Getting annotation
+
+# Adding annotation to the DESeq2 results
+
+We have a list of significantly differentially expressed genes, but the only
+annotation we can see is the Ensembl Gene ID, which is not very informative. 
+
+```{r, message=FALSE}
+results.interaction.11 <- readRDS("RObjects/DESeqResults.interaction_d11.rds")
+results.interaction.11
+```
+
+
+There are a number of ways to add annotation. One method is to do this using the
+*org.Mm.eg.db* package. This package is one of several *organism-level* packages
+which are re-built every 6 months. These packages are listed on the [annotation 
+section](http://bioconductor.org/packages/release/BiocViews.html#___AnnotationData) 
+of the Bioconductor, and are installed in the same way as regular Bioconductor 
+packages. 
+
+An alternative approach is to use `biomaRt`, an interface to the 
+[BioMart](http://www.biomart.org/) resource. This is the method we will use 
+today.
+
+## Select BioMart database and dataset
+
+The first step is to select the Biomart database we are going to access and 
+which data set we are going to use.
+
+There are multiple mirror sites that we could use for access. The default is to 
+use the European servers, however if the server is busy or inaccessible for some
+reason it is possible to access one of the three mirror sites. See the 
+instructions at 
+[here](https://bioconductor.org/packages/release/bioc/vignettes/biomaRt/inst/doc/accessing_ensembl.html) 
+for detailed instruction on using different mirrors, but in brief simply add the 
+`mirror` argument to the `listEnsembl` and `useEnsembl` functions below.   
+
+e.g to use the US West mirror:  
+  `ensembl <- useEnsembl("genes", mirror = "uswest")`  
+  
+**Pro Tip**: The Ensembl servers tend to get very busy in the afternoons, to 
+the extent that biomaRt may have trouble getting and maitaining a connection. 
+Try to do this in the morning.
+
+### list the available databases
+
+```{r ensDBs}
+# view the available databases
+listEnsembl()
+```
+```{r echo=FALSE, include=FALSE}
+# view the available databases
+currentRelease <- listMarts()[1,2] %>% str_extract("[0-9]+$")
+```
+
+We want the "genes" database.
+
+The current Ensembl release is version **`r currentRelease`**, however, when we 
+downloaded the reference files the current version was **102**. We will need to
+ensure that `biomaRt` accesses the correct version of the gene annotations.
+
+```{r ensArchivedDBs}
+# view the available databases
+listEnsembl(version = 102)
+```
+
+
+### list the available datasets (species)
+
+Now we need to identify the dataset for mouse.
+
+```{r datasets}
+## set up connection to ensembl database
+ensembl <- useEnsembl(biomart = "genes", version=102)
+
+# serach the available datasets (species)
+searchDatasets(mart = ensembl, pattern = "Mouse")
+```
+
+We want the `mmusculus_gene_ensembl` data set.
+
+### specify a data set to use
+
+We can now specify the complete connection to the database and dataset that we
+want to access.
+
+```{r connect}
+ensembl <- useEnsembl(biomart = 'genes', 
+                      dataset = 'mmusculus_gene_ensembl',
+                      version = 102)
+```
+
+## Query the database
+
+Now we need to set up a query. For this we need to specify three things: 
+
+(a) What type of information we are going to search the dataset on - called
+**filters**. In our case this is Ensembl Gene IDs
+(b) A vector of the **values** for our filter - the Ensembl Gene IDs from our DE 
+results table
+(c) What columns (**attributes**) of the dataset we want returned.
+
+
+```{r filters, message=F}
+# check the available "filters" - things you can filter for
+ensembl_filters  <- listFilters(ensembl)
+
+# To find the correct name for the Ensembl ID we can filter the name column
+ensembl_filters %>% 
+    filter(str_detect(name, "ensembl"))
+```
+
+So, we will use `ensembl_gene_id` to query the data bases
+
+```{r attributes, message=F}
+# check the available "attributes" - things you can retreive
+ensembl_attributes <- listAttributes(ensembl)
+head(ensembl_attributes, 20)
+```
+
+We'll retrieve the `external_gene_name`, which is the Gene Symbol, the 
+`entrez_id` - we may need this for tools that use the NCBI databases - 
+and the `entrez_accession`, which is the Gene Symbol associated with that 
+`entrez_id`.
+
+We also need to specify that we want the query to return the `ensembl_gene_id`
+that we used to query the database. This ensures that our final table will 
+include all of query gene ids, even if no record was found in the data base.
+
+Returning data from Biomart can take time, so it's always a good idea to test 
+your query on a small list of values first to make sure it is doing what you
+want. We'll just use the first 1000 genes for now.
+
+```{r runQuery}
+# Set the filter type and values
+ourFilterType <- "ensembl_gene_id"
+
+# get the Ensembl IDs from our results table
+filterValues <- rownames(results.interaction.11)[1:1000]
+
+# Set the list of attributes
+attributeNames <- c("ensembl_gene_id",
+                    "external_gene_name", 
+                    "entrezgene_id", 
+                    "entrezgene_accession")
+
+# run the query
+annot <- getBM(attributes=attributeNames, 
+               filters = ourFilterType, 
+               values = filterValues, 
+               mart = ensembl)
+head(annot)
+```
+
+### One-to-many relationships
+
+Let's inspect the annotation.
+
+```{r inspectAnnot}
+dim(annot)
+```
+
+#### Why are there more than `r nrow(annot)` annotations?
+
+Some genes that have multiple entries in the retrieved annotation. This is 
+because there are multiple Entrez IDs for a single Ensembl gene. These 
+one-to-many relationships come up frequently in genomic databases, it is 
+important to be aware of them and check when necessary. 
+
+```{r getDups}
+# find all rows containing duplicated ensembl ids
+annot %>%  
+    add_count(ensembl_gene_id) %>%  
+    filter(n>1)
+```
+
+We will need to do a little work before adding the annotation to our results 
+table. We could decide to discard one or both of the Entrez ID mappings, or we 
+could concatenate the Entrez IDs so that we don't lose information. Matching
+the `entrezgene_accession` and the `external_gene_name` can help with resolving
+some of these problems. 
+
+
+```{r fixDups}
+fixedDuplicates <- annot %>%  
+    add_count(ensembl_gene_id) %>%  
+    filter(n>1) %>% 
+    select(-n) %>% 
+    filter(entrezgene_accession==external_gene_name)
+
+annot <- annot %>%  
+    add_count(ensembl_gene_id) %>%  
+    filter(n==1) %>% 
+    select(-n) %>% 
+    bind_rows(fixedDuplicates)
+
+nrow(annot)
+length(unique(annot$ensembl_gene_id))
+```
+
+
+## Retrieve full annotation
+
+> ### Challenge 1 {.challenge}
+> That was just 1000 genes. We need annotations for the entire results table.
+> Also, there may be some other interesting columns in BioMart that we wish to
+> retrieve.  
+>
+> (a) Search the attributes and add the following to our list of attributes:  
+>       (i) The gene description   
+>       (ii) The gene biotype  
+> (b) Query BioMart using all of the genes in our results table (`results.interaction.11`)  
+>
+> (c) How many Ensembl genes have multipe Entrez IDs associated with them?  
+> (d) How many Ensembl genes in `results.interaction.11` don't have any annotation?
+
+-------------------------------------------------------------------------------

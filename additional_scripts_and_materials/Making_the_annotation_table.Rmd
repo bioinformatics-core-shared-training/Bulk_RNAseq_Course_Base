@@ -1,0 +1,242 @@
+---
+title: "RNA-seq analysis in R"
+subtitle: "Making the annotation table for the course"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  html_document:
+    toc: yes
+---
+
+# Preamble
+
+This document provides the necessary code for creating the rds file with
+the annotation table used in the course. It uses `biomaRt` to retrieve the
+annotation from Ensembl. The list of Ensembl IDs to retrieve annotation for is
+extracted from an rds object containing the DESeq2 differential expression 
+results, which was already created.
+
+```{r include=FALSE}
+library(DESeq2)
+library(tidyverse)
+```
+
+<p style="color:red">**This document is not intended as a tutorial, for a detailed explanation of how
+to use `biomaRt` please see 
+[supplementary materials Annotation with biomaRt](../Markdowns/S6_Annotation_With_BioMart.html).
+Nor is this document intended to be a guide for creating your own annotations, 
+some totally arbitrary decisions were made in order to save effort.**</p>
+
+```{r eval=FALSE}
+library(DESeq2)
+library(biomaRt)
+library(tidyverse)
+```
+
+# Load a DESeq2 results table to retrieve gene ids from
+
+```{r}
+results.interaction.11 <- readRDS("RObjects/DESeqResults.interaction_d11.rds")
+```
+
+# Retrieve annotation using biomaRt
+
+## Set up connection to ensembl database
+
+```{r eval=FALSE}
+ensembl <- useEnsembl(biomart = 'genes', 
+                      dataset = 'mmusculus_gene_ensembl',
+                      version = 102)
+```
+
+## Retrieve the complete annotation
+
+```{r eval=FALSE}
+filterType <- "ensembl_gene_id"
+filterValues <- rownames(results.interaction.11)
+attributeNames <- c("ensembl_gene_id",
+                    "entrezgene_id",
+                    "external_gene_name",
+                    "description",
+                    "gene_biotype",
+                    "chromosome_name",
+                    "start_position",
+                    "end_position",
+                    "strand",
+                    "entrezgene_accession")
+
+annot <- getBM(attributes=attributeNames,
+               filters = filterType,
+               values = filterValues,
+               mart = ensembl)
+```
+
+This is the complete annotation with all the one-to-many relationships. Export
+it, so that we won't have to run the query again if we wish to come back to it.
+
+```{r eval=FALSE}
+saveRDS(annot, file="Full_annotation_with_duplicates.rds")
+```
+
+# Fix the various One-to-Many relationships
+
+## Assess the one-to-many relationships related to duplicated Ensembl IDs
+
+```{r echo=FALSE}
+filterValues <- rownames(results.interaction.11)
+annot <- readRDS("Full_annotation_with_duplicates.rds")
+```
+
+There are ensembl id's with multiple Entrez ID's:
+
+```{r}
+annot %>%  
+    add_count(ensembl_gene_id) %>%  
+    filter(n>1) %>% 
+    count()
+```
+So 128 IDs with multiple entries.
+
+```{r}
+annot %>%  
+    add_count(ensembl_gene_id) %>%  
+    filter(n>1) %>% 
+    select(ensembl_gene_id, external_gene_name, entrezgene_accession)
+```
+
+### Deduplicate the using the `entrezgene_accession` and the `external_gene_name`
+
+Collect the duplicated gene ids into a new object.
+
+```{r}
+dups <- annot %>%  
+    add_count(ensembl_gene_id) %>%  
+    filter(n>1)
+```
+
+Fix as many as possible by keeping those where the two gene symbols match.
+
+```{r}
+fixedDuplicates <- dups %>% 
+    select(-n) %>% 
+    filter(entrezgene_accession==external_gene_name)
+```
+
+Check that this has no duplicates.
+
+```{r}
+fixedDuplicates %>%  
+    add_count(ensembl_gene_id) %>%  
+    filter(n>1)
+```
+
+Create a new annotation with all the unique entries from the full annotation
+plus the `fixedDuplicates`.
+
+```{r}
+annot2 <- annot %>%  
+    add_count(ensembl_gene_id) %>%  
+    filter(n==1) %>% 
+    select(-n) %>% 
+    bind_rows(fixedDuplicates)
+
+nrow(annot2)
+length(unique(annot$ensembl_gene_id))
+```
+
+### A pragmatic solution for the remainder
+
+There are four remaining. 
+
+```{r}
+dups %>% 
+    filter(!ensembl_gene_id%in%annot2$ensembl_gene_id)
+```
+
+We could spend time looking at the data bases but it's really not important for
+the course, so we'll just make an arbitrary decision to keep the first entry of
+each.
+
+```{r}
+fixedDuplicates <- dups %>% 
+    filter(!ensembl_gene_id%in%annot2$ensembl_gene_id) %>% 
+    distinct(ensembl_gene_id, .keep_all = TRUE) %>%
+    select(-n)
+
+annotUn <- bind_rows(annot2, fixedDuplicates)
+nrow(annotUn)
+length(unique(annot$ensembl_gene_id))
+all(filterValues%in%annotUn$ensembl_gene_id)
+```
+
+## Check for duplicated Entrez IDs
+
+```{r}
+annotUn %>% 
+    filter(!is.na(entrezgene_id)) %>% 
+    add_count(entrezgene_id) %>% 
+    filter(n>1) %>% 
+    count(entrezgene_id)
+```
+There are 31 Entrez IDs that match multiple Ensembl IDs. Resolving which of
+these is correct would require more extensive research on the data bases. We
+need a pragmatic solution for the course. Let's have alook at the signficance of
+these genes.
+
+### A pragmatic solution for the Entrez IDs
+
+```{r}
+as.data.frame(results.interaction.11) %>% 
+    rownames_to_column("ensembl_gene_id") %>% 
+    left_join(annotUn, by = "ensembl_gene_id") %>% 
+    filter(!is.na(entrezgene_id)) %>% 
+    add_count(entrezgene_id) %>% 
+    filter(n>1) %>% 
+    select(ensembl_gene_id, entrezgene_id, padj, chromosome_name) %>% 
+    arrange(padj)
+```
+
+These genes are mostly non-significant, so it's really not going to affect the
+results of the downstream analyses. Seeing as this is only a teaching exercise,
+we'll arbitrarily set the second entry to `NA`. Some of the duplicates are on
+patch scaffolds, we'll arrange by chromosome, so that these get set to `NA`.
+
+```{r}
+dupEntrez <- annotUn %>% 
+    add_count(entrezgene_id) %>% 
+    filter(n>1) %>% 
+    select(-n) %>% 
+    arrange(entrezgene_id, chromosome_name)
+dupEntrez$entrezgene_id[duplicated(dupEntrez$entrezgene_id)] <- NA
+
+annotFinal <- annotUn %>% 
+    add_count(entrezgene_id) %>% 
+    filter(n==1) %>% 
+    select(-n) %>% 
+    bind_rows(dupEntrez)
+```
+
+Final checks
+
+```{r}
+dim(annotFinal)
+annotFinal %>% 
+    filter(!is.na(entrezgene_id)) %>% 
+    add_count(entrezgene_id) %>% 
+    filter(n>1) 
+all(filterValues%in%annotFinal$ensembl_gene_id)
+```
+
+## Final table
+
+```{r eval=FALSE}
+ensemblAnnot <- rownames(results.interaction.11) %>%  
+    enframe(name = NULL, value = "ensembl_gene_id")  %>%  
+    left_join(annotFinal) %>%
+    dplyr::select(GeneID="ensembl_gene_id", Entrez="entrezgene_id",
+                  Symbol="external_gene_name", Description="description",
+                  Biotype="gene_biotype", Chr="chromosome_name",
+                  Start="start_position", End="end_position",
+                  Strand="strand")
+
+saveRDS(ensemblAnnot, file="RObjects/Ensembl_annotations.rds")
+```

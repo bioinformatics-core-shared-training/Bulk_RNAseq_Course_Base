@@ -1,0 +1,314 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: "Counting reads with SubRead"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  html_document:
+    toc: yes
+bibliography: ref.bib
+---
+
+## Introduction and data import
+
+The raw reads, in fastq files, have been aligned using HISAT2. The alignment
+process produces a set of BAM files, where each file contains the read
+alignments for each library. The BAM files containing the aligned reads can be
+found in the **`bam`** directory under the **`CourseMaterials`** 
+
+In the BAM file, there is a chromosomal location for every read that has been
+aligned. By matching the genomic location of each read to a gene annotation that
+provided the genomic location of the gene, we can determine if the region the
+read is aligned to corresponds to the exon of a particular gene and then
+summarise across the entire BAM file to get total read counts for each gene.
+
+We will use the **`featureCounts`** [@Liao2014] programme from the [subRead
+package](http://subread.sourceforge.net/) to do the counting. 
+
+## 1. Gene annotations in GTF format
+
+In addition to the BAM files, we also need to provide **`featureCounts`** with
+an annotation file. Usually this will be a GTF/GFF file corresponding to the
+genome assembly used (a description of the GTF  format  can  be  found  at
+[UCSC website](http://genome.ucsc.edu/FAQ/FAQformat.html#format4)).
+**`featureCounts`** can also use a simpler annotation format called SAF, this is
+particularly useful for defining custom/novel features that you wish to count
+against.
+
+GTF/GFF files define genomic regions covered by different types of genomic
+features, e.g. genes, transcripts, exons, or UTRs. The necessary GTF is already
+in the directory `Course_Materials/references`. This reference was downloaded
+from Ensembl:
+
+http://ftp.ensembl.org/pub/release-102/gtf/mus_musculus/
+
+### Exercise 1
+
+> We can view how many of each feature type there are in the GTF by counting the 
+> entries in the 3rd column of the GTF:
+> 
+> ```{bash eval=FALSE}
+> tail -n +6 references/Mus_musculus.GRCm38.102.gtf | cut -f 3 | sort | uniq -c
+> ```
+> N.B. The `|` symbol is known as the "pipe", it "pipes" the output of the first 
+> command into the next command.
+> 
+> The above commands are:
+> 
+> - `tail -n +6` - start on the 6th line (skipping the first 5 lines which 
+> contain the GTF headers)
+> - `cut -f 3` - extract (*cut* out) the third column (it assumes the columns 
+> are separated by tabs; this can be changed)
+> - `sort` - sort the lines alphabetically
+> - `uniq -c` - collapse consecutive lines that are same and (`-c`) report how
+> many there were.
+> 
+> Q. How many genes are there in the in the GTF? Is this roughly what you 
+> would expect?
+
+## 2. Running `featureCounts`
+
+When using a GTF/GFF file we need to tell **`featureCounts`** what feature type
+to use to count reads, and what attribute type to summarise the results at. For
+RNAseq we most commonly wish to count reads aligning to exons, and then to
+summarise at the gene level. 
+
+Running `featureCounts -h` gives the full help page. At the top is the 
+generalised **usage**:
+
+```
+Usage: featureCounts [options] -a <annotation_file> -o <output_file> input_file1 [input_file2] ... 
+```
+
+This means that at minimum we need to specify an annotation file `-a`, 
+and output file `-o` and then follow the command with a series of input files.
+
+There are many other options we could specify, including the feature to count
+over `-t` and the attribute to summarise to `-g`.
+
+### Exercise 2
+
+> Run code below to count reads in the bam file `SRR7657883.chr14.sorted.bam` 
+> against the GTF for the mouse GRCm38 genome assembly.
+>
+> ```{bash eval=FALSE}
+>   mkdir counts
+> 
+>   featureCounts \
+>       -t exon \
+>       -g gene_id \
+>       --primary \
+>       -p \
+>       -C \
+>       -a references/Mus_musculus.GRCm38.102.gtf \
+>       -o counts/SRR7657883.chr14.featureCounts \
+>       bam/SRR7657883.chr14.sorted.bam
+> ```
+> * **`-t exon`** - the **feature** type to count reads against, in this case
+>   exons
+> * **`-g gene_id`** - the **attribute** type to summarise counts by, in this
+>   case the gene ID
+> * **`--primary`** - only count primary alignments
+> * **`-p`** - This specifies that as we have paired reads, we want the counts to
+>   be based on the number of fragments (each represented by a pair of reads)
+> * **`-C`** - indicates that we want to omit **C**himeric reads. These are
+>   reads where the two ends map to different chromosomes
+> * **`-a`** - the gene annotation reference file
+> * **`-o`** - the name for the output files
+>
+> Q. Check the help page again, did we need to specify `-t` and `-g`?
+
+## 3. The output files
+
+This should have generated two output files. A summary statistics table
+(**`SRR7657883.chr14.featureCounts.summary`**) and a full table of counts
+(**`SRR7657883.chr14.featureCounts`**) for each feature (gene in this case). 
+
+To view the summary table: 
+
+```{bash eval=FALSE}
+cat counts/SRR7657883.chr14.featureCounts.summary
+```
+
+```
+Status	bam/SRR7657883.chr14.sorted.bam
+Assigned	792742
+Unassigned_Unmapped	0
+Unassigned_MappingQuality	0
+Unassigned_Chimera	6752
+Unassigned_FragmentLength	0
+Unassigned_Duplicate	0
+Unassigned_MultiMapping	0
+Unassigned_Secondary	48873
+Unassigned_Nonjunction	0
+Unassigned_NoFeatures	83829
+Unassigned_Overlapping_Length	0
+Unassigned_Ambiguity	35617
+```
+
+The summary table reports the numbers of unassigned reads and the reasons why
+they are not assigned (e.g. ambiguity, multi-mapping, secondary alignment,
+mapping quality, fragment length, chimera, read duplicate, non-junction and so
+on), in addition to the number of successfully assigned reads for each library.
+See [subread
+documentation](http://bioinf.wehi.edu.au/subread-package/SubreadUsersGuide.pdf)
+('Program output' section).
+
+To view the first few lines of the main counts output: 
+```{bash eval=FALSE}
+head counts/SRR7657883.chr14.featureCounts
+```
+
+```
+# Program:featureCounts v1.5.3; Command:"featureCounts" "-t" "exon" "-g" "gene_id" "--primary" "-p" "-C" "-a" "references/Mus_musculus.GRCm38.102.gtf" "-o" "counts/SRR7657883.chr14.featureCounts" "bam/SRR7657883.chr14.sorted.bam" 
+Geneid	Chr	Start	End	Strand	Length	bam/SRR7657883.chr14.sorted.bam
+ENSMUSG00000102693	1	3073253	3074322	+	1070	0
+ENSMUSG00000064842	1	3102016	3102125	+	110	0
+ENSMUSG00000051951	1;1;1;1;1;1;1	3205901;3206523;3213439;3213609;3214482;3421702;3670552	3207317;3207317;3215632;3216344;3216968;3421901;3671498	-;-;-;-;-;-;-	6094	0
+ENSMUSG00000102851	1	3252757	3253236	+	480	0
+ENSMUSG00000103377	1	3365731	3368549	-	2819	0
+ENSMUSG00000104017	1	3375556	3377788	-	2233	0
+ENSMUSG00000103025	1	3464977	3467285	-	2309	0
+ENSMUSG00000089699	1;1	3466587;3513405	3466687;3513553	+;+	250	0
+```
+
+The full file begins with a line containing the command used to generate the
+counts. It then has a table of 7 columns:
+
+1. The gene identifier; this will vary depending on the GTF file used, in our
+case this is an Ensembl gene id
+2. Chromosome  
+3. Start position for each exon in the gene  
+4. End position for each exon in the gene  
+5. Transcription strand for each exon in the gene  
+6. The total length of the gene in nucleotides 
+7. The number of reads assigned to the gene.   
+
+The genes above all have a count of 0, but the bam was only chromosome 14, so
+we'll need to find genes on chromosom 14 to see any counts.
+
+```{bash eval=FALSE}
+awk '{if ( $2 == 14 ) print $0 }' counts/SRR7657883.chr14.featureCounts | head
+```
+
+```
+ENSMUSG00000114955	14	3000669	3001058	-	390	0
+ENSMUSG00000079101	14	3051653	3052499	-	847	5
+ENSMUSG00000091289	14	3084899	3085385	-	487	2
+ENSMUSG00000090684	14	3149604	3150084	-	481	0
+ENSMUSG00000095512	14	3210975	3211821	-	847	1
+ENSMUSG00000096217	14	3254679	3255873	-	1195	1
+ENSMUSG00000090318	14	3362782	3363262	-	481	0
+ENSMUSG00000097382	14	3442185	3442523	-	339	0
+ENSMUSG00000090578	14	3479745	3480945	-	1201	0
+ENSMUSG00000096905	14	3496367	3497570	-	1204	0
+```
+
+Note that `featureCounts` outputs a row for every gene in the GTF, even the
+ones with no reads assigned, and the row order is determined by the order in the
+GTF.  This means that if `featureCounts` is used on multiple samples with same GTF
+file, the separate files can be combined easily as the rows always refer to the
+same gene.
+
+## 4. Running `featureCounts` on multiple samples
+
+We can also run `featureCounts` on multiple BAM files in one command.
+As explained by the **usage** in the help page, we can specify multiple input
+files (bam files in our case) one by one after the command.
+
+If we had many bam files to include it would be very time consuming to type out
+each file name and would result in a very long and difficult to read command.
+Instead, there is a quick way to refer to many files at once on the command line
+using "wild cards". 
+
+### Wildcards in file names
+
+Suppose we had a directory called `myData` containing:
+
+```
+myFile_A01.txt
+myFile_B02.txt
+myFile_C03.txt
+myFile_D04.txt
+myFile_E15.txt
+```
+
+We could refer to all of these files by replacing the part of the file name that 
+changes with an asterix: 
+
+`myData/myFile_*.txt`
+
+The asterix means essentially means 'replace this with anything'. So 
+`myFile_*.txt` will be expanded to a list of all the files that could match.
+
+In the metrics directory we have an RNAseq metrics file for each bam file called
+```
+SRR7657872.RNA_metrics.txt
+SRR7657873.RNA_metrics.txt 
+SRR7657874.RNA_metrics.txt
+...
+SRR7657893.RNA_metrics.txt
+``` 
+
+To look at the first line  of each RNAseq metrics file in the `metrics`
+directory, we can use:
+```{bash eval=FALSE}
+head -n 1 metrics/SRR76578*.RNA_metrics.txt
+``` 
+
+### Exercise 3
+
+> * Run featureCounts on multiple bam files at once. To save time we will use
+> versions of our BAM files that only include reads aligned against the
+> Interleukin 10 receptor, alpha gene (Il10ra; ENSMUSG00000032089) (these bams
+> are used in the [Additional Visualisations](S7_Additional_Visualisation.html) 
+> exercises). You can find these in the `small_bams` directory.  
+> * output the results to a new file called 
+> `counts/ENSMUSG00000032089.featureCounts`  
+> * Specify the input (bam) files using the * wildcard.
+>
+> Q. What are the read counts for Il10ra for each sample?
+
+## 5. Library preparation strandedness and `featureCounts`
+
+Some mRNAseq library preparation protocols return reads on the same genomic
+strand as the transcript was read from, some return reads on the opposite
+strand, and others return reads from both strands. When working with data from a
+stranded protocol, specifying strandness will avoid counting reads that are
+aligned to the wrong strand - these may be due to overlapping genes or due to
+sequencing/mapping errors.
+
+`featureCounts` has a parameter that allows us to perform strand-specific read
+counting by specifying the "strandness" of the library prep method used. The
+default is to assume an unstranded protocol.
+
+### Exercise 4
+
+> * Rerun `featureCounts` on `bam/SRR7657883.chr14.sorted.bam`, but this time 
+> specify "reversely stranded". Use the help to find out which option you need 
+to set to do this: `featureCounts -h`  
+> * Output the results to a new file called
+> `counts/SRR7657883.chr14.reverse.featureCounts`. 
+>
+> Q. Compare the summary of the read count assignments to our intial results 
+> where we used the default settings (unstranded). Which type of protocol do 
+> you think was used to generate this library? 
+
+## 6. Extracting additional attribute information
+
+`featureCounts` now includes the option "--extraAttributes" that enables us to
+extract additional information from the attributes column for each gene and
+include it in the output counts table.
+
+### Exercise 5
+
+> Rerun `featureCounts` on `bam/SRR7657883.sorted.bam`, but this time also 
+> extract the "gene_biotype" from the GTF file and output to a new file called
+> `counts/SRR7657883.gene_biotype.featureCounts`.
+>
+> Q. How many of the genes are protein coding? (Hint: To count the 
+> bioyptes, see the section above where we counted the feature types in the GTF
+> file)
+
+--------------------------------------------------------------------------------
+
+# References

@@ -1,0 +1,231 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: "Gene Set Testing for RNA-seq - Solutions"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes  
+layout: page
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+library(msigdbr)
+library(clusterProfiler)
+library(pathview)
+library(org.Mm.eg.db)
+library(tidyverse)
+knitr::opts_knit$set(cache=TRUE)
+options(bitmapType='cairo')
+knitr::opts_chunk$set(dev = c("png"))
+```
+
+```{r prepareORAData, include=FALSE}
+shrink.d11 <- readRDS("RObjects/Shrunk_Results.d11.rds")
+
+# Kegg data
+sigGenes <-  shrink.d11 %>% 
+    drop_na(Entrez, FDR) %>% 
+    filter(FDR < 0.01 & abs(logFC) > 1) %>% 
+    pull(Entrez)
+kk <- enrichKEGG(gene = sigGenes, organism = 'mmu')
+```
+
+## Exercise 1 - pathview
+
+> 1. Use `pathview` to export a figure for "mmu04659", but this time only
+> use genes that are statistically significant at FDR < 0.01
+
+```{r solution1}
+logFC <- shrink.d11 %>% 
+  drop_na(FDR, Entrez) %>% 
+  filter(FDR < 0.01) %>% 
+  dplyr::select(Entrez, logFC) %>% 
+  deframe()
+
+pathview(gene.data = logFC, 
+         pathway.id = "mmu04659", 
+         species = "mmu", 
+         limit = list(gene=5, cpd=1))
+```
+
+mmu04659.pathview.png:
+
+![mmu04659 - Th17 cell differentiation](images/mmu04659_pathview.png)
+
+## Exercise 2 - GO term enrichment analysis
+
+> `clusterProfiler` can also perform over-representation analysis on GO terms.
+> using the commmand `enrichGO`. Look at the help page for the command 
+> `enrichGO` (`?enrichGO`) and have a look at the instructions in the 
+> [clusterProfiler book](http://yulab-smu.top/clusterProfiler-book/chapter5.html#go-over-representation-test).
+>
+> 1. Run the over-representation analysis for GO terms 
+>     - Use genes that have an adjusted p-value (FDR) of less than 0.01 and
+> an absolute fold change greater than 2.    
+>     - For this analysis you can use Ensembl IDs rather then Entrez
+>     - You'll need to provide the background (`universe`) genes, this should be
+> all the genes in our analysis.
+>     - The mouse database package is called `org.Mm.eg.db`. You'll need to load
+>  it using `library` before running the analysis.    
+>     - As we are using Ensembl IDs, you'll need to set the `keyType` 
+> parameter in the `enrichGO` command to indicate this.
+>     - Only test terms in the "Biological Processes" ontology 
+> 2. Use the `dotplot` function to visualise the results.
+
+```{r solution2}
+
+sigGenes <-  shrink.d11 %>% 
+    drop_na(FDR) %>% 
+    filter(FDR < 0.01 & abs(logFC) > 1) %>% 
+    pull(GeneID)
+
+universe <- shrink.d11$GeneID
+
+ego <- enrichGO(gene          = sigGenes, 
+                universe      = universe,
+                OrgDb         = org.Mm.eg.db,
+                keyType       = "ENSEMBL",
+                ont           = "BP",
+                pvalueCutoff  = 0.01,
+                readable      = TRUE)
+
+dotplot(ego,
+        font.size = 8,
+        )
+```
+
+```{r}
+barplot(ego, 
+        drop = TRUE, 
+        showCategory = 10,
+        label_format = 20,
+        title = "GO Biological Pathways",
+        font.size = 8)
+```
+
+
+## Exercise 3 - GSEA
+
+> Another common way to rank the genes is to order by pvalue, but also, sorting
+> so that upregulated genes are at the start and downregulated at the end - 
+> you can do this combining the sign of the fold change and the pvalue. 
+> 
+> 1. Rank the genes by statisical significance - you will need to create
+> a new ranking value using `-log10({p value}) * sign({Fold Change})`  
+> 2. Run `fgsea` using the new ranked genes and the H pathways  
+> 3. Conduct the same analysis for the d33 vs control contrast.
+
+### Exercise 3 - d11 new rank
+
+```{r solution3_GSEA_1}
+# 1. Rank the genes by statistical significance - you will need to create
+# a new ranking value using `-log10({p value}) * sign({Fold Change})`  
+
+# obtain the H(allmarks) catalog for mouse:
+m_H_t2g <- msigdbr(species = "Mus musculus", category = "H") %>% 
+  dplyr::select(gs_name, entrez_gene, gene_symbol)
+
+# rank genes
+rankedGenes.e1 <- shrink.d11 %>%
+  drop_na(Entrez, pvalue, logFC) %>%
+  # rank genes by strength of significance,
+  # keeping the direction of the fold change 
+  mutate(rank = -log10(pvalue) * sign(logFC)) %>%
+  # sort genes by decreasing rank.
+  arrange(-rank) %>%
+  # keep ranks and Entrez IDs
+  pull(rank,Entrez)
+
+# conduct analysis:
+gseaRes.e1 <- GSEA(rankedGenes.e1,
+                TERM2GENE = m_H_t2g[,c("gs_name", "entrez_gene")],
+                #pvalueCutoff = 0.05,
+                pvalueCutoff = 1.00, # to retrieve whole output
+                minGSSize = 15,
+                maxGSSize = 500)
+```
+
+```{r}
+# have function to format in scientific notation
+format.e1 <- function(x) (sprintf("%.1e", x))
+# format table:
+gseaRes.e1 %>%
+  # sort in decreasing order of absolute NES
+  arrange(desc(abs(NES))) %>%
+  # only keep the 10 entries with the lowest p.adjust
+  top_n(10, -p.adjust) %>%
+  # remove columns 'core_enrichment' and 'Description'
+  dplyr::select(-core_enrichment) %>%
+  dplyr::select(-Description) %>%
+  # convert to data.frame
+  data.frame() %>%
+  # remove row names
+  remove_rownames() %>%
+  # format score
+  mutate(NES=formatC(NES, digits = 3)) %>%
+  mutate(ES=formatC(enrichmentScore, digits = 3)) %>%
+  relocate(ES, .before=NES) %>%
+  dplyr::select(-enrichmentScore) %>%
+  # format p-values
+  modify_at(
+    c("pvalue", "p.adjust", "qvalues"),
+    format.e1
+  ) %>%
+  # display
+  DT::datatable(options = list(dom = 't'))
+```
+
+### Exercise 3 - d33
+
+With d33 and H catalog:
+
+```{r solution3_GSEA_3}
+
+# read d33 data in:
+shrink.d33 <- readRDS("RObjects/Shrunk_Results.d33.rds")
+
+# get mouse H(allmarks) catalog
+m_H_t2g <- msigdbr(species = "Mus musculus", category = "H") %>% 
+  dplyr::select(gs_name, entrez_gene, gene_symbol)
+
+# rank genes
+rankedGenes.e3 <- shrink.d33 %>%
+  drop_na(Entrez, pvalue, logFC) %>%
+  mutate(rank = -log10(pvalue) * sign(logFC)) %>%
+  arrange(-rank) %>%
+  pull(rank,Entrez)
+
+# perform analysis
+gseaRes.e3 <- GSEA(rankedGenes.e3,
+                TERM2GENE = m_H_t2g[,c("gs_name", "entrez_gene")],
+                #pvalueCutoff = 0.05,
+                pvalueCutoff = 1.00, # to retrieve whole output
+                minGSSize = 15,
+                maxGSSize = 500)
+```
+
+Check outcome:
+
+```{r}
+gseaRes.e3 %>%
+  arrange(desc(abs(NES))) %>%
+  top_n(10, -p.adjust) %>%
+  dplyr::select(-core_enrichment) %>%
+  dplyr::select(-Description) %>%
+  data.frame() %>%
+  remove_rownames() %>%
+  # format score
+  mutate(NES=formatC(NES, digits = 3)) %>%
+  mutate(ES=formatC(enrichmentScore, digits = 3)) %>%
+  relocate(ES, .before=NES) %>%
+  dplyr::select(-enrichmentScore) %>%
+  # format p-values
+  modify_at(
+    c("pvalue", "p.adjust", "qvalues"),
+    format.e1
+  ) %>%
+  DT::datatable(options = list(dom = 't'))
+```

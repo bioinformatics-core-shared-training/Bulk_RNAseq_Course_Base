@@ -1,0 +1,120 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+author: "Abbi Edwards"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  pdf_document: default
+  html_document: default
+subtitle: Annotation and Visualisation of Differential Expression Results - Solutions
+---
+
+```{r setup, include=FALSE}
+library(AnnotationHub)
+library(AnnotationDbi)
+library(DESeq2)
+library(tidyverse)
+```
+
+```{r prepareData, echo=FALSE, message=FALSE, warning=FALSE}
+# First load data and annotations
+ddsObj.interaction <- readRDS("RObjects/DESeqDataSet.interaction.rds")
+results.interaction.11 <- readRDS("RObjects/DESeqResults.interaction_d11.rds")
+results.interaction.33 <- readRDS("RObjects/DESeqResults.interaction_d33.rds")
+```
+
+## Exercise 1 - Retrieve the full annotation
+
+> So far we have retrieved the annotation for just 1000 genes, but we need 
+> annotations for the entire results table.
+>
+> A reminder of the code we have used so far:
+
+```{r eval=FALSE}
+# lets set it up
+ourCols <- c("ENSEMBL", "SYMBOL", "ENTREZID")
+ourKeys <- rownames(results.interaction.11)[1:1000]
+
+# run the query
+annot <- AnnotationDbi::select(OrgDb, 
+                keys=ourKeys, 
+                columns=ourCols, 
+                keytype="ENSEMBL")
+```
+
+> (a) Run the same query using all of the genes in our results table (`results.interaction.33`),
+> and this time include the descriptive name of the genes too. Hint: You can find the 
+> name of the column for this by running `columns(OrgDb)`
+>
+> (b) How many Ensembl genes have multipe Entrez IDs associated with them?
+>
+> (c) Are all of the Ensembl gene IDs annotated? If not, why do you think this 
+> is?
+
+```{r solutionChallenge1, eval=FALSE}
+# (a)
+ourKeys <- rownames(results.interaction.11)
+
+# (b)
+ourCols <- c("SYMBOL", "ENSEMBL", "ENTREZID", "GENENAME")
+
+# run the query
+annot <- AnnotationDbi::select(EnsDb.Mmusculus.v79, 
+                keys=ourKeys, 
+                columns=ourCols,
+                keytype="ENSEMBL")
+
+# (c)
+annot %>%  
+    add_count(ENSEMBL) %>%  
+    dplyr::filter(n>1) %>% 
+    distinct(ENSEMBL) %>%
+    count()
+
+# (d)
+length(unique(annot$ENSEMBL))
+length(ourKeys)
+```
+
+## Exercise 2 - Volcano plot for 33 days
+
+Now it's your turn! We just made the volcano plot for the 11 days contrast, you will make the one for the 33 days contrast.
+
+If you haven't already make sure you load in our data and annotation. You can copy and paste the code below.
+
+```{r load}
+# First load data and annotations
+results.interaction.33 <- readRDS("RObjects/DESeqResults.interaction_d33.rds")
+ensemblAnnot <- readRDS("RObjects/Ensembl_annotations.rds")
+```
+
+> (a)
+> Shrink the results for the 33 days contrast.
+
+```{r shrink}
+#Shrink our values
+ddsShrink.33 <- lfcShrink(ddsObj.interaction, 
+                       res = results.interaction.33,
+                       type = "ashr")
+
+shrinkTab.33 <- as.data.frame(ddsShrink.33) %>%
+    rownames_to_column("GeneID") %>% 
+    left_join(ensemblAnnot, "GeneID") %>% 
+    rename(logFC=log2FoldChange, FDR=padj)
+
+```
+
+> (b) 
+> Create a new column of -log10(pvalue) values in your shrinkTab for 33 days.
+>
+> (c) 
+> Create a plot with points coloured by P-value < 0.05 similar to how we did in 
+> the first volcano plot
+
+```{r plot}
+volcanoTab.33 <- shrinkTab.33 %>% 
+    mutate(`-log10(pvalue)` = -log10(pvalue))
+
+ggplot(volcanoTab.33, aes(x = logFC, y=`-log10(pvalue)`)) + 
+    geom_point(aes(colour=pvalue < 0.05), size=1)
+
+```

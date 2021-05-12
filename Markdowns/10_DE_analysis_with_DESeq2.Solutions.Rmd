@@ -1,0 +1,186 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: Differential Expression of RNA-seq data
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, echo=FALSE, message=FALSE}
+options(tibble.print_max = 4, tibble.print_min = 4, max.print=40, 
+        tibble.max_extra_cols=2)
+library(tidyverse)
+library(DESeq2)
+```
+
+### Exercise 1
+
+> So far we have fitted a simple model considering just "Status", but in reality 
+> we want to model the effects of both "Status" and "Time Point".
+> 
+> Let's start with the model with only main effects - an additive model with no 
+> interaction. The main assumption here is that the effects of Status and the
+> effects of Time Point are indepedent.
+> 
+> Recapitulate the above steps to generate a new DESeq2 object with
+> the additive model. Then we will extract the results table as above.
+> 
+> #### Load the raw data, remembering to set the factor on the Status so that
+> "Uninfected" will be set as the intercept:    
+>   
+```{r}
+txi <- readRDS("RObjects/txi.rds")
+sampleinfo <- read_tsv("data/samplesheet_corrected.tsv", col_types="cccc") %>% 
+                   mutate(Status = fct_relevel(Status, "Uninfected"))
+```
+> 
+> #### Create the model:
+> 
+```{r}
+additive.model <- as.formula(~ TimePoint + Status)
+```
+> 
+> #### Then build the DESeq from the raw data, the sample meta data and the model:
+> 
+```{r}
+ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
+                                      colData = sampleinfo,
+                                      design = additive.model)
+```
+> 
+> #### Filter the data set:
+>
+```{r}
+keep <- rowSums(counts(ddsObj.raw)) > 5
+ddsObj.filt <- ddsObj.raw[keep,]
+```
+>
+> You are now ready to run the differential gene expression analysis
+> Run the DESeq2 analysis
+> 
+> 1. Run the size factor estimation, dispersion estimation and modelling steps 
+> using the `DESeq` command as above. 
+>
+```{r}
+ddsObj <- DESeq(ddsObj.filt)
+```
+
+> 
+> 2. Extract the default contrast using the `results` command into a new object 
+> called `results.additive`
+>
+```{r}
+results.additive <- results(ddsObj, alpha=0.05)
+results.additive
+```
+>
+> a) What contrast are these results for? If you have constructed the model 
+>    correctly, then it should be the same as previous `results.simple`
+Again this results table is for the contrast Infected v Uninfected.
+> b) How many genes have an adjusted p-value of less than 0.05
+```{r}
+sum(results.additive$padj < 0.05, na.rm = TRUE)
+```
+
+
+### Exercise 2
+
+> If we want a different contrast we can just pass the `results` function the 
+> **name** of the contrast, as given by `resultsNames(ddsObj)`.
+> Look at the help page for the `results` command to see how to do this.
+>
+> 1. Retrieve the results for the contrast of d33 versus d11. 
+```{r}
+results.d33vd11 <- results(ddsObj, name= "TimePoint_d33_vs_d11", alpha=0.05)
+```
+
+> 2. How many differentially expressed genes are there at FDR < 0.05?
+```{r}
+sum(results.d33vd11$padj < 0.05, na.rm = TRUE)
+```
+
+### Exercise 3
+>
+> When we looked at the PCA it did seem that an interaction model might be
+> warranted. Let's test that.  
+>  
+> 1. Create a new DESeq2 object using a model with an interaction between 
+>    TimePoint and Status. The model formula should be 
+>
+>    `~TimePoint + Status + TimePoint:Status`
+>
+>    where `TimePoint:Status` is the parameter for the interaction beteween 
+>    TimePoint and Status.
+>
+> Note that `*` can be used as shortcut to add the interaction term,
+> e.g. `~TimePoint * Status`, however, writing out in long form is clearer here.
+>
+> Remember to filter to remove uninformative genes.
+>
+```{r}
+interaction.model <- as.formula(~ TimePoint * Status)
+ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
+                                      colData = sampleinfo,
+                                      design = interaction.model)
+keep <- rowSums(counts(ddsObj.raw)) > 5
+ddsObj.filt <- ddsObj.raw[keep,]
+```
+> 2. Run the statistical analysis using the `DESeq` command and create a new
+>    analysis object called `ddsObj.interaction`.
+```{r}
+ddsObj.interaction <- DESeq(ddsObj.filt)
+```
+> 3. Use the LRT to compare this to the simpler additive model 
+>    (`~TimePoint + Status`)
+```{r}
+ddsObj.LRT <- DESeq(ddsObj.interaction, test="LRT", reduced=additive.model)
+results.Interaction_v_Additive <- results(ddsObj.LRT)
+```
+> 4. Extract a table of results using `results`. 
+> For how many genes is interaction model a better fit?  
+```{r}
+table(results.Interaction_v_Additive$padj < 0.05)
+```
+
+### Exercise 4
+>
+> Let's investigate the uninfected mice
+>  
+> 1. Extract the results for d33 v d11 for Uninfected mice. 
+The the intercept is Uninfected mice at 11 days post infection, so the main 
+effect `TimePoint_d33_vs_d11` is the result that we want.
+```{r}
+results.d33_v_d11_uninfected <- results(ddsObj.interaction, 
+                                        name="TimePoint_d33_vs_d11",
+                                        alpha = 0.05)
+```
+> How many genes have an adjusted p-value less than 0.05?  
+```{r}
+table(results.d33_v_d11_uninfected$padj < 0.05)
+```
+> Is this remarkable?  
+Maybe not. Do we really expect vast gene expression differences between the 
+brains of mice that are slightly older than one another? It is possible that 
+there could have been confounding factors, such as changes in enviromental 
+conditions such as temperature or feeding regime, that may have effected gene
+expression. In which case it was important to set the experiment up with 
+control for both time points.
+>
+> 2. Extract the results for d33 v d11 for Infected mice. 
+The the intercept is Uninfected mice at 11 days post infection, so the main 
+effect `TimePoint_d33_vs_d11` is the result that we want.
+```{r}
+results.d33_v_d11_infected <- results(ddsObj.interaction, 
+      contrast = list(c("TimePoint_d33_vs_d11", "TimePointd33.StatusInfected")),
+                                        alpha = 0.05)
+```
+> How many genes have an adjusted p-value less than 0.05?  
+```{r}
+table(results.d33_v_d11_infected$padj < 0.05)
+```
+>
+> Do these results suggest another approach to analysing this data set?   
+Could we possibly treat the six uninfected samples as a single group with six
+replicates and then just have 1 factor with 3 levels: Control, d11.Infected,
+d33.Infected? This is really a biological question and not a statistical one.

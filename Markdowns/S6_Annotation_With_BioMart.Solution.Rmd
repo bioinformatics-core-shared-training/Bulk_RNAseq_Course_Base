@@ -1,0 +1,82 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: Annotation Differential Expression Results with biomaRt
+date: "`r format(Sys.time(), "Last modified: %d %b %Y")`"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+layout: page
+bibliography: ref.bib
+---
+
+```{r setup, message=FALSE}
+library(biomaRt)
+library(tidyverse)
+```
+
+```{r knitrOpts, echo=FALSE}
+knitr::opts_knit$set(cache=TRUE)
+```
+
+## Retrieve full annotation
+
+> ### Challenge 1 {.challenge}
+> That was just 1000 genes. We need annotations for the entire results table.
+> Also, there may be some other interesting columns in BioMart that we wish to
+> retrieve.  
+>
+> (a) Search the attributes and add the following to our list of attributes:  
+>       (i) The gene description   
+>       (ii) The gene biotype  
+
+```{r}
+ensembl <- useEnsembl(biomart = 'genes', 
+                      dataset = 'mmusculus_gene_ensembl',
+                      version = 102)
+ensembl_attributes <- listAttributes(ensembl)
+filter(ensembl_attributes, str_detect(name, "description"))
+filter(ensembl_attributes, str_detect(name, "biotype"))
+```
+
+> (b) Query BioMart using all of the genes in our results table (`results.interaction.11`)  
+
+```{r, eval=FALSE}                  
+# Set the filter type and values
+ourFilterType <- "ensembl_gene_id"
+
+# get the Ensembl IDs from our results table
+filterValues <- rownames(results.interaction.11)[1:1000]
+
+# Set the list of attributes
+attributeNames <- c("ensembl_gene_id",
+                    "external_gene_name", 
+                    "entrezgene_id", 
+                    "entrezgene_accession",
+                    "description",
+                    "gene_biotype")
+
+# run the query
+annot <- getBM(attributes=attributeNames, 
+               filters = ourFilterType, 
+               values = filterValues, 
+               mart = ensembl)
+```
+```{r echo=FALSE}
+annot <- readRDS("../additional_scripts/Full_annotation_with_duplicates.rds")
+```
+
+>
+> (c) How many Ensembl genes have multipe Entrez IDs associated with them?  
+
+```{r}
+annot %>% 
+  add_count(ensembl_gene_id) %>% 
+  filter(n>1) %>% 
+  pull(ensembl_gene_id) %>% 
+  unique() %>% 
+  length()
+```
+
+-------------------------------------------------------------------------------

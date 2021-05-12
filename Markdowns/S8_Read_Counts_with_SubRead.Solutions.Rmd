@@ -1,0 +1,294 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: "Counting reads with SubRead - Solutions"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output: html_document
+---
+
+### Exercise 1
+
+> We can view how many of each feature type there are in the GTF by counting the 
+> entries in the 3rd column of the GTF:
+> 
+> ```{bash eval=FALSE}
+> tail -n +6 references/Mus_musculus.GRCm38.97.gtf | cut -f 3 | sort | uniq -c
+> ```
+> N.B. The `|` symbol is known as the "pipe", it "pipes" the output of the first 
+> command into the next command.
+> 
+> The above commands are:
+> 
+> - `tail -n +6` - start on the 6th line (skipping the first 5 lines which 
+> contain the GTF headers)
+> - `cut -f 3` - extract (*cut* out) the third column (it assumes the columns 
+> are separated by tabs; this can be changed)
+> - `sort` - sort the lines alphabetically
+> - `uniq -c` - collapse consecutive lines that are same and (`-c`) report how
+> many there were.
+> 
+> Q. How many genes are there in the in the GTF? Is this roughly what you 
+> would expect?
+
+```{bash eval=FALSE}
+tail -n +6 references/Mus_musculus.GRCm38.102.gtf | 
+    cut -f 3 | 
+    sort | 
+    uniq -c
+```
+>> 528978 CDS  
+>> 843712 exon  
+>>  95453 five_prime_utr  
+>>  55487 gene  
+>>     65 Selenocysteine  
+>>  60104 start_codon  
+>>  55849 stop_codon  
+>>  87287 three_prime_utr  
+>> 142699 transcript  
+
+There are 55,487 genes in the GTF. This is much more that the ~20K protein 
+coding genes that we might be expecting. In fact the gtf includes a wide range
+of genes including those for non-coding RNAs, tRNAs, pseudogenes etc..
+
+### Exercise 2
+
+> Run code below to count reads in the bam file `SRR7657883.chr14.sorted.bam` 
+> against the GTF for the mouse GRCm38 genome assembly.
+>
+> ```{bash eval=FALSE}
+>   mkdir counts
+> 
+>   featureCounts \
+>       -t exon \
+>       -g gene_id \
+>       --primary \
+>       -p \
+>       -C \
+>       -a references/Mus_musculus.GRCm38.102.gtf \
+>       -o counts/SRR7657883.chr14.featureCounts \
+>       bam/SRR7657883.chr14.sorted.bam
+> ```
+
+>> $\Rightarrow$ counts/SRR7657883.chr14.featureCounts  
+>> $\Rightarrow$ counts/SRR7657883.chr14.featureCounts.summary
+
+>
+> Q. Check the help page again, did we need to specify `-t` and `-g`?
+
+If we check the help page using `featureCounts -h`, we find the entries for 
+these two options:
+
+```
+  -t <string>         Specify feature type(s) in a GTF annotation. If multiple
+                      types are provided, they should be separated by ',' with
+                      no space in between. 'exon' by default. Rows in the
+                      annotation with a matched feature will be extracted and
+                      used for read mapping. 
+
+  -g <string>         Specify attribute type in GTF annotation. 'gene_id' by 
+                      default. Meta-features used for read counting will be 
+                      extracted from annotation using the provided value.
+```
+
+For `-t` the default is "exon" and for `-g` the default is `gene_id`. These are
+the most commonly used settings, so if we don't specify them explicitly 
+`featureCounts` assumes that this is what we want. We can omit them, but you
+may wish to include them in your scripts for clarity.
+
+
+### Exercise 3
+
+> * Run featureCounts on multiple bam files at once. To save time we will use
+> versions of our BAM files that only include reads aligned against the
+> Interleukin 10 receptor, alpha gene (Il10ra; ENSMUSG00000032089) (these bams
+> are used in the [Additional Visualisations](S7_Additional_Visualisation.html) 
+> exercises). You can find these in the `small_bams` directory.  
+> * output the results to a new file called 
+> `counts/ENSMUSG00000032089.featureCounts`  
+> * Specify the input (bam) files using the * wildcard.
+>
+> Q. What are the read counts for Il10ra for each sample?
+
+```{bash eval=FALSE}
+featureCounts \
+  -t exon \
+  -g gene_id \
+  --primary \
+  -p \
+  -C \
+  -a references/Mus_musculus.GRCm38.102.gtf \
+  -o counts/ENSMUSG00000032089.featureCounts \
+  small_bams/SRR76578*.sorted.small.bam
+```
+
+>> $\Rightarrow$ counts/ENSMUSG00000032089.featureCounts  
+>> $\Rightarrow$ counts/ENSMUSG00000032089.featureCounts.summary
+
+> Q. How many reads does each sample have aligned to Il10ra?
+
+We can use `grep` to search for the Il10ra gene using its Ensembl gene id. 
+
+```{bash eval=FALSE}
+grep ENSMUSG00000032089 counts/ENSMUSG00000032089.featureCounts
+```
+>> \# Program:featureCounts v1.5.3; Command:"featureCounts" "-t" "exon" "-g" "gene_id" "--primary" "-p" "-C" "-a" "references/Mus_musculus.GRCm38.102.gtf" "-o" "counts/**ENSMUSG00000032089**.featureCounts" "small_bams/SRR7657872.sorted.small.bam" "small_bams/SRR7657874.sorted.small.bam" "small_bams/SRR7657877.sorted.small.bam" "small_bams/SRR7657878.sorted.small.bam" "small_bams/SRR7657883.sorted.small.bam"    
+>> **ENSMUSG00000032089**	9;9;9;9;9;9;9;9;9;9;9;9;9;9;9;9;9;9;9;9	45253837;45253840;45254527;45260353;45260353;45260353;45264325;45264325;45264325;45265489;45265489;45265489;45266455;45266455;45266455;45267100;45267100;45269006;45269006;45269006	45256441;45256441;45256441;45260471;45260471;45260471;45264478;45264478;45264478;45265655;45265655;45265655;45266642;45266642;45266642;45267214;45267220;45269146;45269149;45269149	-;-;-;-;-;-;-;-;-;-;-;-;-;-;-;-;-;-;-;-	3498	1089	740	201	336	145
+
+
+We can see the counts for each file in columns 7-11, but we don't have the
+column headers. Also, we probably don't want to output the programme line at the
+top. We can use the `-E` flag to switch to using regular expressions to make our
+search more powerful. If you are not familiar with regular expressions, they are
+very much worth learning, there is a nice tutorial
+[here](https://www.digitalocean.com/community/tutorials/using-grep-regular-expressions-to-search-for-text-patterns-in-linux). We'll also do some string replacement with `sed` to tidy up the sample
+names.
+
+```{bash eval=FALSE}
+grep -E "Geneid|^ENSMUSG00000032089"  counts/ENSMUSG00000032089.featureCounts |
+    cut -f 1,7-11 |
+    sed -e 's/small_bams.//g' -e 's/.sorted.small.bam//g' |
+    column -t 
+```
+
+>> |&nbsp;        | &nbsp;| &nbsp;| &nbsp;| &nbsp;| &nbsp;|
+>> |:----------------------|:----------|:----------|:----------|:----------|:----------|  
+>> |**Geneid**             | SRR7657872| SRR7657874| SRR7657877| SRR7657878| SRR7657883|
+>> |**ENSMUSG00000032089** |       1089|        740|        201|        336|        145|
+
+
+### Exercise 4
+
+> * Rerun `featureCounts` on `bam/SRR7657883.chr14.sorted.bam`, but this time 
+> specify "reversely stranded". Use the help to find out which option you need 
+to set to do this: `featureCounts -h`  
+> * Output the results to a new file called
+> `counts/SRR7657883.chr14.reverse.featureCounts`. 
+>
+View the help page `featureCounts -h`:
+
+```
+  -s <int or string>  Perform strand-specific read counting. A single integer
+                      value (applied to all input files) or a string of comma-
+                      separated values (applied to each corresponding input
+                      file) should be provided. Possible values include:
+                      0 (unstranded), 1 (stranded) and 2 (reversely stranded).
+                      Default value is 0 (ie. unstranded read counting carried
+                      out for all input files).
+```
+
+To specify the a reversely stranded protocol we need to add `-s 2`:
+
+```{bash eval=FALSE}
+featureCounts \
+  -t exon \
+  -g gene_id \
+  --primary \
+  -p \
+  -C \
+  -s 2 \
+  -a references/Mus_musculus.GRCm38.102.gtf \
+  -o counts/SRR7657883.chr14.reverse.featureCounts \
+  bam/SRR7657883.chr14.sorted.bam
+```
+
+>> $\Rightarrow$ counts/SRR7657883.chr14.reverse.featureCounts  
+>> $\Rightarrow$ counts/SRR7657883.chr14.reverse.featureCounts.summary
+
+> Q. Compare the summary of the read count assignments to our intial results 
+> where we used the default settings (unstranded). Which type of protocol do 
+> you think was used to generate this library? 
+
+If we look in the summaries, we can compare the number of assigned reads and the
+number of reads unassigned as they are not aligned to a valid feature (exon).
+
+```{bash eval=FALSE}
+cat counts/SRR7657883.chr14.featureCounts.summary`
+```
+
+>> Status    bam/SRR7657883.chr14.sorted.bam
+>> Assigned    792742
+>> ...
+>> ...
+>> Unassigned_NoFeatures   83829
+
+
+```{bash eval=FALSE}
+cat counts/SRR7657883.chr14.reverse.featureCounts.summary`
+```
+
+>>   Status    bam/MCL1.DL.sorted.bam
+>>   Assigned    425813
+>>   ...
+>>   ...
+>>   Unassigned_NoFeatures   480483
+
+From this we can see that requiring the read to be on the opposite strand to the
+transcript for it to be assigned to an exon causes us to lose about 50% of the
+counts. From this we can infer that the original protocol was unstranded. In 
+practice, it is better to have this information ahead of time by knowing what
+protocol was used to generate your data.
+
+### Exercise 5
+
+> Rerun `featureCounts` on `bam/SRR7657883.sorted.bam`, but this time also 
+> extract the "gene_biotype" from the GTF file and output to a new file called
+> `counts/SRR7657883.gene_biotype.featureCounts`.
+
+
+```{bash eval=FALSE}
+featureCounts \
+  -t exon \
+  -g gene_id \
+  --primary \
+  -p \
+  -C \
+  --extraAttributes "gene_biotype" \
+  -a references/Mus_musculus.GRCm38.102.gtf \
+  -o counts/SRR7657883.gene_biotype.featureCounts \
+  bam/SRR7657883.chr14.sorted.bam
+```
+
+>> $\Rightarrow$ counts/SRR7657883.gene_biotype.featureCounts  
+>> $\Rightarrow$ counts/SRR7657883.gene_biotype.featureCounts.summary
+
+The biotype is now in the 7th column:
+
+```{bash eval=FALSE}
+head -n 3 counts/SRR7657883.gene_biotype.featureCounts | tail -n 2
+```
+
+
+>> Geneid	Chr	Start	End	Strand	Length	gene_biotype	bam/SRR7657883.chr14.sorted.bam  
+>> ENSMUSG00000102693	1	3073253	3074322	+	1070	TEC	0
+
+
+>
+> Q. How many of the genes are protein coding? (Hint: To count the 
+> bioyptes, see the section above where we counted the feature types in the GTF
+> file)
+
+To count the biotypes:
+
+```{bash eval=FALSE}
+tail -n +3 counts/SRR7657883.gene_biotype.featureCounts | 
+    cut -f 7| 
+    sort |
+    uniq -c
+```
+
+>>      3 3prime_overlapping_ncRNA  
+>>    2991 antisense  
+>>     198 bidirectional_promoter_lncRNA  
+>>      13 IG_C_gene  
+>>     ... ...  
+>>     ... ...  
+>>   21936 protein_coding  
+>>     ... ...  
+>>     ... ...  
+
+From this we can see that we have 21936 protein coding genes, with most of the
+rest being either non-coding RNAs or pseudogenes.
+
+--------------------------------------------------------------------------------
+
+
+

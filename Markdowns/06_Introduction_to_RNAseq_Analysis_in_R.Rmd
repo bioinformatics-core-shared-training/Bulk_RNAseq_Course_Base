@@ -1,0 +1,462 @@
+---
+title: "Introduction to RNAseq analysis in R"
+date: "April 2021"
+output:
+  ioslides_presentation:
+    css: css/stylesheet.css
+    logo: images/CRUK_Cambridge_Institute.png
+    smaller: yes
+    widescreen: yes
+  beamer_presentation: default
+  slidy_presentation: default
+---
+<!--
+## The many faces of RNA-seq
+
+<div style="width: 31%; float: left">
+* Different flavours:
+
+    * mRNAseq
+    
+    * Targeted
+    
+    * Small RNA
+    
+    * Single Cell RNA-Seq
+
+</div>
+<div style="width: 31%; float: left">
+* Discovery:
+
+    * Transcripts
+
+    * Isoforms
+
+    * Splice junctions
+
+    * Fusion genes
+
+</div>
+<div style="float: left">
+* Differential expression:
+
+    * **Gene level expression changes**
+
+    * Relative isoform abundance
+
+    * Splicing patterns
+
+* Variant calling
+
+</div>
+
+<img src="images/attendance.gif" class="centerimg" style="width: 65%"/>
+--> 
+
+## Differential Gene Expression Analysis Workflow {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+
+## Sources of Noise
+
+<img src="images/Noise.svg" style="width: 65%; margin-left: 23%">
+
+## Sources of Noise - Sampling Bias
+
+<img src="images/SamplingBias.svg" class="centerimg" style="width: 60%">
+
+
+## Sources of Noise - Transcript Length
+
+<div style="margin-top: 60px; margin-bottom: 40px;">
+<img src="images/TranscriptLength.svg" class="centerimg" style="width: 65%">
+</div>
+
+<div>
+The length of the transcript affects the number of RNA fragments present in the
+library from that gene.
+</div>
+
+
+## Sources of Noise - Sequencing Artefacts
+
+<img src="images/SequencingArtefacts.png" class="centerimg" style="width: 75%">
+
+## Normalisation
+
+* Counting estimates the *relative* counts for each gene
+
+* Does this **accurately** represent the original population of RNAs?
+
+* The relationship between counts and RNA expression is not the same for all 
+genes across all samples
+
+
+<div style="width: 30%; 
+    float: left;
+    border-style: solid; 
+    border-width: 1px;
+    border-radius: 25px; 
+    padding: 20px; 
+    margin-right: 10%;
+    margin-left: 10%;">
+<span style="color: #2e3192">**Library Size**</span>
+
+Differing sequencing depth
+
+</div>
+
+<div style="width: 30%; 
+    float: left; 
+    border-style: solid; 
+    border-width: 1px;
+    border-radius: 25px; 
+    padding: 20px;">
+<span style="color: #2e3192">**Gene properties**</span>
+
+Length, GC content, sequence
+
+</div>
+
+<div style="width: 40%; 
+    float: left; 
+    border-style: solid; 
+    border-width: 1px;
+    border-radius: 25px; 
+    padding: 20px;
+    clear: both;
+    margin-top: 20px;
+    margin-left: 27%">
+<span style="color: #2e3192;">**Library composition**</span>
+
+Highly expressed genes overrepresented at the cost of lowly expressed genes
+
+"Composition Bias"
+
+</div>
+
+## Normalisation - scaling
+
+Library Size 
+
+* Normalise each sample by total number of reads sequenced.  
+
+* Can also use another statistic similar to total count eg. median, upper 
+quartile 
+
+* Does not account for composition bias
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/scaling.svg" class="centerimg" style="width: 40%">
+
+## DESeq2 analysis workflow
+
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/DESeq2_workflow_00.png" class="centerimg" style="width: 25%">
+
+## Normalisation - Geometric mean scaling factor
+
+* Used by DESeq2
+
+<div class="smalltext" style="margin-left: 25px">
+1. For each gene calculate the geometric mean across all samples
+2. For each gene in each sample, normalise by dividing by the geometric mean for that gene
+3. For each sample calculate the scaling factor as the median of the normalised counts
+</div>
+
+<img src="images/DESeq2_workflow_01.png"  style="width: 16%; float: left">
+
+<img src="images/GeometricScaling.svg" style="margin-left: 15%; width: 63%">
+
+## Differential Expression
+
+* Comparing feature abundance under different conditions
+
+*  Assumes linearity of signal
+
+*  When feature=gene, well-established pre- and post-analysis strategies exist
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/LinearityOfCounts.png" class="centerimg" style="width: 40%;
+    border-style: solid; 
+    border-width: 1px;
+    ">
+
+<div style="text-align: right">
+    Mortazavi, A. et al (2008) Nature Methods
+</div>
+
+## Differential Expression
+
+Simple difference in means  
+
+<img src="images/DifferenceInMeans.png" class="centerimg" style="width: 60%;">
+
+<div style="text-align: right">
+    Replication introduces variation
+</div>
+
+## Differential Expression - Modelling population distributions
+
+* Normal (Gaussian) Distribution - t-test
+
+* Two parameters - $mean$ and $sd$ ($sd^2 = variance$)
+
+* Suitable for microarray data but not for RNAseq data
+
+<div style="width: 60%; margin-left: 16%; padding-top: 5px">
+
+```{r diffInMeans, echo=FALSE, fig.width=7, fig.height=4}
+library(shape)
+x1 <- seq(0, 6, length=100)
+hx1 <- dnorm(x1, mean = 3, sd = 1)
+x2 <- seq(2, 12, length=100)
+hx2 <- dnorm(x2, mean = 7, sd = 1.5)
+par(bg=NA, mar=c(5, 4, 0, 4) + 0.1) 
+
+plot(x1, hx1, type="l", lty=1, 
+     xlab="x value", ylab="Density",
+     col="tomato", ylim=c(0, 0.6), xlim=c(0, 13))
+lines(x2, hx2, type="l", col="steelblue")
+abline(v=3, col="tomato3", lty=2)
+abline(v=7, col="steelblue3", lty=2)
+Arrows(3.3, 0.5, 6.7, 0.5, code = 3, arr.type = "curved")
+```
+</div>
+
+## Differential Expression - Modelling population distributions
+
+* Count data - Poisson distribution
+
+* One parameter - $mean$ $(\lambda)$
+
+* $variance$ = $mean$
+
+<div style="width: 60%; margin-left: 16%; padding-top: 5px">
+```{r poissonDistr, echo=FALSE, fig.width=7, fig.height=4}
+x1 <- seq(0, 20)
+hx1 <- dpois(x1, lambda = 1)
+hx2 <- dpois(x1, lambda = 4)
+hx3 <- dpois(x1, lambda = 10)
+par(bg=NA, mar=c(5, 4, 0, 4) + 0.1) 
+plot(x1, hx1, type="l", lty=1,
+     xlab="k", ylab="P(X=k)")
+lines(x1, hx2, type="l")
+lines(x1, hx3, type="l")
+cols <- c("coral2", "darkgoldenrod1", "deepskyblue3")
+points(x1, hx1, bg=cols[1], pch=21)
+points(x1, hx2, bg=cols[2], pch=21)
+points(x1, hx3, bg=cols[3], pch=21)
+leg <- c(expression(paste(lambda, " =  ", 1)),
+         expression(paste(lambda, " =  ", 4)),
+         expression(paste(lambda, " = ", 10)))
+legend("topright", legend = leg, pt.bg = cols, pch=21, bty="n")
+```
+</div>
+
+## Differential Expression - Modelling population distributions
+
+<img src="images/DESeq2_workflow_02.png"  style="width: 16%; float: left; 
+    margin-top: 40px">
+
+    
+<div style="width: 45%; float: left; 
+    margin-right: 10px; 
+    margin-left: 30px; 
+    margin-top: 40px">
+
+* Use the Negative Binomial distribution
+
+* In the NB distribution $mean$ not equal to $variance$
+
+* Two paramenters - $mean$ and $dispersion$
+
+* $dispersion$ describes how $variance$ changes with $mean$
+
+</div>
+
+<img src="images/NegativeBinomialDistribution.png" style="width: 33%; 
+    margin-top: 40px">
+
+<div style="text-align: right">
+    Anders, S. & Huber, W. (2010) Genome Biology
+</div>
+
+## Differential Expression - estimating dispersion
+
+
+<img src="images/DESeq2_workflow_03.png"  style="width: 16%; float: left; 
+    margin-top: 40px">
+
+<div style="width: 40%; float: left; 
+    margin-right: 10px; 
+    margin-left: 30px; 
+    margin-top: 40px">
+
+* Estimating the dispersion parameter can be difficult with a small number of samples 
+
+* DESeq2 models the variance as the sum of technical and biological variance
+
+* Esimate dispersion for each gene
+
+* ‘Share’ dispersion information between genes to obtain fitted estimate
+
+* Shrink gene-wise estimates towards the fitted estimates
+
+</div>
+
+<img src="images/dispersion.png" style="width: 38%; margin-top: 40px">
+
+
+## Differential Expression - worrying dispersion plot examples
+
+<!--
+A note about these dispersion plots:
+
+I wrote the Harvard team and got the response below. This is basically what Dom
+surmised. For the second plot, Dom thinks it is conceivable that there could be
+nothing wrong with the data as such and that this pattern could arise if you
+had a particularly unusual treatment, perhaps resulting in extreme
+downregulation of a large cohort of genes and extreme upregulation of another
+large cohort of genes. Either way, in both cases the thing to do is not to
+worry about trying to interpret the problem from the dispersion plot, but to go
+back to the raw data and figure out what is unusual.
+
+From: Piper, Mary <piper@hsph.harvard.edu>
+Sent: 01 July 2020 01:19
+To: Ashley Sawle <Ashley.Sawle@cruk.cam.ac.uk>
+Cc: HSPH-HBCTraining <HBCtraining@hsph.harvard.edu>
+Subject: Re: A question about your RNAseq course from a fellow trainer
+ 
+Hi Ash,
+
+Glad that our materials are useful to you - we have converted the DGE materials
+to an online course format too, which is available at:
+https://hbctraining.github.io/DGE_workshop_salmon_online/schedule/. I added
+these dispersion plots a while ago, and I believe that the first plot was from
+data that was highly contaminated with rRNA. I think the rRNA was
+computationally removed prior to the analysis from a low input RNA-seq library
+back 3-4 years ago, but there were still large differences in the complexity of
+the samples (the data was a real mess). The second plot was from a student who
+had taken our course; I know the data was really weird in that it had very few
+genes with higher mean counts (it also had weird MA plot and poor clustering by
+PCA). However, since I had not analyzed the data, I only offered suggestions
+for looking into the dataset - I don't know if they were able to rescue their
+dataset (b/c I believe they also did not have any/many DE genes). So, the bad
+dispersion plot is likely due to the strange nature of their data with few
+genes with higher mean counts (so the dispersion could not be estimated as
+accurately across genes with higher mean counts) and/or affected by the outlier
+sample/s.
+
+Note that in the online materials, I have an additional bad dispersion plot in
+an exercise. This plot was from a pseudobulk scRNA-seq analysis - the data
+reflect a single cell type that had huge variations in the number of cells
+collapsed together per sample to generate the sample-level counts. Some samples
+had only  a handful of cells, while other samples had thousands. Therefore, you
+can imagine the variation being quite large between samples of the same sample
+group.
+
+Hope this helps, and please let me know if you have additional questions.
+
+Best wishes,
+Mary
+
+-->
+
+<div><br></div>
+
+<img src="images/bad_dispersion.png" class="centerimg" style="width: 100%">
+
+<div style="text-align: right;">
+    Bad dispersion plots from: https://github.com/hbctraining/DGE_workshop
+</div>
+
+## Differential Expression - linear models
+
+* Calculate coefficients describing change in gene expression
+
+* Linear Model $\rightarrow$ General Linear Model
+
+<img src="images/DESeq2_workflow_04.png"  style="width: 16%; float: left; 
+    padding-top: 5px">
+
+<div style="width: 30%; margin-left: 20%; padding-top: 5px">
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=4}
+library(tidyverse)
+dat <- data.frame(C1=rnorm(6, 4, 1),
+                  C2=rnorm(6, 6, 1.3)) %>% 
+    gather("Cat", "Expression") %>% 
+    mutate(Group=as.numeric(factor(Cat)))
+
+ewe <- lm(dat$Expression~dat$Group)
+
+par(bg=NA, mar=c(5, 4, 0, 4) + 0.1) 
+plot(dat$Group, dat$Expression, 
+     pch=21, 
+     bg=rep(c("tomato", "steelblue"), each=6),
+     xlim=c(0, 3),
+     ylim=c(0, 8), xaxt="n", xlab="Group", ylab = "Expression")
+axis(1, at = 1:2)
+abline(h=5, lty=2, col="grey")
+abline(ewe, col="red")
+
+```
+</div>
+
+## Towards biological meaning - hierachical clustering {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/Heatmap.svg" style="width: %; 
+                                     display: block;
+                                     margin-left: 32%;">
+
+
+## Towards biological meaning - Gene Ontology testing {#less_space_after_title}
+
+<img src="images/GOenrichment.svg" style="width: 70%; 
+                                     display: block;
+                                     margin-left: 8%;
+                                     margin-top: 10%">
+
+## Towards biological meaning - Gene Set Enrichment Analysis {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<div style="float: left; width: 50%; margin-left: 5%; margin-top: 50px">
+<img src="images/GSEA-homegraphic.gif">
+
+    http://software.broadinstitute.org/gsea
+</div>
+
+<div>
+<img src="images/MSigDBTrsp.png" style="width: 45%;">
+</div>
+
+## Towards biological meaning - Pathway Analysis {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/mmu03320.pathview.png" class="centerimg" style="width: 65%">
+
+## More Depth or More Reps? {#less_space_after_title}
+
+<div><br></div>
+
+<img src="images/DepthvReps.jpg" class="centerimg" style="width: 60%">
+
+<div style="text-align: right;">
+    Liu et al. (2014) Bioinformatics
+</div>
+
+##
+
+<div style="text-align: center; margin-top: 30%">
+<span style="color: #2e3192; font-size: 80px">**Thank you**</span>
+</div>

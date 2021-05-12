@@ -1,0 +1,101 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: "A very brief intro to `dplyr` and tidyverse"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output: html_document
+minutes: 300
+layout: page
+bibliography: ref.bib
+editor_options: 
+  chunk_output_type: inline
+---
+
+One of the most complex aspects of learning to work with data in `R` is 
+getting to grips with subsetting and manipulating data tables. The package 
+`dplyr` [@Wickham2018] was developed to make this process more intuitive than it
+is using standard base `R` processes. It also makes use of a new symbol `%>%`,
+called the "pipe", which makes the code a bit tidier. 
+
+`dplyr` is one of suite of similar packages collectively known as the tidyverse.
+
+This is a **very** brief introduction to the `tidyverse` way of writing R code.
+A more detailed introduction can be found in our
+[online R course](https://bioinformatics-core-shared-training.github.io/r-intro/week4.html) 
+
+We are introducing this because it makes many of the processes we will look at 
+later **much simpler**. Importantly it also results in code that is much easier
+to read and understand.
+
+The entire tidyverse suite can be loaded via the `tidyverse` package:
+
+```{r setup}
+library(tidyverse)
+```
+
+Let's have a quick look at this by playing with our `sampleinfo` table.
+
+```{r loadSampleInfo, message = FALSE}
+# Read the sample information into a data frame
+sampleinfo <- read_tsv("data/samplesheet.tsv")
+sampleinfo
+```
+
+Suppose we wanted a new sample table that:
+
+1. Just includes the "d11" samples
+2. Only has the columns "SampleName" and "Status"
+3. Renames the "Status" column as "SampleGroup"
+
+### Manipulating the table in base R
+
+With base R we would do something like this
+
+```{r baseR, }
+newTable <- sampleinfo
+newTable <- newTable[newTable$TimePoint=="d11",]
+newTable <- newTable[, c("SampleName", "Status")]
+colnames(newTable)[2] <- "SampleGroup"
+newTable
+```
+
+### `dplyr`
+
+With `dplyr` we can use three new functions: `filter`, `select` and `rename`:
+
+```{r dplyr}
+newTable <- sampleinfo
+newTable <- filter(newTable, TimePoint=="d11")
+newTable <- select(newTable, SampleName, Status)
+newTable <- rename(newTable, SampleGroup=Status)
+newTable
+```
+
+The idea is that the `dplyr` code is easier to read and interpret than the base 
+R syntax. 
+
+There's no need to quote the column names as dplyr intelligently interprets
+the arguments it's passed as belonging to the data table columns.
+
+### The Pipe
+
+Rather than repeatedly reassigning `newTable <- f(newTable)` as above, we can 
+use the "*pipe*" - `%>%`. This takes the output of one function and "*pipes*" it
+into the first argument of the next function so that we don't have to keep
+specifying the object we are working with:
+
+```{r pipe}
+newTable <- sampleinfo %>%
+    filter(TimePoint=="d11") %>%
+    select(SampleName, Status) %>% 
+    rename(SampleGroup=Status)
+newTable
+```
+
+This is a fairly trivial example and the benefits may not be immediately 
+obvious, but once you get used to using `dplyr` (and the other related
+"tidyverse" packages, such as `stringr`) you'll find it much more powerful and 
+easy to use than base R. 
+
+----------------------------------------------
+
+# References

@@ -1,0 +1,415 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: "Gene Set Testing for RNA-seq"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+always_allow_html: true
+bibliography: ref.bib
+---
+
+```{r setup, include=FALSE, cache=FALSE}
+options(bitmapType='cairo')
+knitr::opts_chunk$set(dev = c("png"))
+
+library(tidyverse)
+```
+
+The list of differentially expressed genes is sometimes so long that its 
+interpretation becomes cumbersome and time consuming. It may also be very
+short while some genes have low p-value yet higher than the given threshold.
+
+A common downstream procedure to combine information across genes is gene set testing.
+It aims at finding pathways or gene networks the differentially expressed genes play a role in.
+
+Various ways exist to test for enrichment of biological pathways. We will look
+into over representation and gene set enrichment analyses.
+
+A gene set comprises genes that share a biological function, chromosomal location, or any other
+relevant criterion.
+
+<!--
+- Define gene set
+- gene set == "pathway"
+- over-represented == enriched
+ie pathway A is enriched in our diff exp gene list
+-->
+
+# Over-representation
+
+## Method
+
+This method tests whether genes in a pathway are present in a subset of our data
+in a higher number than expected by chance (explanations derived from the 
+[clusterProfiler manual](https://yulab-smu.github.io/clusterProfiler-book/index.html)).
+
+Genes in the experiment are split in two ways:
+
+* annotated to the pathway or not
+* differentially expressed or not
+
+We can then create a contingency table with:
+
+* rows: genes in pathway or not
+* columns: genes differentially expressed or not
+
+## A toy example
+
+Let's start with an experiment with:
+
+* 20,000 genes of which 100 are differentially expressed,
+* a pathway with 2000 genes,
+  * including 20 of the 100 differentially expressed genes.
+
+```{r}
+# make contingency table
+contingencyTable <- data.frame(
+  NoDiffExp=c(17920, 1980),
+  YesDiffExp=c(80, 20))
+row.names(contingencyTable) <- c("NoPathway", "YesPathway")
+
+# check margin sums:
+rowSums(contingencyTable)
+colSums(contingencyTable)
+
+# show table
+contingencyTable
+```
+
+Let's define variables for the analysis of a given pathway:
+
+* **N**: total number of genes in the **background** set, e.g. all genes tested - 20,000
+in our example.
+  * This background set is sometimes referred to as the **universe**.
+* **M**: number of genes within that background that are annotated to the pathway -
+2,000 in our example
+* **n**: number of differentially expressed genes - 100 in our example
+* **k**: number of differentially expressed genes that are annotated to the pathway 
+  * 20 in our example
+
+Significance can then be assessed with the hypergeometric distribution:
+
+<!-- over-representation p-value -->
+![](images/overRepPvalHyperGeoFormula.png)
+
+The test above is identical to the one-tailed Fisher's exact test.
+
+```{r}
+fisher.test(contingencyTable, alternative = "greater")
+```
+
+To save time and effort there are a number of packages that make applying this 
+test to a large number of gene sets simpler, and which will import gene lists 
+for testing from various sources.
+
+Today we will use [`clusterProfiler`](https://yulab-smu.github.io/clusterProfiler-book/index.html).
+
+<!--
+https://yulab-smu.github.io/clusterProfiler-book/index.html
+https://yulab-smu.github.io/clusterProfiler-book/chapter2.html#over-representation-analysis
+-->
+
+<!-- KEGG pathway enrichment analysis -->
+
+## `clusterProfiler`
+
+`clusterprofiler` [@Yu2012] supports direct online access of the current KEGG
+database (KEGG: Kyoto Encyclopedia of Genes and Genomes),
+rather than relying on R annotation packages.
+It also provides some nice visualisation options.
+
+We first search the resource for mouse data:
+
+```{r loadClusterProfiler, message=FALSE}
+library(clusterProfiler)
+library(tidyverse)
+
+search_kegg_organism('mouse', by='common_name')
+```
+
+We will use the 'mmu' 'kegg_code'.
+
+## KEGG enrichment analysis
+
+The input for the KEGG enrichment analysis is the list of gene IDs of significant genes. 
+
+We now load the R object keeping the outcome of the differential expression 
+analysis for the d11 contrast.
+
+```{r loadData}
+shrink.d11 <- readRDS("RObjects/Shrunk_Results.d11.rds")
+```
+
+We will only use genes that have:
+
+* an adjusted p-value (FDR) of less than 0.05
+* and an absolute fold change greater than 2.
+
+We need to remember to eliminate genes with missing values in the FDR as a result
+of the independent filtering by DESeq2.
+
+For this tool we need to use Entrez IDs, so we will also need to eliminate genes
+with a missing Entrez ID (NA values in the 'Entrez' column).
+
+```{r enrichKEGGprint}
+sigGenes <- shrink.d11 %>% 
+    drop_na(Entrez, FDR) %>% 
+    filter(FDR < 0.05 & abs(logFC) > 1) %>% 
+    pull(Entrez)
+
+kk <- enrichKEGG(gene = sigGenes, organism = 'mmu')
+head(kk, n=10) %>%  as_tibble()
+```
+
+### Visualise a pathway in a browser
+
+`clusterProfiler` has a function `browseKegg` to view the KEGG pathway in a browser,
+highlighting the genes we selected as differentially expressed.
+
+We will show one of the top hits: pathway 'mmu04612' for 'Antigen processing and presentation'.
+
+```{r browseKegg}
+browseKEGG(kk, 'mmu04612')
+```
+
+### Visualise a pathway as a file
+
+The package `pathview` [@Luo2013] can be used to generate figures of KEGG 
+pathways. 
+
+One advantage over the `clusterProfiler` browser method `browseKEGG` is that genes can be
+coloured according to fold change levels in our data. To do this we need
+to pass `pathview` a named vector of fold change values (one could in fact
+colour by any numeric vector, e.g. p-value).
+
+The package plots the KEGG pathway to a `png` file in the working directory.
+
+```{r pathview, message=F}
+# check working directory
+#getwd()
+
+# run pathview
+library(pathview)
+logFC <- shrink.d11$logFC
+names(logFC) <- shrink.d11$Entrez
+pathview(gene.data = logFC, 
+         pathway.id = "mmu04612", 
+         species = "mmu", 
+         limit = list(gene=20, cpd=1))
+```
+
+*mmu04612.pathview.png*:
+
+![mmu04612 - Antigen processing and presentation](images/mmu04612_pathview.png)
+
+> ### Exercise 1 {.challenge}
+>
+> 1. Use `pathview` to export a figure for "mmu04659" or "mmu04658", but this time only
+> use genes that are statistically significant at FDR < 0.01
+>
+
+```{r solution1, eval=F}
+
+```
+
+> ### Exercise 2 - GO term enrichment analysis
+>
+> `clusterProfiler` can also perform over-representation analysis on GO terms 
+using the command `enrichGO`. Check:
+>
+> * the help page for the command `enrichGO` (type `?enrichGO` at the console prompt)
+> * and the instructions in the
+> [clusterProfiler book](http://yulab-smu.top/clusterProfiler-book/chapter5.html#go-over-representation-test).
+> 
+> 1. Run the over-representation analysis for GO terms 
+>     - Use genes that have an adjusted p-value (FDR) of less than 0.01 and
+> an absolute fold change greater than 2.    
+>     - For this analysis you can use Ensembl IDs rather then Entrez
+>     - You'll need to provide the background (`universe`) genes, this should be
+> all the genes in our analysis.
+>     - The mouse database package is called `org.Mm.eg.db`. You'll need to load
+>  it using `library` before running the analysis.    
+>     - As we are using Ensembl IDs, you'll need to set the `keyType` 
+> parameter in the `enrichGO` command to indicate this.
+>     - Only test terms in the "Biological Processes" ontology 
+> 2. Use the `dotplot` function to visualise the results.
+
+
+```{r solution2, eval=F}
+# may need devtools::install_github("YuLab-SMU/enrichplot")
+# to avoid a 'wrong orderBy parameter' warning.
+```
+
+# GSEA analysis
+
+Gene Set Enrichment Analysis (GSEA) identifies gene sets that are related to the
+difference of interest between samples [@Subramanian15545].
+
+The software is distributed by the 
+[Broad Institute](http://software.broadinstitute.org/gsea/index.jsp)
+and is freely available for use by academic and non-profit organisations.
+The Broad also provide a number of very well curated gene sets
+for testing against your data - the [Molecular Signatures Database (MSigDB)](http://software.broadinstitute.org/gsea/msigdb/index.jsp). 
+These are collections of human genes. Fortunately, these lists
+have been translated to mouse equivalents by the Walter+Eliza Hall Institute
+Bioinformatics service and made available for 
+[download](http://bioinf.wehi.edu.au/MSigDB/index.html).
+They are now also available from a recent R package
+[msigdbr](https://cran.r-project.org/web/packages/msigdbr/index.html), which we will use.
+
+Let's load `msigdbr` now.
+
+```{r}
+library(msigdbr)
+```
+
+## Method
+
+The analysis is performed by:
+
+1. ranking all genes in the data set  
+2. identifying in the ranked data set the rank positions of all members of the gene set 
+3. calculating an enrichment score (ES) that represents the difference 
+between the observed rankings and that which would be expected assuming a random 
+rank distribution.
+ 
+The article describing the original software is available 
+[here](http://www.pnas.org/content/102/43/15545.long),
+while this [commentary on GSEA](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1266131/) provides a shorter description.
+
+![](../images/gseaArticleFig1.png)
+
+We will use `clusterProfiler`'s [`GSEA`](http://yulab-smu.top/clusterProfiler-book/chapter2.html#gene-set-enrichment-analysis) 
+package [@Yu2012] that implements the same algorithm in R. 
+
+<!-- We will use `GSEA` in `clusterProfiler`. -->
+
+## Rank genes
+
+We need to provide `GSEA` with a vector containing values for a given gene mtric, e.g. log(fold change), sorted in decreasing order.
+
+To start with we will simply use a rank based on their fold change.
+
+We must exclude genes with no Entrez ID.
+
+Also, we should use the shrunk LFC values.
+
+```{r preparedata}
+rankedGenes <- shrink.d11 %>%
+  drop_na(Entrez) %>%
+  mutate(rank = logFC) %>%
+  arrange(-rank) %>%
+  pull(rank,Entrez)
+```
+
+## Load pathways
+
+We will load the MSigDB Hallmark gene set with `msigdbr`, setting the `category` parameter to 'H' for **H**allmark gene set. The object created is a `tibble` with information on each {gene set; gene} pair (one per row). We will only keep the the gene set name, gene Entrez ID and symbol, in mouse.
+
+```{r loadPathways_msigdbr}
+m_H_t2g <- msigdbr(species = "Mus musculus", category = "H") %>% 
+  dplyr::select(gs_name, entrez_gene, gene_symbol)
+```
+
+## Conduct analysis
+
+Arguments passed to `GSEA` include:
+
+* ranked genes
+* pathways
+* gene set minimum size
+* gene set maximum size
+
+```{r runGsea}
+gseaRes <- GSEA(rankedGenes,
+                TERM2GENE = m_H_t2g[,1:2],
+                #pvalueCutoff = 0.05,
+                pvalueCutoff = 1.00, # to retrieve whole output
+                minGSSize = 15,
+                maxGSSize = 500)
+```
+
+Let's look at the top 10 results.
+
+```{r top10GseaPrint, echo=!FALSE}
+# have function to format in scientific notation
+format.e1 <- function(x) (sprintf("%.1e", x))
+# show table
+gseaRes %>%
+  arrange(desc(abs(NES))) %>%
+  top_n(10, -p.adjust) %>%
+  dplyr::select(-core_enrichment) %>%
+  dplyr::select(-Description) %>%
+  data.frame() %>%
+  remove_rownames() %>%
+  # format
+  mutate(ES=formatC(enrichmentScore, digits = 3)) %>%
+  mutate(NES=formatC(NES, digits = 3)) %>%
+  # format p-values
+  modify_at(
+    c("pvalue", "p.adjust", "qvalues"),
+    format.e1
+  ) %>%
+  DT::datatable(options = list(dom = 't'))
+```
+
+## Enrichment score plot
+
+The enrichment score plot displays along the x-axis that represents the decreasing gene rank:
+
+* genes involved in the pathway under scrutiny: one black tick per gene in the
+pathway (no tick for genes not in the pathway) 
+* the enrichment score: the green curve shows the difference between the observed
+rankings and that which would be expected assuming a random rank distribution.
+
+```{r }
+# HALLMARK_INFLAMMATORY_RESPONSE is 4th
+topx <- match("HALLMARK_INFLAMMATORY_RESPONSE", data.frame(gseaRes)$ID)
+```
+
+Gene log(fold change):
+
+```{r gseaEnrichmentPlot_preranked}
+gseaplot(gseaRes, geneSetID = topx, by = "preranked", title = gseaRes$Description[topx])
+```
+
+Running score:
+
+```{r gseaEnrichmentPlot_runningScore}
+gseaplot(gseaRes, geneSetID = topx, by = "runningScore", title = gseaRes$Description[topx])
+```
+
+Both the log(fold change) and running score:
+
+```{r gseaEnrichmentPlot_both}
+gseaplot(gseaRes, geneSetID = topx, title = gseaRes$Description[topx])
+```
+
+Remember to check the [GSEA 
+article](http://www.pnas.org/content/102/43/15545.full) for the complete 
+explanation.
+
+> ## Exercise 3 {.exercise}
+>
+> Another common way to rank the genes is to order by pvalue while sorting
+> so that upregulated genes are at the start and downregulated at the end.
+> You can do this combining the sign of the fold change and the pvalue. 
+> 
+> 1. Rank the genes by statistical significance - you will need to create
+> a new ranking value using `-log10({p value}) * sign({Fold Change})`.
+> 2. Run `fgsea` using the new ranked genes and the H pathways.
+> 3. Conduct the same analysis for the d33 vs control contrast.
+> Extended: Do results differ between ranking scheme?  
+> Extended: Do results differ between d11 and d33, with the significance-based ranking scheme?  
+
+```{r solution3}
+
+```
+
+
+---------------------------------------------------------------
+
+# References

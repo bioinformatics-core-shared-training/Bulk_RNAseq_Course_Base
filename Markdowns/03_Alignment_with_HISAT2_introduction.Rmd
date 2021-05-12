@@ -1,0 +1,149 @@
+---
+title: "Short Read Alignment"
+date: "April 2021"
+output:
+  ioslides_presentation:
+    css: css/stylesheet.css
+    logo: images/CRUK_Cambridge_Institute.png
+    smaller: yes
+    widescreen: yes
+  beamer_presentation: default
+  slidy_presentation: default
+---
+
+```{r, include=FALSE, echo=FALSE}
+options(bitmapType='cairo')
+knitr::opts_chunk$set(dev = c("png"))
+```
+
+## Differential Gene Expression Analysis Workflow {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+
+## Alignment
+
+AIM: Given a reference sequence and a set of short reads, align each read to
+the reference sequence finding the most likely origin of the read sequence.
+
+<img src="images/SRAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
+
+## Alignment - Gap aware alignment
+
+<img src="images/GappedAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
+
+Aligners: STAR, HISAT2
+
+## SAM format
+
+**S**equence **A**lignment/**M**ap (SAM) format is the standard format for files
+containing aligned reads.
+
+Definition of the format is available at https://samtools.github.io/hts-specs/SAMv1.pdf.
+
+Two main parts:  
+
+* Header  
+  	- contains meta data (source of the reads, reference genome, aligner, etc.)  
+  	- header lines start with “@”
+  	- header fields have standardized two-letter codes
+  	
+* Alignment section  
+    - 1 line for each alignment  
+    - contains details of alignment position, mapping, base quality etc.  
+    - 11 required fields, but other content may vary depending on aligner and other
+      tools used to create the file
+      
+## SAM format - header
+
+<img src="images/SAM_header_1.png" class="centerimg" style="width: 100%">  
+..........................  
+..........................  
+<img src="images/SAM_header_2.png" class="centerimg" style="width: 100%; margin-top: 10px;">
+
+## SAM format - alignment
+
+<img src="images/SAM_alignment_1.png" class="centerimg" style="width: 100%; margin-top: 10px;">
+
+## SAM format - alignment
+
+<img src="images/SAM_alignment_1a.png" class="centerimg" style="width: 100%; margin-top: 10px;">
+
+## SAM format - alignment
+
+<img src="images/SAM_alignment_1b.png" class="centerimg" style="width: 100%; margin-top: 10px;">
+
+## SAM format - alignment
+
+<img src="images/SAM_alignment_1c.png" class="centerimg" style="width: 100%; margin-top: 10px;">
+
+## SAM format - alignment
+
+
+<div style="position: relative; 
+            z-index: 0;
+            height: 480px;
+            width: 960px;">
+<div style="z-index: 1;
+            position: absolute;
+            top: 0px;
+            left: 0px">
+<img src="images/SAM_details.png" style="width: 50%; float: left; margin-right: 10px">
+</div>
+
+</div>
+
+## SAM format - alignment
+
+<div style="position: relative; 
+            z-index: 0;
+            height: 480px;
+            width: 960px;">
+<div style="z-index: 1;
+            position: absolute;
+            top: 0px;
+            left: 0px">
+<img src="images/SAM_details.png" style="width: 50%; float: left; margin-right: 10px">
+</div>
+
+<div style="z-index: 2;
+            position: absolute;
+            bottom: 170px;
+            left: 350px;">
+<div>
+<img src="images/SAMflags.png" style="width: 100%">
+</div>
+</div>
+
+<div style="z-index: 3;
+            position: absolute;
+            top: 320px;
+            left: 500px;">
+<div>
+[Explain SAM flags](https://broadinstitute.github.io/picard/explain-flags.html)
+</div>
+</div>
+</div>
+
+## HISAT2
+
+Fast and good performance in published benchmark tests
+
+First need to generate an index for the reference genome with the `hisat2-build` 
+command
+
+Indexing is where all the work takes place and so is computationally intensive
+
+Then we can align reads to the genome with `hisat2`
+
+## Practical
+
+1. Create an index to the genome with `HISAT2`
+
+2. Align reads to the genome with `HISAT2` and store outcome in a SAM file <!-- for one sample at a time -->
+
+3. Convert the SAM file (human readable text) to BAM (binary) with `samtools`
+
+4. Index the BAM file with `samtools`
+

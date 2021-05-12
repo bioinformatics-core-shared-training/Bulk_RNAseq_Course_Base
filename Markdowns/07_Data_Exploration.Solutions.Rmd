@@ -1,0 +1,105 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: Initial exploration of RNA-seq data - solutions
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
+layout: page
+---
+
+### Data 
+
+```{r setup, message = FALSE}
+library(tximport)
+library(DESeq2)
+library(tidyverse)
+library(ggfortify)
+```
+
+```{r prepareData, message=FALSE, include=FALSE}
+# This chunk is just for the knitting
+# Read the sample information into R
+sampleinfo <- read_tsv("data/samplesheet.tsv", col_types = c("cccc"))
+# Read the data into R
+files <- str_c("salmon/", sampleinfo$SampleName, "/quant.sf")
+files <- set_names(files, sampleinfo$SampleName)
+
+tx2gene <- read_tsv("references/tx2gene.tsv")
+
+txi <- tximport(files, type = "salmon", tx2gene = tx2gene)
+
+rawCounts <- round(txi$counts, 0)
+# filter
+keep <- rowSums(rawCounts) > 5
+filtCounts <- rawCounts[keep,]
+# VST
+vst_counts <- vst(filtCounts)
+statusCols <- str_replace_all(sampleinfo$Status, c(Infected="red", Uninfected="orange"))
+rlogcounts <- rlog(filtCounts)
+
+# run PCA
+pcDat <- prcomp(t(rlogcounts))
+```
+
+### Exercise 1
+>
+> We have loaded in the raw counts here. These are what we need for the 
+> differential expression analysis. For other investigations we might want 
+> counts normalised to library size. `tximport` allows us to import 
+> "transcript per million" (TPM) scaled counts instead.
+>
+> 1. Create a new object called `tpm` that contains length scaled TPM 
+>    counts. You will need to add an extra argument to the command. Use the help
+>    page to determine how you need to change the code: `?tximport`.
+
+```{r, solutionExercise1}
+tpm <- tximport(files, type = "salmon", tx2gene = tx2gene, 
+                countsFromAbundance = "lengthScaledTPM")
+```
+
+### Exercise 2
+>
+> 1. Use the `DESeq2` function `rlog` to transform the count data. This function
+> also normalises for library size.
+> 2. Plot the count distribution boxplots with this data.
+> How has this effected the count distributions?
+
+```{r, message=FALSE}
+rlogcounts <- rlog(filtCounts)
+
+# Check distributions of samples using boxplots
+boxplot(rlogcounts, 
+        xlab="", 
+        ylab="Log2(Counts)",
+        las=2,
+        col=statusCols)
+# Let's add a blue horizontal line that corresponds to the median logCPM
+abline(h=median(as.matrix(rlogcounts)), col="blue")
+```
+
+### Exercise 3
+>
+> The plot we have generated shows us the first two principle components. This
+> shows us the relationship between the samples according to the two greatest
+> sources of variation. Sometime, particularly with more complex experiments 
+> with more than two experimental factors, or where there might be confounding
+> factors, it is helpful to look at more principle components.
+>
+> 1. Redraw the plot, but this time plot the 2nd principle component on the 
+> x-axis and the 3rd prinicple component on the y axis. To find out how to do
+> the consult the help page for the `prcomp` data method for the `autoplot`
+> function: `?autoplot.prcomp`.
+
+```{r solutionExercise3}
+autoplot(pcDat,
+         data = sampleinfo, 
+         colour="Status", 
+         shape="TimePoint",
+         x=2,
+         y=3,
+         size=5)
+```

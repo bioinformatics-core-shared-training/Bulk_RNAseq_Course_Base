@@ -1,0 +1,159 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  html_document:
+    toc: yes
+layout: page
+subtitle: Obtaining RNA-seq reads from public repositories
+bibliography: ref.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+```
+
+<p style="color:red">**PLEASE DO NOT RUN THE CODE IN THIS DOCUMENT ON THE COURSE MACHINES**</p>
+
+## Introduction
+
+Analysing an RNAseq experiment begins with sequencing reads. This tutorial 
+explains how to begin by downloading the raw data files from the [NCBI 
+Sequence Read Archive](https://trace.ncbi.nlm.nih.gov/Traces/sra/) public 
+repository.
+
+## The Dataset
+
+The data for this course comes from a Frontiers in Microbiology paper, [Transcriptomic 
+Profiling of Mouse Brain During Acute and Chronic Infections by Toxoplasma gondii
+Oocysts*](https://www.frontiersin.org/articles/10.3389/fmicb.2020.570903/full) 
+[@Hu2020]. 
+The raw data (sequence reads) can be downloaded from SRA under under the 
+bio-project number PRJNA483261.
+
+## Downloading     raw data from SRA
+
+Raw reads from sequencing experiments tend to be distributed through the
+Sequence Read Archive [SRA](https://trace.ncbi.nlm.nih.gov/Traces/sra/)). SRA
+provide command line tools for downloading and processing the archive files as
+the [SRA
+toolkit](https://trace.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?view=software).
+
+Alternatively the 
+(*SRAdb*)[http://bioconductor.org/packages/release/bioc/html/SRAdb.html] 
+Bioconductor package can be used to query and download files that are hosted in 
+SRA from within R. 
+
+We will download the data using the SRA toolkit in the Terminal.
+
+### a) Download the SRA toolkit
+
+You will need to select the correct version from the website above for your
+operating system, in this case we are on a CentOS Linux machine. There are other
+versions for Windows and MAC OS, be sure to download the correct version for 
+your system.
+
+#### Download the toolkit as a gzip file
+
+```
+wget https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.10.9/sratoolkit.2.10.9-centos_linux64.tar.gz
+```
+
+#### Unpack the file
+
+```
+tar -xzvf sratoolkit.2.10.9-centos_linux64.tar.gz
+```
+
+#### Add the `bin` directory to the PATH
+
+The tools are located in the `bin` directory. Adding them to the PATH allows us
+to use them by name on the command line without having to provide the full path
+to file every time.
+
+**NOTE**: You will need to do this every time you start a new terminal and wish 
+to use the toolkit
+
+```
+export PATH=$PWD/sratoolkit.2.10.9-centos_linux64/bin/:${PATH}
+```
+
+### b) Set up the download directory
+
+We want to direct the toolkit to download the data to a directory we specify.
+
+##### Create a directory to which to download the sra files
+
+```
+mkdir sra
+```
+
+##### Use the vdb-config tool to set the download directory
+
+```
+vdb-config -i 
+```
+
+The last command will open an interactive window:
+
+![](images/vdb-config.1.png)
+
+Use the vdb-config window to set the import path to the `sra` directory we just 
+created:
+
+1. Press 'c' to navigate to the "CACHE" tab
+2. Set the 'location of the user-repository' to `sra`:
+    a) Press 'o' to "choose" the directory
+    b) Navigate the directory tree using the up and down arrow keys to select a 
+    directory and 'Enter' to open directories
+    c) When you are in `sra` directory press 'Tab', the red indicator will move 
+       to 'OK', then press 'Enter'
+    d) Then press 'y' to confirm
+3. Press 't' to move to the "TOOLS" tab
+4. Set 'prefetch downloads to' to 'user-repository' (it may already be set):
+    a) Press 'p', this should highlight the options
+    b) Use the arrow keys to move the asterix to "user-directory"
+5. Exit and save:
+    a) Press 'x' to exit
+    b) Press 'y' to save changes
+    c) press 'o' to confirm
+
+### c) Download the set of sra files
+
+We can now directly download the `sra` files. The `sra` file is SRA's own
+archive format, but we can extract the raw reads in the more common `.fastq`
+format in the next step.
+
+To download the sra file we need their accessions numbers. Go to the 
+[SRA Run Selector](https://trace.ncbi.nlm.nih.gov/Traces/study/?go=home) and
+enter the project number *PRJNA483261*. 
+
+"Metadata" --> SraRunTable.txt
+"Accession List" --> SRR_Acc_List.txt
+
+Use the `prefetch` tool from the sra toolkit to download each file.
+
+```
+for sraAcc in `cat SRR_Acc_List.txt`; do
+  prefetch ${srrAcc}  
+done
+```
+
+This will download the `sra` files into the `sra` directory. There will be one
+file for each `SRR` run number in the `SRR_Acc_List.txt` file, these correspond
+to samples.
+
+### d) Extracting fastq files
+
+We can extract reads from these archive files to `fastq` format files using 
+`fasterq-dump` tool.
+
+```
+mkdir fastq
+for sraFile in sraDir/sra/*.sra; do
+  fasterq-dump -O fastq -e 8 --split-files ${sraFile}
+done
+```
+
+After each fastq file has been extracted, you should see a message to report
+have many reads are contained in the file.

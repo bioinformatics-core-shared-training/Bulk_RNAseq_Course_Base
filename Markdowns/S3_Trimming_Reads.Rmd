@@ -1,0 +1,140 @@
+---
+title: "Trimming with Trimmomatic"
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output: html_document
+bibliography: ref.bib
+---
+
+# Introduction
+
+This document gives a very brief introduction to read trimming. Read trimming
+may desirable to remove adapter sequence or poor quality sequence from reads
+prior to analysis.
+
+Whilst most aligners and the kmer quantification methods can copy with adapter
+contamination without trimming the reads. It can also be helpful to trim reads
+in order to get a better idea of the quality of the remaining sequence.
+
+There are a number of tools that can be used for read trimming e.g.:
+
+* [Cutadapt](https://cutadapt.readthedocs.io/en/stable/)
+* [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
+* [fastp](https://github.com/OpenGene/fastp)
+
+They have a varying range of clipping and trimming features, but for simple
+removal of adapter sequences they all perform the same. `The usage is different
+for each.`fastp` in particular has an extensive set of options for trimming and 
+processing reads in various ways.
+
+In this example we will be using Trimmomatic [@Bolger2014].
+
+## Fastq with adapter contamination
+
+We have provided a toy data set which features adapter contamination: 
+`fastq/Test_adapter_contamination.fq.gz`.
+
+First run fastqc on the sample:
+
+```{bash eval=FALSE}
+mkdir QC
+fastqc -o QC fastq/Test_adapter_contamination.fq.gz
+```
+
+If you open the resulting FASTQC report you should see that a number of the
+plots show problems with the data. In particular the "Per sequence GC content"
+plot and the "Adapter Content" plot:
+
+![](images/adapter_content.png)
+This shows that there is significant contaiminaion with "Illumina Universal
+Adapter". 
+
+## Trimming with the Trimmomatic tool
+
+To trim the adapter we need to provide Trimmomatic with a fasta file containing
+the adapters we want to remove. For common Illumina adapters, these are provided
+in the Trimmomatic directory under `adapters`. Here we have single end data, so
+we will use the fasta `Trimmomatic-0.39/adapters/TruSeq3-SE.fa`.
+
+There are various trimming steps that Trimmomatic will apply. We will only use
+
+* ILLUMINACLIP:<fastaWithAdaptersEtc>:<seed mismatches>:<palindrome clip threshold>:<simple clip threshold>  
+    
+    * <fastaWithAdaptersEtc>: specifies the path to a fasta file containing all
+    the adapters, PCR sequences etc. The naming of the various sequences within
+    this file determines how they are used. See below.  
+    * seedMismatches: specifies the maximum mismatch count which will still
+    allow a full match to be performed  
+    * palindromeClipThreshold: specifies how accurate the match between the two
+    'adapter ligated' reads must be for PE palindrome read alignment.  
+    * simpleClipThreshold: specifies how accurate the match between any adapter
+    etc. sequence must be against a read.  
+* MINLEN:<length> where <length>: Specifies the minimum length of reads to be
+kept; reads that have been trimmed to less that this length will be discarded.  
+
+Details of all the parameters can be found in the documentation on the 
+Trimmomatic website.
+
+The command we need use is:
+
+```{bash eval=FALSE}
+java -jar trimmomatic/trimmomatic-0.39.jar \
+    SE \
+    -phred33 \
+    -trimlog fastq/trimlog.txt \
+    fastq/Test_adapter_contamination.fq.gz \
+    fastq/Test_adapter_contamination.trimmed.fastq \
+    ILLUMINACLIP:trimmomatic/adapters/TruSeq3-SE.fa:2:30:7 \
+    MINLEN:15
+```
+
+You should see the following message:
+
+```
+TrimmomaticSE: Started with arguments:
+ -phred33 -trimlog fastq/trimlog.txt fastq/Test_adapter_contamination.fq.gz fastq/Test_adapter_contamination.trimmed.fastq ILLUMINACLIP:trimmomatic/adapters/TruSeq3-SE.fa:2:30:7 MINLEN:15
+Automatically using 4 threads
+Using Long Clipping Sequence: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA'
+Using Long Clipping Sequence: 'AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC'
+ILLUMINACLIP: Using 0 prefix pairs, 2 forward/reverse sequences, 0 forward only sequences, 0 reverse only sequences
+ 
+Input Reads: 31469 Surviving: 26069 (82.84%) Dropped: 5400 (17.16%)
+TrimmomaticSE: Completed successfully
+```
+
+Trimmomatic has run sucessfully. ~17% of reads have been discarded as they after
+trimming they are < 15 nucleotides in length.
+
+The file `fastq/trimlog.txt` contains a log of what has happened to each and 
+every read. It contains 5 columns:
+
+1. the read name
+2. the surviving sequence length
+3. the location of the first surviving base, aka. the amount trimmed from the start
+4. the location of the last surviving base in the original read
+5. the amount trimmed from the end
+
+For full size fastq files, these log files will be very large. We recommend that
+if you wish to keep them, you should compress them with `zip` or `gzip`.
+
+Also, note that the output fastq files that Trimmomatic outputs also need
+be compressed to save disk space.
+
+## Fastq after trimming
+
+Run FASTQC on the new trimmed reads.
+
+```{bash eval=FALSE}
+fastqc -o QC fastq/Test_adapter_contamination.trimmed.fastq
+```
+
+You should now see that the Illumina Universal Adapter has been removed:
+
+![](images/adapter_content_trimmed.png)
+
+If you look at the "Overrepresented sequences" table. You may observe that there
+are other contaminants that remain. You may with to modify the adapter fasta 
+file to include these so that they are also removed.
+
+------------------------------------------------------------------------------
+
+# References

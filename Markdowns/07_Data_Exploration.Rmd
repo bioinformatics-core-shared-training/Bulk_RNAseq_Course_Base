@@ -1,0 +1,453 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: Initial exploration of RNA-seq data
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+bibliography: ref.bib
+---
+
+# Introduction
+
+In this section we will begin the process of analyzing the RNAseq data in R. In
+the next section we will use
+[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) for
+differential analysis. A detailed analysis workflow, recommended by the authors
+of DESeq2 can be found on [the Bionconductor
+website](http://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html).
+
+Before embarking on the main analysis of the data, it is essential to do some
+exploration of the raw data. We want to assess the patterns and 
+characteristics of the data and compare these to what we expect from mRNAseq 
+data and assess the data based on our knowledge of the experimental design. The
+primary means of data explorations are summary statistics and visualisations.
+In this session we will primarily concentrate on assessing if the patterns
+in the raw data conform to what we know about the experimental design. This is
+essential to identify problems such as batch effects, outlier samples and 
+sample swaps.
+
+Due to time constraints we are not able to cover all the ways we might do this,
+so additional information on initial data exploration are available in the
+[supplementary materials](Markdowns/S4_Additional_Data_Exploration.html).
+
+In this session we will:
+
+* import our counts into R  
+* filter out unwanted genes  
+* look at the effects of variance and how to mitigate this with data 
+transformation
+* do some initial exploration of the raw count data using principle component 
+analysis  
+
+# Data import
+
+First, let's load all the packages we will need to analyse the data.
+
+```{r setup, message = FALSE}
+library(tximport)
+library(DESeq2)
+library(tidyverse)
+```
+
+## A brief description of the data set
+
+The data for this tutorial comes from the paper [Transcriptomic Profiling of 
+Mouse Brain During Acute and Chronic Infections by *Toxoplasma gondii*
+Oocysts](https://www.frontiersin.org/articles/10.3389/fmicb.2020.570903/full) 
+[@Hu2020]. The raw data (sequence reads) can be downloaded from the [NCBI Short 
+Read Archive](https://www.ncbi.nlm.nih.gov/sra) under project number 
+**PRJNA483261**.
+
+Please see extended material for instructions on [downloading raw files from
+SRA](S1_Getting_raw_reads_from_SRA.html).
+
+This study examines changes in the gene expression profile in mouse brain in 
+response to infection with the protozoan *Toxoplasma gondii*. The authors
+performed transcriptome analysis on samples from infected and uninfected mice at 
+two time points, 11 days post infection and 33 days post infection. For each 
+sample group there are 3 biological replicates. This effectively makes this a 
+two factor study with two groups in each factor:
+
+* Status: Infected/Uninfected
+* Time Point: 11 dpi/33 dpi
+
+## Reading in the sample metadata
+
+The `SampleInfo.txt` file contains basic information about the samples that we will
+need for the analysis today: name, cell type, status.
+
+```{r loadSampleInfo, message = FALSE}
+# Read the sample information into a data frame
+sampleinfo <- read_tsv("data/samplesheet.tsv", col_types = c("cccc"))
+sampleinfo %>% 
+  arrange(Status, TimePoint, Replicate)
+```
+
+## Reading in the count data
+
+Salmon [@Patro2017] was used to quantify gene expression from raw reads against
+the Ensembl transcriptome GRCm38 version 102 (as described in 
+[the previous session](05_Quantification_with_Salmon_practical.html)).
+
+First we need to read the data into R from the `quant.sf` files under the 
+*salmon* directory. To do this we use the `tximport` function. We need to create
+a named vector in which the values are the paths to the `quant.sf` files and the
+names are sample names that we want in the column headers - these should match
+the sample names in our `sampleinfo` table.
+
+The Salmon quantification results are per transcript, we'll want to summarise
+to gene level. To this we need a table that relates transcript IDs to gene IDs.
+
+```{r readSalmon}
+files <- str_c("salmon/", sampleinfo$SampleName, "/quant.sf")
+files <- set_names(files, sampleinfo$SampleName)
+
+tx2gene <- read_tsv("references/tx2gene.tsv")
+
+txi <- tximport(files, type = "salmon", tx2gene = tx2gene)
+str(txi)
+head(txi$counts)
+```
+
+Save the `txi` object for use in later sessions.
+
+```{r saveData, eval=FALSE}
+saveRDS(txi, file = "salmon_outputs/txi.rds")
+```
+
+### Exercise 1
+>
+> We have loaded in the raw counts here. These are what we need for the 
+> differential expression analysis. For other investigations we might want 
+> counts normalised to library size. `tximport` allows us to import 
+> "transcript per million" (TPM) scaled counts instead.
+>
+> 1. Create a new object called `tpm` that contains length scaled TPM 
+>    counts. You will need to add an extra argument to the command. Use the help
+>    page to determine how you need to change the code: `?tximport`.
+
+```{r solutionExercise1}
+
+```
+
+### A quick intro to `dplyr`
+
+One of the most complex aspects of learning to work with data in `R` is 
+getting to grips with subsetting and manipulating data tables. The package 
+`dplyr` [@Wickham2018] was developed to make this process more intuitive than it
+is using standard base `R` processes. It also makes use of a new symbol `%>%`,
+called the "pipe", which makes the code a bit tidier. 
+
+In particular we will use the commands:
+
+* `select` to select columns from a table
+* `filter` to filter rows based on the contents of a column in the table
+* `rename` to rename columns
+
+We will encounter a few more `dplyr` commands during the course, we will explain
+their use as we come to them.
+
+If you are familiar with R but not `dplyr` or `tidyverse` then we have a very
+brief introduction [here](../extended_html/02a_A_brief_intro_to_dplyr.html). A more detailed 
+introduction can be found in our [online R course](https://bioinformatics-core-shared-training.github.io/r-intro/week4.html)
+
+# Prepare count matrix
+
+## Create a raw counts matrix for data exploration
+
+DESeq2 will use the txi object directly but we will need a counts matrix to
+do the data exploration.
+
+```{r rawCounts}
+rawCounts <- round(txi$counts, 0) 
+```
+
+## Filtering the genes
+
+<!-- prefiltering -->
+
+For many analysis methods it is advisable to filter out as many genes as 
+possible before the analysis to decrease the impact of multiple testing
+correction on false discovery rates. This is normally done
+by filtering out genes with low numbers of reads and thus likely to be 
+uninformative.
+
+With `DESeq2` this is however not necessary as it applies `independent
+filtering` during the analysis. On the other hand, some filtering for 
+genes that are very lowly expressed does reduce the size of the data matrix, 
+meaning that less memory is required and processing steps are carried out 
+faster. Furthermore, for the purposes of visualization it is important to remove
+the genes that are not expressed in order to avoid them dominating the patterns
+that we observe.
+
+We will keep all genes where the total number of reads across all samples is 
+greater than 5.
+
+```{r filterGenes}
+# check dimension of count matrix
+dim(rawCounts)
+# for each gene, compute total count and compare to threshold
+# keeping outcome in vector of 'logicals' (ie TRUE or FALSE, or NA)
+keep <- rowSums(rawCounts) > 5
+# summary of test outcome: number of genes in each class:
+table(keep, useNA="always") 
+# subset genes where test was TRUE
+filtCounts <- rawCounts[keep,]
+# check dimension of new count matrix
+dim(filtCounts)
+```
+
+# Count distribution and Data transformations
+
+Differential expression calculations with DESeq2 uses raw read counts as input,
+but for visualization purposes we use transformed counts.
+
+## Raw counts 
+
+Why not raw counts? Two issues:
+
+* Raw counts range is very large
+* Variance increases with mean gene expression, this has impact on assessing
+  the relationships.
+
+```{r raw_summary}
+summary(filtCounts)
+```
+
+```{r raw_boxplot}
+# few outliers affect distribution visualization
+boxplot(filtCounts, main='Raw counts', las=2)
+```
+
+```{r raw_mean_vs_sd}
+# Raw counts mean expression Vs standard Deviation (SD)
+plot(rowMeans(filtCounts), rowSds(filtCounts), 
+     main='Raw counts: sd vs mean', 
+     xlim=c(0,10000),
+     ylim=c(0,5000))
+```
+
+## Data transformation
+
+To avoid problems posed by raw counts, they can be [transformed](http://www.bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization).
+Several transformation methods exist to limit the dependence of variance on mean gene expression:
+
+* Simple log2 transformation
+* VST : variance stabilizing transformation
+* rlog : regularized log transformation
+
+### log2 transformation
+
+Because some genes are not expressed (detected) in some samples, their count are `0`. As log2(0) returns -Inf in R which triggers errors by some functions, we add 1 to every count value to create 'pseudocounts'. The lowest value then is 1, or 0 on the log2 scale (log2(1) = 0).
+
+```{r logTransform}
+# Get log2 counts
+logcounts <- log2(filtCounts + 1)
+# summary(logcounts[,1]) # summary for first column
+# summary(logcounts) # summary for each column
+```
+
+We will check the distribution of read counts using a boxplot and add some
+colour to see if there is any difference between sample groups.
+
+```{r plotLogCounts}
+# make a colour vector
+statusCols <- str_replace_all(sampleinfo$Status, c(Infected="red", Uninfected="orange"))
+
+# Check distributions of samples using boxplots
+boxplot(logcounts,
+        xlab="",
+        ylab="Log2(Counts)",
+        las=2,
+        col=statusCols,
+        main="Log2(Counts)")
+# Let's add a blue horizontal line that corresponds to the median
+abline(h=median(logcounts), col="blue")
+```
+
+From the boxplots we see that overall the density distributions of raw
+log-counts are not identical but still not very different. If a sample is
+really far above or below the blue horizontal line (overall median) we may need to investigate
+that sample further.
+
+```{r log2_mean_vs_sd}
+# Log2 counts standard deviation (sd) vs mean expression
+plot(rowMeans(logcounts), rowSds(logcounts), 
+     main='Log2 Counts: sd vs mean')
+```
+
+In contrast to raw counts, with log2 transformed counts lowly expressed genes show higher variation.
+
+### VST : variance stabilizing transformation
+
+Variance stabilizing transformation (VST) aims at generating a matrix of values for which variance is constant across the range of mean values, especially for low mean.
+
+The `vst` function computes the fitted dispersion-mean relation, derives the transformation to apply and accounts for library size.
+
+```{r vst_counts, message=FALSE}
+vst_counts <- vst(filtCounts)
+
+# Check distributions of samples using boxplots
+boxplot(vst_counts, 
+        xlab="", 
+        ylab="VST counts",
+        las=2,
+        col=statusCols)
+# Let's add a blue horizontal line that corresponds to the median
+abline(h=median(vst_counts), col="blue")
+```
+
+```{r vst_mean_vs_sd}
+# VST counts standard deviation (sd) vs mean expression
+plot(rowMeans(vst_counts), rowSds(vst_counts), 
+     main='VST counts: sd vs mean')
+```
+
+### Exercise 2
+>
+> 1. Use the `DESeq2` function `rlog` to transform the count data. This function
+> also normalises for library size.
+> 2. Plot the count distribution boxplots with this data  
+>    How has this affected the count distributions?
+
+```{r solutionExercise2}
+
+```
+
+
+# Principal Component Analysis
+
+A principal component analysis (PCA) is an example of an unsupervised analysis,
+where we don't specify the grouping of the samples. If the experiment is well
+controlled and has worked well, we should find that replicate samples cluster 
+closely, whilst the greatest sources of variation in the data should be between
+treatments/sample groups. It is also an incredibly useful tool for checking for 
+outliers and batch effects.
+
+To run the PCA we should first normalise our data for library size and transform
+to a log scale. DESeq2 provides two separate commands to do this (`vst` and
+`rlog`). Here we will use the command `rlog`. `rlog` performs a log2 scale
+transformation in a way that compensates for differences between samples for
+genes with low read count and also normalizes between samples for library size.
+
+You can read more about `rlog`, its alternative `vst` and the comparison
+between the two 
+[here](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#count-data-transformations).
+
+To plot the PCA results we will use the `autoplot` function from the
+`ggfortify` package [@Tang2016]. `ggfortify` is built on top of `ggplot2` and
+is able to recognise common statistical objects such as PCA results or linear
+model results and automatically generate summary plot of the results in an
+appropriate manner.
+
+```{r pcaPlot, message = FALSE, fig.width=6.5, fig.height=5, fig.align="center"}
+library(ggfortify)
+
+rlogcounts <- rlog(filtCounts)
+
+# run PCA
+pcDat <- prcomp(t(rlogcounts))
+# plot PCA
+autoplot(pcDat)
+```
+
+We can use colour and shape to identify the Cell Type and the Status of each
+sample.
+
+```{r pcaPlotWiColor, message = FALSE, fig.width=6.5, fig.height=5, fig.align="center"}
+autoplot(pcDat,
+         data = sampleinfo, 
+         colour="Status", 
+         shape="TimePoint",
+         size=5)
+```
+
+### Exercise 3
+>
+> The plot we have generated shows us the first two principle components. This
+> shows us the relationship between the samples according to the two greatest
+> sources of variation. Sometime, particularly with more complex experiments 
+> with more than two experimental factors, or where there might be confounding
+> factors, it is helpful to look at more principle components.
+>
+> 1. Redraw the plot, but this time plot the 2nd principle component on the 
+> x-axis and the 3rd prinicple component on the y axis. To find out how to do
+> the consult the help page for the `prcomp` data method for the `autoplot`
+> function: `?autoplot.prcomp`.
+
+```{r solutionChallenge1}
+
+```
+
+> ### Discussion: What do the PCA plots tell us about our samples?
+
+<!-- amount and source of variation, sample swap, interaction -->
+
+Let's identify these samples. The package `ggrepel` allows us to add text to 
+the plot, but ensures that points that are close together don't have their
+labels overlapping (they *repel* each other).
+
+```{r badSamples, fig.width=6.5, fig.height=5, fig.align="center"}
+library(ggrepel)
+
+# setting shape to FALSE causes the plot to default to using the labels instead of points
+autoplot(pcDat,
+         data = sampleinfo,  
+         colour="Status", 
+         shape="TimePoint",
+         size=5) +
+    geom_text_repel(aes(x=PC1, y=PC2, label=SampleName), box.padding = 0.8)
+```
+
+The mislabelled samples are *SRR7657882*, which is labelled as *Test* but should
+be *Control*, and *SRR7657873*, which is labelled as *Control* but should be *Test*.
+Let's fix the sample sheet.
+
+We're going to use another `dplyr` command `mutate`. 
+
+```{r correctSampleSheet}
+sampleinfo <- mutate(sampleinfo, Status=case_when(
+                                          SampleName=="SRR7657882" ~ "Uninfected",
+                                          SampleName=="SRR7657873" ~ "Infected", 
+                                          TRUE ~ Status))
+```
+
+...and export it so that we have the correct version for later use.
+
+```{r, exportSampleSheet, eval=FALSE}
+write_tsv(sampleinfo, "results/SampleInfo_Corrected.txt")
+```
+
+Let's look at the PCA now.
+
+```{r correctedPCA, fig.width=6.5, fig.height=5, fig.align="center"}
+autoplot(pcDat,
+         data = sampleinfo, 
+         colour="Status", 
+         shape="TimePoint",
+         size=5)
+```
+
+Replicate samples from the same group cluster together in the plot, while 
+samples from different groups form separate clusters. This indicates that the
+differences between groups are larger than those within groups.
+The biological signal of interest is stronger than the noise (biological and 
+technical) and can be detected. 
+
+Also, there appears to be a strong difference between days 11 and 33 post 
+infection for the test group, but the day 11 and day 33 samples for the controls
+are mixed together.
+
+Clustering in the PCA plot can be used to motivate changes to the design
+matrix in light of potential batch effects. For example, imagine that the
+first replicate of each group was prepared at a separate time from the second
+replicate. If the PCA plot showed separation of samples by time, it might be
+worthwhile including time in the downstream analysis to account for the
+time-based effect.
+
+--------------------
+
+# References

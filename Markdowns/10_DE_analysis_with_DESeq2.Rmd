@@ -1,0 +1,565 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: Differential Expression of RNA-seq data
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+bibliography: ref.bib
+---
+
+```{r setup, echo=FALSE}
+options(tibble.print_max = 4, tibble.print_min = 4, max.print=40, 
+        tibble.max_extra_cols=2)
+```
+
+## Load the data
+
+In the previous session we read the results from Salmon into R and created a 
+`txi` object, which we then saved into an "rds" file. We can now load the txi
+from that file to start the differential expression analysis. We will also need
+the sample meta data sheet
+
+First load the packages we need.
+
+```{r message = FALSE}
+library(DESeq2)
+library(tidyverse)
+```
+
+Now load the data from the earlier session.
+
+```{r loadData}
+txi <- readRDS("RObjects/txi.rds")
+sampleinfo <- read_tsv("data/samplesheet_corrected.tsv", col_types="cccc")
+```
+
+It is important to be sure that the order of the samples in rows in the sample 
+meta data table matches the order of the columns in the data matrix - `DESeq2`
+will **not** check this. If the order does not match you will not be running the
+analyses that you think you are.
+
+```{r checkSampleNames}
+all(colnames(txi$counts)==sampleinfo$SampleName)
+```
+
+# The model formula and design matrices
+
+Now that we are happy that the quality of the data looks good, we can proceed to
+testing for differentially expressed genes. There are a number of packages to
+analyse RNA-Seq data. Most people use
+[DESeq2](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html)
+[@Love2014] or
+[edgeR](http://bioconductor.org/packages/release/bioc/html/edgeR.html)
+[@Robinson2010; @McCarthy2012]. There is also the option to use the
+[limma](https://bioconductor.org/packages/release/bioc/html/limma.html) package
+and transform the counts using its `voom` function .They are all equally valid
+approaches [@Ritchie2015]. There is an informative and honest blog post
+[here](https://mikelove.wordpress.com/2016/09/28/deseq2-or-edger/) by Mike Love,
+one of the authors of DESeq2, about deciding which to use.
+
+We will use **DESeq2** for the rest of this practical.
+
+## Create a DESeqDataSet object with the raw data
+
+### Creating the design model formula
+
+First we need to create a design model formula for our analysis. `DESeq2` will 
+use this to generate the model matrix, as we have seen in the linear models 
+lecture. 
+
+We have two variables in our experiment: "Status" and "Time Point". 
+
+We will fit two models under two assumptions: no interaction and interaction of
+these two factors, however, to demonstrate the how `DESeq2` is used we will start
+with a simple model which considers Status but ignores Time Point.  
+
+First, create a variable containing the model using standard R 'formula' syntax.
+
+```{r modelForumla}
+simple.model <- as.formula(~ Status)
+```
+
+What does this look like as a model matrix?
+
+```{r modelMatrix}
+model.matrix(simple.model, data = sampleinfo)
+```
+
+The intercept has been set automatically to the group in the factor that is
+alphabetically first: `Infected`.
+
+It would be nice if `Uninfected` were the base line/intercept. To get R to 
+use `Uninfected` as the intercept we need to use a `factor`. Let's set factor 
+levels on Status to use `Uninfected` as the intercept.
+
+```{r setFactors}
+sampleinfo <- mutate(sampleinfo, Status = fct_relevel(Status, "Uninfected"))
+model.matrix(simple.model, data = sampleinfo)
+```
+
+# Build a DESeq2DataSet
+
+We don't actually need to pass `DESeq2` the model matrix, instead we pass it the 
+design formula and the `sampleinfo` it will build the matrix itself.
+
+```{r makeDDSObj}
+# create the DESeqDataSet object
+ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
+                                       colData = sampleinfo,
+                                       design = simple.model)
+```
+
+When we summarised the counts to gene level, `tximport` also calculated an 
+average transcript length for each gene for each sample. For a given gene the
+average transcript length may vary between samples if different samples are 
+using alternative transcripts. `DESeq2` will incorporate this into its 
+"normalisation".
+
+# Filter out the unexpressed genes
+
+Just as we did in session 7, we should filter out genes that uninformative.
+
+```{r}
+keep <- rowSums(counts(ddsObj.raw)) > 5
+ddsObj.filt <- ddsObj.raw[keep,]
+```
+
+# Differential expression analysis with DESeq2
+
+## The `DESeq2` work flow
+
+The main `DESeq2` work flow is carried out in 3 steps:
+
+### `estimateSizeFactors`
+
+First, Calculate the "median ratio" normalisation size factors for each sample 
+and adjust for average transcript length on a per gene per sample basis.
+
+```{r commonSizeFactors}
+ddsObj <- estimateSizeFactors(ddsObj.filt)
+```
+
+#### Let's have a look at what that did
+
+`DESeq2` has calculated a normalizsation factor for each gene for each sample.
+
+```{r}
+normalizationFactors(ddsObj.filt)
+normalizationFactors(ddsObj)
+```
+
+We can use `plotMA` from `limma` to look at the of these normalisation factors
+on data in an MA plot. Let's look at **SRR7657882**, the fifth column, which has
+the largest normalisation factors.
+
+```{r}
+logcounts <- log2(counts(ddsObj, normalized=FALSE)  + 1)
+
+limma::plotMA(logcounts, array = 5, ylim =c(-5, 5))
+abline(h=0, col="red")
+```
+
+```{r}
+logNormalizedCounts <- log2(counts(ddsObj, normalized=TRUE)  + 1)
+
+limma::plotMA(logNormalizedCounts, array=5, ylim =c(-5, 5))
+abline(h=0, col="red")
+```
+
+DESeq2 doesn't actually normalise the counts, it uses raw counts and includes
+the normalisation factors in the modeling as an "offset". Please see the DESeq2
+documentation if you'd like more details on exactly how they are incorporated 
+into the algorithm. For practical purposes we can think of it as a normalisation.
+
+### `estimateDispersions`
+
+Next we need to estimate the dispersion parameters for each gene.
+
+```{r genewiseDispersion}
+ddsObj <- estimateDispersions(ddsObj)
+```
+
+We can plot all three sets of dispersion estimates. It is particularly important
+to do this if you change any of the default parameters for this step.
+
+```{r plotDisp}
+plotDispEsts(ddsObj)
+```
+
+
+### `nbinomWaldTest`
+
+Finally, apply Negative Binomial GLM fitting and calculate Wald statistics.
+
+```{r applyGLM}
+ddsObj <- nbinomWaldTest(ddsObj)
+```
+
+## The `DESeq` command
+
+In practice the 3 steps above can be performed in a single step using the 
+`DESeq` wrapper function. Performing the three steps separately is useful if you
+wish to alter the default parameters of one or more steps, otherwise the `DESeq`
+function is fine.
+
+```{r theShortVersion}
+ddsObj <- DESeq(ddsObj.filt)
+```
+
+## Generate a results table
+
+We can generate a table of differential expression results from the DDS object
+using the `results` function of DESeq2.
+
+```{r resultsTable}
+results.simple <- results(ddsObj, alpha=0.05)
+results.simple
+```
+
+How many genes have an adjusted p-value of less than 0.05?
+
+```{r countSigGenes}
+sum(results.simple$padj < 0.05)
+```
+
+
+### Independent filtering
+
+You will notice that some of the adjusted p-values (`padj`) are NA. 
+
+```{r}
+sum(is.na(results.simple$padj))
+```
+
+Remember 
+in Session 7 we said that there is no need to pre-filter the genes as DESeq2
+will do this through a process it calls 'independent filtering'. The genes 
+with `NA` are the ones `DESeq2` has filtered out.
+
+From `DESeq2` manual:
+"The results function of the `DESeq2` package performs independent filtering by
+default using the mean of normalized counts as a filter statistic. A threshold 
+on the filter statistic is found which optimizes the number of adjusted p values
+lower than a [specified] significance level".
+
+The default significance level for independent filtering is `0.1`, however, you
+should set this to the FDR cut off you are planning to use. We will use `0.05` -
+this was the purpose of the `alpha` argument in the previous command.
+
+How many genes have an adjusted p-value of less than 0.05?
+
+```{r countSigGenes2}
+sum(results.simple$padj < 0.05, na.rm = TRUE)
+```
+
+How many genes are up-regulated?
+
+```{r countSigUpGenes2}
+sum(results.simple$padj < 0.05 & results.simple$log2FoldChange > 0, na.rm = TRUE)
+```
+
+How many genes are down-regulated?
+
+```{r countSigDownGenes2}
+sum(results.simple$padj < 0.05 & results.simple$log2FoldChange < 0, na.rm = TRUE)
+```
+
+### Exercise 1
+
+> So far we have fitted a simple model considering just "Status", but in reality 
+> we want to model the effects of both "Status" and "Time Point".
+> 
+> Let's start with the model with only main effects - an additive model with no 
+> interaction. The main assumption here is that the effects of Status and the
+> effects of Time Point are indepedent.
+> 
+> Recapitulate the above steps to generate a new DESeq2 object with
+> the additive model. Then we will extract the results table as above.
+> 
+> #### Load the raw data, remembering to set the factor on the Status so that
+> "Uninfected" will be set as the intercept:   
+>   
+> ```{r eval=FALSE}
+> txi <- readRDS("RObjects/txi.rds")
+> sampleinfo <- read_tsv("data/samplesheet_corrected.tsv", col_types="cccc") %>% 
+>                   mutate(Status = fct_relevel(Status, "Uninfected"))
+> ```
+> 
+> #### Create the model:
+> 
+> ```{r eval=FALSE}
+> additive.model <- as.formula(~ TimePoint + Status)
+> ```
+> 
+> #### Then build the DESeq from the raw data, the sample meta data and the model:
+> 
+> ```{r eval=FALSE}
+> ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
+>                                      colData = sampleinfo,
+>                                      design = additive.model)
+> ```
+> 
+> #### Filter the data set:
+>
+> ```{r eval=FALSE}
+> keep <- rowSums(counts(ddsObj.raw)) > 5
+> ddsObj.filt <- ddsObj.raw[keep,]
+> ```
+>
+> You are now ready to run the differential gene expression analysis
+> Run the DESeq2 analysis
+> 
+> 1. Run the size factor estimation, dispersion estimation and modelling steps 
+> using the `DESeq` command as above.
+> 
+> 2. Extract the default contrast using the `results` command into a new object 
+> called `results.additive`
+>
+>     a) What contrast are these results for? If you have constructed the model 
+>    correctly, then it should be the same as previous `results.simple`
+>     b) How many genes have an adjusted p-value of less than 0.05
+ 
+```{r echo=FALSE, message=FALSE, include=FALSE}
+additive.model <- as.formula(~ TimePoint + Status)
+ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
+                                      colData = sampleinfo,
+                                      design = additive.model)
+keep <- rowSums(counts(ddsObj.raw)) > 5
+ddsObj.filt <- ddsObj.raw[keep,]
+ddsObj <- DESeq(ddsObj.filt)
+results.additive <- results(ddsObj, alpha=0.05)
+```
+
+### The default contrast of `results`
+
+The `results` function has returned the results for the contrast "Infected vs
+Uninfected". Let's have a look at the model matrix to understand why `DESeq2`
+has given us this particular contrast.
+
+```{r viewModelMatrix}
+model.matrix(additive.model, data = sampleinfo)
+```
+
+By default, `results` has returned the contrast encoded by the final column in
+the model matrix. `DESeq2` has the command `resultsNames` that allows us to
+view the contrasts that are available directly from the DESeq2 object.
+
+```{r resultsNames}
+resultsNames(ddsObj)
+```
+
+Let's just rename `results.additive` so that we know which contrast results it contains.
+
+```{r}
+results.InfectedvUninfected <- results.additive
+rm(results.additive)
+```
+
+Let's get the top 100 genes by adjusted p-value
+
+```{r topGenesPvV, message = F, results="hide"}
+topGenesIvU <- as.data.frame(results.InfectedvUninfected) %>%
+    rownames_to_column("GeneID") %>% 
+    top_n(100, wt=-padj)
+topGenesIvU
+```
+
+### Exercise 2
+
+> If we want a different contrast we can just pass the `results` function the 
+> **name** of the contrast, as given by `resultsNames(ddsObj)`.
+> Look at the help page for the `results` command to see how to do this.
+>
+> 1. Retrieve the results for the contrast of d33 versus d11. 
+> 2. How many differentially expressed genes are there at FDR < 0.05?
+
+# Should we be using the interaction model?
+
+So far we have modeled gene expression as a function of Status and Time Point 
+with an additive model. Realistically, we expect the two factors interact such 
+that differences in gene expression between infected and uninfected mice are not 
+the same at different time point:
+
+![](images/AdditiveAndInteractionModels.png)
+[*pdf version*](images/AdditiveAndInteractionModels.pdf)
+
+Let's plot a PCA from `vst` transformed data. 
+Can you anticipate if the interaction term will be important?
+
+```{r pcaPlot, fig.width=5, fig.height=5}
+vstcounts <- vst(ddsObj.raw, blind=TRUE)
+plotPCA(vstcounts,  intgroup = c("Status", "TimePoint"))
+```
+
+In this case we can, from both the PCA and our understanding of the biology, be
+fairly certain that the interaction model is the appropriate model to use. This
+is not always the case and so we need a way to compare two models.
+
+## Comparing two design models
+
+Let's take a simple example to start with.
+
+Suppose we thought that maybe `TimePoint` was irrelevant and really the only 
+differences might be between `Infected` and `Uninfected` groups. We could fit 
+the simpler model and this would give us more degrees of freedom and therefore 
+more power, but how would we know if it was a better model of not? 
+
+We can compare two models by using the "likelihood ratio test" (LRT). 
+
+To do so we provide the LRT with a simpler model (one with less parameters) than
+the one currently being used. 
+
+Currently `ddsObj` is using the model `~TimePoint + Status`. Here we want to
+compare to a model without the `TimePoint` parameter: `~Status`, this was our
+`simple.model` from earlier.
+
+```{r compareModels}
+ddsObj.LRT <- DESeq(ddsObj, test = "LRT", reduced = simple.model)
+results.Additive_v_Simple <- results(ddsObj.LRT)
+results.Additive_v_Simple
+```
+
+The second line of the results output shows us the test we are doing:
+
+  `LRT p-value: '~ TimePoint + Status' vs '~ Status'`
+
+The null hypothesis is that there is no significant difference between the two
+models, i.e. the simpler model is sufficient to explain the variation in gene
+expression between the samples. If the the adjusted p-value for a gene passes
+a significance threshold (e.g. padj < 0.05) then we should consider using the 
+more complex model for this gene. 
+
+```{r nAdditiveSig}
+sum(results.Additive_v_Simple$padj < 0.05, na.rm=TRUE)
+```
+
+We can see that for `r sum(results.Additive_v_Simple$padj < 0.05, na.rm=TRUE)`
+genes the more complex model does fit the data better. Although we have a result
+for each gene, in practice we should choose one model or the other and apply it
+to all genes. Curiously then, this suggests that overall the simple model
+is more appropriate than the additive model. Let's look into the interaction
+model.
+
+### Exercise 3
+>
+> When we looked at the PCA it did seem that an interaction model might be
+> warranted. Let's test that.  
+>  
+> 1. Create a new DESeq2 object using a model with an interaction between 
+>    TimePoint and Status. The model formula should be 
+>
+>    `~TimePoint + Status + TimePoint:Status`
+>
+>    where `TimePoint:Status` is the parameter for the interaction beteween 
+>    TimePoint and Status.
+>
+> Note that `*` can be used as shortcut to add the interaction term,
+> e.g. `~TimePoint * Status`, however, writing out in long form is clearer here.
+>>
+> Remember to filter to remove uninformative genes.
+>
+> 2. Run the statistical analysis using the `DESeq` command and create a new
+>    analysis object called `ddsObj.interaction`.
+> 3. Use the LRT to compare this to the simpler additive model 
+>    (`~TimePoint + Status`)
+> 4. Extract a table of results using `results`. 
+> For how many genes is interaction model a better fit?  
+> 
+
+```{r interactionModel, echo=FALSE, message=FALSE, include=FALSE}
+interaction.model <- as.formula(~ TimePoint * Status)
+ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
+                                      colData = sampleinfo,
+                                      design = interaction.model)
+keep <- rowSums(counts(ddsObj.raw)) > 5
+ddsObj.filt <- ddsObj.raw[keep,]
+
+ddsObj.interaction <- DESeq(ddsObj.filt)
+```
+
+## Extracting specific contrasts from an interactive model
+
+If we are settled on using the interaction model, then we need to extract 
+our contrasts with reference to this. That is, we can no longer ask the general
+question "What is the difference in gene expression between Infected and 
+Uninfected?", but must rather ask two quesions:
+
+* "What is the difference in gene expression between Infected and 
+Uninfected at 11 days post infection?"   
+* "What is the difference in gene expression between Infected and 
+Uninfected at 33 days post infection?"    
+
+If we view the `resultsNames` for the interaction model, we can see the intercept
+is Uninfected and 11 days post infection:
+
+```{r resNamInteraction}
+resultsNames(ddsObj.interaction)
+```
+
+The main effect `Status_Infected_vs_Uninfected` is therefore the difference
+between Infected and Uninfected **at 11 days post infection**. 
+
+```{r, resIntd11}
+results.interaction.11 <- results(ddsObj.interaction, 
+                                  name="Status_Infected_vs_Uninfected",
+                                  alpha=0.05)
+```
+
+To get the results for Infected versus Uninfected at 33 days post infection, 
+we would need to add the interaction term `TimePointd33.StatusInfected`.
+
+In the help page for `results` it shows us how to do this with a `contrast` in 
+example 3.
+
+```{r resIntd33}
+results.interaction.33 <- results(ddsObj.interaction, 
+          contrast = list(c("Status_Infected_vs_Uninfected", "TimePointd33.StatusInfected")),
+                                  alpha=0.05)
+```
+
+Number of genes with padj < 0.05 for Test v Control at day 11:
+
+```{r nSigIntd11}
+sum(results.interaction.11$padj < 0.05, na.rm = TRUE)
+```
+
+Number of genes with padj < 0.05 for Test v Control at day 33:
+
+```{r nSigIntd33}
+sum(results.interaction.33$padj < 0.05, na.rm = TRUE)
+```
+
+We can see that there is a strong difference in the effects of infection on 
+gene expression between days 11 and 33.
+
+### Exercise 4
+>
+> Let's investigate the uninfected mice
+>  
+> 1. Extract the results for d33 v d11 for Uninfected mice.  
+> How many genes have an adjusted p-value less than 0.05?  
+> Is this remarkable?  
+> 2. Extract the results for d33 v d11 for Infected mice.  
+> How many genes have an adjusted p-value less than 0.05?  
+>
+> Do these results suggest another approach to analysing this data set?
+
+## Save the results
+
+Finally save the corrected sample metadata, the DESeq2 dataset, and the two 
+DESeq2 results objects.
+
+```{r saveObjects, eval=FALSE}
+write_tsv(sampleinfo, "results/samplesheet_corrected.tsv")
+saveRDS(ddsObj.interaction, "results/DESeqDataSet.interaction.rds")
+saveRDS(results.interaction.11, "results/DESeqResults.interaction_d11.rds")
+saveRDS(results.interaction.33, "results/DESeqResults.interaction_d33.rds")
+```
+
+
+--------------------
+
+# References
