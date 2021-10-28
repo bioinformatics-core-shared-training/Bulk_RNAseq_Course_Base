@@ -1,0 +1,72 @@
+You will be doing this analysis on a computing cluster -
+
+Exercise 1.
+
+mkdir references/hisat2_index_chr14
+hisat2-build -p 7 \
+    references/Mus_musculus.GRCm38.dna_sm.chr14.fa \
+    references/hisat2_index_chr14/mmu.GRCm38
+
+Exercise 2.
+
+hisat2 -x references/hisat2_index/mmu.GRCm38 -1 fastq/SRR7657883.sra_1.fastq.gz -2 fastq/SRR7657883.sra_2.fastq.gz -S bam/SRR7657883.sam -t -p 7
+# takes around 8 minutes
+# look at the sam file
+# show  headers - explain flags
+
+Exercise 3.
+samtools view -b -@ 7 bam/SRR7657883.sam > bam/SRR7657883.bam
+# takes about a 3 minutes
+
+samtools sort -@ 7 bam/SRR7657883.bam > bam/SRR7657883.sorted.bam
+# about 3 minutes
+
+samtools index bam/SRR7657883.sorted.bam
+
+
+Part2
+
+Exercise 1.
+samtools flagstat bam/SRR7657883.sorted.bam > bam/SRR7657883.sorted.bam.flagstat
+
+Exercise 2.1
+java -jar picard/picard.jar MarkDuplicates \
+         INPUT=bam/SRR7657883.chr14.sorted.bam \
+         OUTPUT=bam/SRR7657883.chr14.mkdup.bam \
+         METRICS_FILE=bam/SRR7657883.chr14.mkdup_metrics.txt \
+         CREATE_INDEX=true
+
+cat bam/SRR7657883.chr14.mkdup_metrics.txt | cut -f9| head
+
+Exercise 2.2
+java -jar picard/picard.jar CollectAlignmentSummaryMetrics \
+INPUT=bam/SRR7657883.chr14.sorted.bam \
+OUTPUT=bam/SRR7657883.chr14.alignment_metrics.txt \
+REFERENCE_SEQUENCE=references/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa
+
+cat bam/MCL1.DL.alignment_metric.txt | cut -f13
+
+java -jar picard/picard.jar CollectInsertSizeMetrics \
+INPUT=bam/SRR7657883.chr14.sorted.bam \
+OUTPUT=bam/SRR7657883.chr1.insert_size.txt \
+HISTOGRAM_FILE=bam/SRR7657883.chr1.insert_size.pdf \
+REFERENCE_SEQUENCE=references/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa
+
+As we have PE 150 reads, the total amount of sequencing from each fragment is
+300 bases. Looking at the distribution only ~25% of the fragments have lengths
+greater than 300 bases. This means that for about 80% of the fragments the reads
+are overlapping. From the perspective of our gene expression analysis, this
+doesn't matter, however, from a design perspective it means that we have
+unnecessarily sequenced a lot of bases twice and he more sequencing we carry
+out, the more expensive the study is. It would have been optimal to use a
+shorter read length.
+
+Exercise 2.3
+java -jar picard/picard.jar CollectRnaSeqMetrics \
+INPUT=bam/SRR7657883.chr14.sorted.bam \
+OUTPUT=bam/SRR7657883.chr14.RNA_metrics.txt \
+REF_FLAT=references/Mus_musculus.GRCm38.102.txt \
+STRAND=NONE
+
+
+
