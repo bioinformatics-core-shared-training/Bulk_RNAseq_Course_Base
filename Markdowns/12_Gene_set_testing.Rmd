@@ -38,6 +38,17 @@ relevant criterion.
 ie pathway A is enriched in our diff exp gene list
 -->
 
+To save time and effort there are a number of packages that make applying these
+tests to a large number of gene sets simpler, and which will import gene lists 
+for testing from various sources.
+
+Today we will use [`clusterProfiler`](https://yulab-smu.github.io/clusterProfiler-book/index.html).
+
+<!--
+https://yulab-smu.github.io/clusterProfiler-book/index.html
+https://yulab-smu.github.io/clusterProfiler-book/chapter2.html#over-representation-analysis
+-->
+
 # Over-representation
 
 ## Method
@@ -56,63 +67,7 @@ We can then create a contingency table with:
 * rows: genes in pathway or not
 * columns: genes differentially expressed or not
 
-## A toy example
-
-Let's start with an experiment with:
-
-* 20,000 genes of which 100 are differentially expressed,
-* a pathway with 2000 genes,
-  * including 20 of the 100 differentially expressed genes.
-
-```{r}
-# make contingency table
-contingencyTable <- data.frame(
-  NoDiffExp=c(17920, 1980),
-  YesDiffExp=c(80, 20))
-row.names(contingencyTable) <- c("NoPathway", "YesPathway")
-
-# check margin sums:
-rowSums(contingencyTable)
-colSums(contingencyTable)
-
-# show table
-contingencyTable
-```
-
-Let's define variables for the analysis of a given pathway:
-
-* **N**: total number of genes in the **background** set, e.g. all genes tested - 20,000
-in our example.
-  * This background set is sometimes referred to as the **universe**.
-* **M**: number of genes within that background that are annotated to the pathway -
-2,000 in our example
-* **n**: number of differentially expressed genes - 100 in our example
-* **k**: number of differentially expressed genes that are annotated to the pathway 
-  * 20 in our example
-
-Significance can then be assessed with the hypergeometric distribution:
-
-<!-- over-representation p-value -->
-![](images/overRepPvalHyperGeoFormula.png)
-
-The test above is identical to the one-tailed Fisher's exact test.
-
-```{r}
-fisher.test(contingencyTable, alternative = "greater")
-```
-
-To save time and effort there are a number of packages that make applying this 
-test to a large number of gene sets simpler, and which will import gene lists 
-for testing from various sources.
-
-Today we will use [`clusterProfiler`](https://yulab-smu.github.io/clusterProfiler-book/index.html).
-
-<!--
-https://yulab-smu.github.io/clusterProfiler-book/index.html
-https://yulab-smu.github.io/clusterProfiler-book/chapter2.html#over-representation-analysis
--->
-
-<!-- KEGG pathway enrichment analysis -->
+And test for independence of the two variables with the Fisher exact test.
 
 ## `clusterProfiler`
 
@@ -227,7 +182,7 @@ using the command `enrichGO`. Check:
 > 1. Run the over-representation analysis for GO terms 
 >     - Use genes that have an adjusted p-value (FDR) of less than 0.01 and
 > an absolute fold change greater than 2.    
->     - For this analysis you can use Ensembl IDs rather then Entrez
+>     - For this analysis you can use Ensembl IDs rather than Entrez
 >     - You'll need to provide the background (`universe`) genes, this should be
 > all the genes in our analysis.
 >     - The mouse database package is called `org.Mm.eg.db`. You'll need to load

@@ -1,6 +1,6 @@
 ---
 title: "Introduction to Gene Set Testing in R"
-date: "April 2021"
+date: "July 2021"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -10,7 +10,6 @@ output:
   beamer_presentation: default
   slidy_presentation: default
 ---
-
 
 ```{r setup, include=FALSE}
 library(tidyverse)
@@ -36,31 +35,37 @@ theme_update(panel.background = element_rect(fill = "transparent", colour = NA),
 <img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
 <!-- <img src="images/workflow.svg" class="centerimg" style="width: 60%;"> -->
 
-## Gene Set Testing
+## Gene Set Testing - Overview
+
+The list of differentially expressed genes is sometimes:
+
+* so long that its interpretation becomes cumbersome and time consuming,
+
+* or very short while some genes have low p-value yet higher than the given threshold.
 
 There are many approaches to searching for biological meaning in the results
 of differential expression analysis.
 
-Commonly we look to see if the differentially expressed genes tend to relate
+Commonly we assess whether the differentially expressed genes tend to relate
 to specific pathways or ontological groups of genes.
 
-We will look at two methods of doing this:
+We will look at two methods:
 
 * Over Representation Analysis (ORA)
 
 * Gene Set Enrichment Analysis (GSEA)
 
-## Gene Set Testing
+## Gene Set Testing - Resources
 
 Common sources of gene sets:
 
-* KEGG pathways
+* [KEGG pathways](https://www.kegg.jp/)
 
-* Gene Ontologies
+* [Gene Ontologies](http://geneontology.org/docs/ontology-documentation/)
 
-* Reactome
+* [Reactome](https://reactome.org/)
 
-* MSigDB (GSEA)
+* [Molecular Signature Database, MSigDB (GSEA)](https://www.gsea-msigdb.org/gsea/msigdb/)
 
 * Manually curated gene lists
 
@@ -78,7 +83,7 @@ Common sources of gene sets:
 
 <img src="images/OverRepresentationAnalysis.svg" class="centerimg" style="width: 90%; margin-top=10px">
 
-## Over Representation Analysis - Method
+## Over Representation Analysis - Example
 
 Genes in the experiment are split in two ways:
   
@@ -87,14 +92,13 @@ Genes in the experiment are split in two ways:
 
 Contingency table:
   
-<img src="images/ContingencyTable.svg" class="centerimg" style="width: 45%">
+<img src="images/ContingencyTable2.png" class="centerimg" style="width: 45%">
 
 * Analysis with the hypergeometric/Fisher's exact test
 
-
 ## Gene Set Enrichment Analysis (GSEA)
 
-* This method is based on ranking of all genes in our dataset
+* This method is based on ranking all genes in our dataset
 
 * If the gene set is significantly affected in our experiment, then the genes
   in the set should tend to be at one end or the other of our ranking.
@@ -105,9 +109,10 @@ Contingency table:
 * GSEA calculates an enrichment score based on the ranking, and then uses 
   permutation to calculate a p-value for how significant the enrichment score   is.
 
-## GSEA: Calculate the enrichment score
+## GSEA - Calculate the enrichment score
 
-* Ranking by Fold Change 
+* Ranking by Fold Change - unsorted logFC
+
 ```{r loadGSEAdata, include=FALSE, message=FALSE}
 set.seed(1)
 tab <- readRDS("RObjects/Shrunk_Results.d11.rds") %>% 
@@ -136,9 +141,9 @@ tab %>%
 ```
 </div> 
 
-## GSEA: Calculate the enrichment score
+## GSEA - Calculate the enrichment score
 
-* Ranking by Fold Change 
+* Ranking by Fold Change - sorted logFC, in decreasing order
 
 <div style="width: 80%; margin-left: 13%">
 ```{r FoldchangesSorted, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5}
@@ -149,7 +154,7 @@ tab %>%
 ```
 </div>
 
-## GSEA: Calculate the enrichment score
+## GSEA - Calculate the enrichment score
 
 * Identify genes in set
 
@@ -164,7 +169,7 @@ tab %>%
 ```
 </div>
 
-## GSEA: Calculate the enrichment score
+## GSEA - Calculate the enrichment score
 
 * Calculate the enrichment score ... start at 0 and an enrichment score 
 of 0
@@ -182,7 +187,7 @@ tab %>%
 ```
 </div>
 
-## GSEA: Calculate the enrichment score
+## GSEA - Calculate the enrichment score
 
 * Walk along genes and calculate a cumulative score
 
@@ -205,7 +210,7 @@ animate(p, nframes=150, fps = 8, renderer = gifski_renderer(loop=FALSE),
 ```
 </div>
 
-## GSEA: Calculate the enrichment score
+## GSEA - Calculate the enrichment score
 
 * A different gene set
 
@@ -222,7 +227,7 @@ tab %>%
 </div>
 
 
-## GSEA: Calculate the enrichment score
+## GSEA - Calculate the enrichment score
 
 * A different gene set
 
@@ -245,9 +250,9 @@ animate(p, nframes=75, fps = 8, renderer = gifski_renderer(loop=FALSE),
 ```
 </div>
 
-## GSEA - estimate a p-value
+## GSEA - Estimate a p-value
 
-* Randomly permute the ranking and recalculate the enrichment score.
+* Randomly permute the ranking and recalculate the enrichment score, repeat many times.
 
 * From a distribution of our permuted enrichment scores determine how likely our ES.
 
@@ -263,3 +268,27 @@ plot(x1, hx1, type="l", lty=1, lwd=2,
 abline(v=4, col="darkgreen", lty=2, lwd=2)
 ```
 </div>
+
+## Recap
+
+Question: Do the differentially expressed genes tend to relate
+to specific pathways or ontological groups of genes?
+
+For a given contrast and a given gene set.
+
+Two methods:
+
+* Over Representation Analysis (ORA)
+
+    - split genes two ways: in pathway or not, of interest or not
+    - Fisher exact test for ratio of 'pathway' odds in the two 'interest' classes   
+
+* Gene Set Enrichment Analysis (GSEA)
+
+    - rank all genes using significance and/or logFC
+    - compute enrichment score
+    - compute its significance
+
+Both methods are applicable to series of gene sets
+
+

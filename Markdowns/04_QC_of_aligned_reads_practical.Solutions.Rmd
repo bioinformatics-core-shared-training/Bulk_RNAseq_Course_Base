@@ -83,7 +83,7 @@ percent. Just an odd quirk of Picard.
 
 > 1. Run Picard's `CollectAlignmentSummaryMetrics` tool on the chr14 sorted bam 
 >    providing the following options.
->     * INPUT - The sorted chr14 only bam file
+>     * INPUT - The sorted chr 14 only bam file
 >     * OUTPUT - `bam/SRR7657883.chr14.alignment_metrics.txt`
 >     * REFERENCE_SEQUENCE - `references/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa`
 ```{bash eval=FALSE}
@@ -99,11 +99,11 @@ java -jar picard/picard.jar CollectAlignmentSummaryMetrics \
 
 ### Exercise 2.3
 
-> 1. Run Picard's `CollectInsertSizeMetrics` tool on the chr14 sorted bam 
+> 1. Run Picard's `CollectInsertSizeMetrics` tool on the chr1 sorted bam 
 >    providing the following options.
->     * INPUT - The sorted chr14 only bam file
->     * OUTPUT - bam/SRR7657883.chr14.insert_size.txt
->     * HISTOGRAM_FILE - bam/SRR7657883.chr14.insert_size.pdf
+>     * INPUT - The sorted chr 1 only bam file
+>     * OUTPUT - bam/SRR7657883.chr1.insert_size.txt
+>     * HISTOGRAM_FILE - bam/SRR7657883.chr1.insert_size.pdf
 >
 ```{bash eval=FALSE}
 java -jar picard/picard.jar CollectInsertSizeMetrics \

@@ -13,6 +13,7 @@ bibliography: ref.bib
 ```{r setup, message=FALSE, warning=F}
 library(AnnotationHub)
 library(AnnotationDbi)
+library(ensembldb)
 library(DESeq2)
 library(tidyverse)
 ```
@@ -50,7 +51,7 @@ the gene annotation that was used for read counting.
 
 A third method is to use `AnnotationHub`, this is like the bioconductor packages but in an online database like `bioMaRt`. They keep them slightly more up to date than the standard bioconductor packages and each time you use them the results are cached on your machine. 
 
-Today we will use the `AnnotationHub` method. A workflow for annotation with biomaRt is included in the extended materials section acessible on the course website.
+Today we will use the `AnnotationHub` method. A workflow for annotation with biomaRt is included in the extended materials section accessible on the course website.
 
 ## Query the database
 
@@ -69,37 +70,23 @@ ah
 ah[1]
 
 # Download the database we want to use
-OrgDb <- query(ah, c("OrgDb", "Mus musculus"))[[1]]
+MouseEnsDb <- query(ah, c("EnsDb", "Mus musculus", "102"))[[1]]
 
 ```
 
-We use the select function to query the database. Now we need to set up a query.
-This requires us to tell it what we want and what we have. For this we need to 
-specify three things: 
-
-(a) What type of information we are going to search the dataset on - called
-**keytypes**. In our case this is Ensembl Gene IDs
-(b) A vector of the **keys** for our filter - the Ensembl Gene IDs from our DE 
-results table
-(c) What columns (**columns**) of the dataset we want returned.
+We can turn the whole Mouse database we have just downloaded into a data frame so we can work with it using the tidyverse suite of tools.
 
 
 ```{r queryOrgDb, message=F}
-# what can we search for? 'columns'
-columns(OrgDb)
+annotations <- genes(MouseEnsDb, return.type = "data.frame")
 
-# what can we search with? 'keytypes'
-keytypes(OrgDb)
+# lets see what information we have
+colnames(annotations)
 
-# lets set it up
-ourCols <- c("SYMBOL", "ENSEMBL", "ENTREZID")
-ourKeys <- rownames(results.interaction.11)[1:1000]
+annot <- annotations %>%
+  dplyr::select(gene_id, gene_name, entrezid) %>%
+  dplyr::filter(gene_id %in% rownames(results.interaction.11))
 
-# run the query
-annot <- AnnotationDbi::select(OrgDb, 
-                keys=ourKeys, 
-                columns=ourCols, 
-                keytype="ENSEMBL")
 ```
 
 
@@ -109,19 +96,15 @@ Let's inspect the annotation.
 
 ```{r inspectAnnot}
 head(annot)
-length(unique(annot$ENTREZID))
-sum(is.na(annot$ENTREZID)) # Why are there NAs in the ENTREZID column?
 
-dim(annot) # why are there more than 1000 rows?
+length(annot$entrezid)
+length(unique(annot$entrezid))
+sum(is.na(annot$entrezid)) # Why are there NAs in the ENTREZID column?
 
-# find all rows containing duplicated ensembl ids
-annot %>%  
-    add_count(ENSEMBL) %>%  
-    dplyr::filter(n>1)
 ```
 
-There is one Ensembl IDs with no EntrezID. These gene ids has no 
-corresponding Entrez ID in the `OrgDb` database package. The 
+There are some Ensembl IDs with no EntrezID. These gene ids has no 
+corresponding Entrez ID in the `EnsDb` database package. The 
 Ensembl and Entrez databases don't match on a 1:1 level although they have 
 started taking steps towards consolidating
 [in recent years](https://m.ensembl.org/info/genome/genebuild/mane.html).
@@ -146,62 +129,9 @@ ID to keep, e.g. Rpl13:
 In this case it would perhaps makes most sense to discard the Entrez ID  
 **100040416**, which is for a pseudogene.
 
-## Exercise 1 - Retrieve the full annotation
+In this case the problems with the annotation aren't due to the versions as we requested release 102 which is the same as the version 102 of the gtf we used  for counting reads in Day 1. It is good to keep an eye on these things so you don't miss releases and know exactly which one you are using at there are often changes albeit minor ones.
 
-> So far we have retrieved the annotation for just 1000 genes, but we need 
-> annotations for the entire results table.
->
-> A reminder of the code we have used so far:
-
-```{r eval=FALSE}
-# lets set it up
-ourCols <- c("ENSEMBL", "SYMBOL", "ENTREZID")
-ourKeys <- rownames(results.interaction.11)[1:1000]
-
-# run the query
-annot <- AnnotationDbi::select(OrgDb, 
-                keys=ourKeys, 
-                columns=ourCols, 
-                keytype="ENSEMBL")
-```
-
-> (a) Run the same query using all of the genes in our results table (`results.interaction.33`),
-> and this time include the descriptive name of the genes too. Hint: You can find the 
-> name of the column for this by running `columns(OrgDb)`
->
-> (b) How many Ensembl genes have multipe Entrez IDs associated with them?
->
-> (c) Are all of the Ensembl gene IDs annotated? If not, why do you think this 
-> is?
-
-```{r solutionChallenge1, eval=FALSE, echo=FALSE}
-# (a)
-ourKeys <- rownames(results.interaction.11)
-
-# (b)
-ourCols <- c("SYMBOL", "ENSEMBL", "ENTREZID", "GENENAME")
-
-# run the query
-annot <- AnnotationDbi::select(OrgDb, 
-                keys=ourKeys, 
-                columns=ourCols,
-                keytype="ENSEMBL")
-
-# (c)
-annot %>%  
-    add_count(ENSEMBL) %>%  
-    dplyr::filter(n>1) %>% 
-    distinct(ENSEMBL) %>%
-    count()
-
-# (d)
-length(unique(annot$ENSEMBL))
-length(ourKeys)
-```
-
-In this case the problems with the annotation aren't due to the versions as our snapshot was made 27-10-2020 which is the same date as version 102 (we used version 102 for counting reads in Day 1) was released. It is good to keep an eye on these things so you don't miss releases.
-
-The is another set of databases within `AnnotationHub` which you can call instead called `EnsDb` and for these you can specify which release you prefer if so some reason you were not using the latest version.
+The is another set of databases within `AnnotationHub` which you can call instead called `OrgDb` which give you the 'latest' version and are more similar to the bioconductor packages if you are more familiar with those. They contain slightly more information than the `EnsDb` records.
 
 ## A curated annotation - one we prepared earlier
 
@@ -323,7 +253,7 @@ ggplot(volcanoTab.11, aes(x = logFC, y=`-log10(pvalue)`)) +
     geom_text(data=~top_n(.x, 1, wt=-FDR), aes(label=Symbol))
 ```
 
-## Exercise 2 - Volcano plot for 33 days
+## Exercise 1 - Volcano plot for 33 days
 
 Now it's your turn! We just made the volcano plot for the 11 days contrast, you will make the one for the 33 days contrast.
 

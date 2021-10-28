@@ -1,13 +1,13 @@
 ---
 title: "Basic quality control with FastQC"
-date: "April 2021"
+date: "June 2021"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
     smaller: yes
     widescreen: yes
-  beamer_presentation: default
   slidy_presentation: default
 ---
 

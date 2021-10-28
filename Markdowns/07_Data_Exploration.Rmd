@@ -3,9 +3,9 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Initial exploration of RNA-seq data
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  html_document:
-    toc: yes
   pdf_document:
+    toc: yes
+  html_document:
     toc: yes
 bibliography: ref.bib
 ---
@@ -41,6 +41,23 @@ In this session we will:
 transformation
 * do some initial exploration of the raw count data using principle component 
 analysis  
+
+# Set working directory
+
+Before starting we need to make sure that the working directory for R is set to
+the **RNAseq** directory, which contains all the necessary file for these
+practicals. You can do this using the menu bar:
+
+`Session` >> `Set Working Directory` >> `Choose Directory ...`
+
+![](images/SetWorkingDirectory.png){width=75%}
+
+
+or you can use the following code in the R console:
+
+```
+setwd("~/Course_Materials/RNAseq")
+```
 
 # Data import
 

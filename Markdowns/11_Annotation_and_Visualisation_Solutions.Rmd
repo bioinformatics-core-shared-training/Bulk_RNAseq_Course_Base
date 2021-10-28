@@ -11,6 +11,7 @@ subtitle: Annotation and Visualisation of Differential Expression Results - Solu
 ```{r setup, include=FALSE}
 library(AnnotationHub)
 library(AnnotationDbi)
+library(ensembldb)
 library(DESeq2)
 library(tidyverse)
 ```
@@ -22,60 +23,8 @@ results.interaction.11 <- readRDS("RObjects/DESeqResults.interaction_d11.rds")
 results.interaction.33 <- readRDS("RObjects/DESeqResults.interaction_d33.rds")
 ```
 
-## Exercise 1 - Retrieve the full annotation
 
-> So far we have retrieved the annotation for just 1000 genes, but we need 
-> annotations for the entire results table.
->
-> A reminder of the code we have used so far:
-
-```{r eval=FALSE}
-# lets set it up
-ourCols <- c("ENSEMBL", "SYMBOL", "ENTREZID")
-ourKeys <- rownames(results.interaction.11)[1:1000]
-
-# run the query
-annot <- AnnotationDbi::select(OrgDb, 
-                keys=ourKeys, 
-                columns=ourCols, 
-                keytype="ENSEMBL")
-```
-
-> (a) Run the same query using all of the genes in our results table (`results.interaction.33`),
-> and this time include the descriptive name of the genes too. Hint: You can find the 
-> name of the column for this by running `columns(OrgDb)`
->
-> (b) How many Ensembl genes have multipe Entrez IDs associated with them?
->
-> (c) Are all of the Ensembl gene IDs annotated? If not, why do you think this 
-> is?
-
-```{r solutionChallenge1, eval=FALSE}
-# (a)
-ourKeys <- rownames(results.interaction.11)
-
-# (b)
-ourCols <- c("SYMBOL", "ENSEMBL", "ENTREZID", "GENENAME")
-
-# run the query
-annot <- AnnotationDbi::select(EnsDb.Mmusculus.v79, 
-                keys=ourKeys, 
-                columns=ourCols,
-                keytype="ENSEMBL")
-
-# (c)
-annot %>%  
-    add_count(ENSEMBL) %>%  
-    dplyr::filter(n>1) %>% 
-    distinct(ENSEMBL) %>%
-    count()
-
-# (d)
-length(unique(annot$ENSEMBL))
-length(ourKeys)
-```
-
-## Exercise 2 - Volcano plot for 33 days
+## Exercise 1 - Volcano plot for 33 days
 
 Now it's your turn! We just made the volcano plot for the 11 days contrast, you will make the one for the 33 days contrast.
 

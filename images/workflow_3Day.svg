@@ -175,16 +175,6 @@
        y2="-488.04404" />
     <linearGradient
        inkscape:collect="always"
-       xlink:href="#linearGradient5520"
-       id="linearGradient3916"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="translate(-103.40617,1032.7645)"
-       x1="-2316.8433"
-       y1="1046.0306"
-       x2="-648.58472"
-       y2="-488.04404" />
-    <linearGradient
-       inkscape:collect="always"
        xlink:href="#linearGradient5436"
        id="linearGradient3921"
        gradientUnits="userSpaceOnUse"
@@ -198,11 +188,21 @@
        xlink:href="#linearGradient5520"
        id="linearGradient957"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="translate(-103.40617,684.99043)"
+       gradientTransform="translate(-103.40613,684.99043)"
        x1="-2316.8433"
        y1="1046.0306"
        x2="-648.58472"
        y2="-488.04404" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5436"
+       id="linearGradient1077"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-1892.3987,51.685353)"
+       x1="-400.02045"
+       y1="1848.3624"
+       x2="703.06628"
+       y2="700.8291" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -234,7 +234,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -244,14 +244,14 @@
      id="layer1"
      transform="translate(2458.1277,34.13074)">
     <rect
-       style="fill:url(#linearGradient3916);fill-opacity:1;stroke:#555555;stroke-width:7.23594809;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       id="rect3914"
+       rx="62.802799"
+       style="fill:url(#linearGradient1077);fill-opacity:1;stroke:#555555;stroke-width:7.23594809;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1075"
        width="1431.1006"
        height="219.8098"
        x="-2454.5098"
-       y="1366.7419"
-       ry="62.802795"
-       rx="62.802799" />
+       y="1367.0842"
+       ry="62.802795" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
@@ -373,7 +373,7 @@
     </g>
     <g
        id="g932"
-       transform="translate(0,-344.86681)">
+       transform="translate(0,-344.86686)">
       <rect
          rx="62.802799"
          style="fill:url(#linearGradient5480);fill-opacity:1;stroke:#555555;stroke-width:7.23594809;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"

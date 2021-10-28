@@ -129,7 +129,7 @@ genomic reference.
 >     * REFERENCE_SEQUENCE - `references/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa`
 >
 
-### 2.3 Insert Size metrics
+### 2.2 Insert Size metrics
 
 Next we will collect some metrics that relate to the *insert size*. This is the
 size of the fragment of RNA that each read pair has originated from. The pair
@@ -140,7 +140,7 @@ contain an plot showing the distribution of insert sizes in our library.
 
 ### Exercise 2.3
 
-> 1. Run Picard's `CollectInsertSizeMetrics` tool on the chr14 sorted bam 
+> 1. Run Picard's `CollectInsertSizeMetrics` tool on the chr1 sorted bam 
 >    providing the following options.
 >     * INPUT - The sorted chr 14 only bam file
 >     * OUTPUT - `bam/SRR7657883.chr14.insert_size.txt`
