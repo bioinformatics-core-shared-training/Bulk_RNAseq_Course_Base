@@ -219,25 +219,37 @@ results.simple <- results(ddsObj, alpha=0.05)
 results.simple
 ```
 
-How many genes have an adjusted p-value of less than 0.05?
 
-```{r countSigGenes}
+### Exercise 1
+
+> Now we have made our results table using our simple model, let have a look at which
+> genes are changing and how many pass our 0.05 threshold. WHy might this not be
+> straigtforward?
+>
+>
+```{r echo=FALSE, message=FALSE, include=FALSE}
 sum(results.simple$padj < 0.05)
 ```
 
-
-### Independent filtering
-
-You will notice that some of the adjusted p-values (`padj`) are NA. 
-
-```{r}
+```{r echo=FALSE, message=FALSE, include=FALSE}
 sum(is.na(results.simple$padj))
 ```
+>
+> a) how many genes are significantly (with an FDR < 0.05) up-regulated?
+>
+>
+```{r echo=FALSE, message=FALSE, include=FALSE}
+sum(results.simple$padj < 0.05 & results.simple$log2FoldChange > 0, na.rm = TRUE)
+```
+>
+> b) how many genes are significantly (with an FDR < 0.05) down-regulated?
+>
+>
+```{r echo=FALSE, message=FALSE, include=FALSE}
+sum(results.simple$padj < 0.05 & results.simple$log2FoldChange < 0, na.rm = TRUE)
+```
 
-Remember 
-in Session 7 we said that there is no need to pre-filter the genes as DESeq2
-will do this through a process it calls 'independent filtering'. The genes 
-with `NA` are the ones `DESeq2` has filtered out.
+### Independent filtering
 
 From `DESeq2` manual:
 "The results function of the `DESeq2` package performs independent filtering by
@@ -249,28 +261,7 @@ The default significance level for independent filtering is `0.1`, however, you
 should set this to the FDR cut off you are planning to use. We will use `0.05` -
 this was the purpose of the `alpha` argument in the previous command.
 
-How many genes have an adjusted p-value of less than 0.05?
-
-```{r countSigGenes2}
-sum(results.simple$padj < 0.05, na.rm = TRUE)
-```
-
-How many genes are up-regulated?
-
-```{r countSigUpGenes2}
-sum(results.simple$padj < 0.05 & results.simple$log2FoldChange > 0, na.rm = TRUE)
-```
-
-How many genes are down-regulated?
-
-```{r countSigDownGenes2}
-sum(results.simple$padj < 0.05 & results.simple$log2FoldChange < 0, na.rm = TRUE)
-```
-
-### Exercise 1
-
-Now we have made our results table using our simple model, how many genes are:
-
-a) significantly up-regulated?
-
-b) significantly down-regulated?
+Remember 
+in Session 7 we said that there is no need to pre-filter the genes as DESeq2
+will do this through a process it calls 'independent filtering'. The genes 
+with `NA` are the ones `DESeq2` has filtered out.
