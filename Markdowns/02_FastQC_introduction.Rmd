@@ -1,6 +1,6 @@
 ---
 title: "Basic quality control with FastQC"
-date: "June 2021"
+date: "November 2021"
 output:
   beamer_presentation: default
   ioslides_presentation:
