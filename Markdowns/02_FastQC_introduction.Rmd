@@ -2,12 +2,12 @@
 title: "Basic quality control with FastQC"
 date: "November 2021"
 output:
-  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
     smaller: yes
     widescreen: yes
+  beamer_presentation: default
   slidy_presentation: default
 ---
 
@@ -26,8 +26,53 @@ output:
 ## Fastq file format - Sequences
 <img src="images/fq_seq.png" style="width: 95%">
 
+## Fastq file format - Third line 
+<img src="images/fq_3rd_line.png"style="width: 95%"> 
+
 ## Fastq file format - Quality Scores
 <img src="images/fq_quality.png" style="width: 95%">
+
+## (Phred) Quality Scores
+
+Sequence quality scores are transformed and translated p-values 
+
+<div style="width: 100%; 
+            float: left"> 
+            
+* Sequence bases are derived after image processing (base calling) 
+  * This process is probabilistic in nature 
+  * Each base in sequence has _p-value_ associated with it 
+  * p-values range: 0-1 (e.g.: 0.05, 0.01, 1e-30) 
+  * p-value of 0.01 inferred as 1 in 100 chance that called base is  wrong 
+</div>
+
+## (Phred) Quality Scores  ... 
+
+
+How to assign p-values to bases in fastq file?
+
+<div style="width: 50%; 
+            float: left"> 
+            
+* Base (one letter) but p-vales can be long (e.g.:0.000005)
+* Transform to Phred quality scores _Q_
+* $Q = -10(log_{10} P)$ (e.g.: 0.01 = Q value of 20,  0.001 = Q value of 30)
+* Translate _Q_ values to ASCII characters (Q value of 1 = !, Q value of 30 = ? )
+</div>
+
+<div style="margin-left: 60px;
+            float: none;">
+  
+<img src="images/ascii.png" style="width: 30%;
+                                  margin-left: auto;
+                                  margin-right: auto;
+                                  margin-bottom: auto;
+                                  display: block;">
+                                               
+</div>
+
+
+  
 
 ## QC is important
 
