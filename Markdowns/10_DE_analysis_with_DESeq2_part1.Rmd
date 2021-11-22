@@ -3,9 +3,9 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Differential Expression of RNA-seq data - Part 1
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  html_document:
-    toc: yes
   pdf_document:
+    toc: yes
+  html_document:
     toc: yes
 bibliography: ref.bib
 ---
@@ -223,10 +223,11 @@ results.simple
 ### Exercise 1
 
 > Now we have made our results table using our simple model, let have a look at which
-> genes are changing and how many pass our 0.05 threshold. WHy might this not be
+> genes are changing and how many pass our 0.05 threshold. Why might this not be
 > straigtforward?
 >
 >
+
 ```{r echo=FALSE, message=FALSE, include=FALSE}
 sum(results.simple$padj < 0.05)
 ```
@@ -238,6 +239,7 @@ sum(is.na(results.simple$padj))
 > a) how many genes are significantly (with an FDR < 0.05) up-regulated?
 >
 >
+
 ```{r echo=FALSE, message=FALSE, include=FALSE}
 sum(results.simple$padj < 0.05 & results.simple$log2FoldChange > 0, na.rm = TRUE)
 ```
@@ -245,6 +247,7 @@ sum(results.simple$padj < 0.05 & results.simple$log2FoldChange > 0, na.rm = TRUE
 > b) how many genes are significantly (with an FDR < 0.05) down-regulated?
 >
 >
+
 ```{r echo=FALSE, message=FALSE, include=FALSE}
 sum(results.simple$padj < 0.05 & results.simple$log2FoldChange < 0, na.rm = TRUE)
 ```
