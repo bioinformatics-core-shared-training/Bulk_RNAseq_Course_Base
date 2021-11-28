@@ -3,9 +3,9 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Differential Expression of RNA-seq data - Part 2
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  html_document:
-    toc: yes
   pdf_document:
+    toc: yes
+  html_document:
     toc: yes
 bibliography: ref.bib
 ---
@@ -15,7 +15,33 @@ options(tibble.print_max = 4, tibble.print_min = 4, max.print=40,
         tibble.max_extra_cols=2)
 ```
 
-### Exercise 1
+# Recap from last week
+
+```{r message = FALSE}
+library(DESeq2)
+library(tidyverse)
+```
+
+```{r loadData}
+txi <- readRDS("RObjects/txi.rds")
+sampleinfo <- read_tsv("data/samplesheet_corrected.tsv", col_types="cccc") %>%
+  mutate(Status = fct_relevel(Status, "Uninfected"))
+
+simple.model <- as.formula(~ Status)
+
+ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
+                                       colData = sampleinfo,
+                                       design = simple.model)
+
+keep <- rowSums(counts(ddsObj.raw)) > 5
+ddsObj.filt <- ddsObj.raw[keep,]
+
+ddsObj <- DESeq(ddsObj.filt)
+
+results.simple <- results(ddsObj, alpha=0.05)
+```
+
+### Exercise 2
 
 > So far we have fitted a simple model considering just "Status", but in reality 
 > we want to model the effects of both "Status" and "Time Point".
@@ -115,7 +141,7 @@ topGenesIvU <- as.data.frame(results.InfectedvUninfected) %>%
 topGenesIvU
 ```
 
-### Exercise 2
+### Exercise 3
 
 > If we want a different contrast we can just pass the `results` function the 
 > **name** of the contrast, as given by `resultsNames(ddsObj)`.
@@ -191,7 +217,7 @@ to all genes. Curiously then, this suggests that overall the simple model
 is more appropriate than the additive model. Let's look into the interaction
 model.
 
-### Exercise 3
+### Exercise 4
 >
 > When we looked at the PCA it did seem that an interaction model might be
 > warranted. Let's test that.  
@@ -283,7 +309,7 @@ sum(results.interaction.33$padj < 0.05, na.rm = TRUE)
 We can see that there is a strong difference in the effects of infection on 
 gene expression between days 11 and 33.
 
-### Exercise 4
+### Exercise 5
 >
 > Let's investigate the uninfected mice
 >  

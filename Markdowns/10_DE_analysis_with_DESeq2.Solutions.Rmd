@@ -3,8 +3,8 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Differential Expression of RNA-seq data
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, echo=FALSE, message=FALSE}
@@ -13,8 +13,41 @@ options(tibble.print_max = 4, tibble.print_min = 4, max.print=40,
 library(tidyverse)
 library(DESeq2)
 ```
-
 ### Exercise 1
+
+> Now we have made our results table using our simple model, let have a look at which
+> genes are changing and how many pass our 0.05 threshold. Why might this not be
+> straigtforward?
+>
+>
+
+```{r eval=FALSE}
+sum(results.simple$padj < 0.05)
+```
+
+```{r eval=FALSE}
+sum(is.na(results.simple$padj))
+```
+>
+> a) how many genes are significantly (with an FDR < 0.05) up-regulated?
+>
+>
+>
+
+```{r eval=FALSE}
+sum(results.simple$padj < 0.05 & results.simple$log2FoldChange > 0, na.rm = TRUE)
+```
+>
+> b) how many genes are significantly (with an FDR < 0.05) down-regulated?
+>
+>
+
+```{r eval=FALSE}
+sum(results.simple$padj < 0.05 & results.simple$log2FoldChange < 0, na.rm = TRUE)
+
+```
+
+### Exercise 2
 
 > So far we have fitted a simple model considering just "Status", but in reality 
 > we want to model the effects of both "Status" and "Time Point".
@@ -84,7 +117,7 @@ sum(results.additive$padj < 0.05, na.rm = TRUE)
 ```
 
 
-### Exercise 2
+### Exercise 3
 
 > If we want a different contrast we can just pass the `results` function the 
 > **name** of the contrast, as given by `resultsNames(ddsObj)`.
@@ -100,7 +133,7 @@ results.d33vd11 <- results(ddsObj, name= "TimePoint_d33_vs_d11", alpha=0.05)
 sum(results.d33vd11$padj < 0.05, na.rm = TRUE)
 ```
 
-### Exercise 3
+### Exercise 4
 >
 > When we looked at the PCA it did seem that an interaction model might be
 > warranted. Let's test that.  
@@ -143,7 +176,7 @@ results.Interaction_v_Additive <- results(ddsObj.LRT)
 table(results.Interaction_v_Additive$padj < 0.05)
 ```
 
-### Exercise 4
+### Exercise 5
 >
 > Let's investigate the uninfected mice
 >  

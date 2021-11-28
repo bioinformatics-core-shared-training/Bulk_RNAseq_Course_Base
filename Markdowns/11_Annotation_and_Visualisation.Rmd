@@ -3,9 +3,9 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Annotation and Visualisation of Differential Expression Results
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  pdf_document:
-    toc: yes
   html_document:
+    toc: yes
+  pdf_document:
     toc: yes
 bibliography: ref.bib
 ---
@@ -30,11 +30,11 @@ results.interaction.33 <- readRDS("RObjects/DESeqResults.interaction_d33.rds")
 # Overview
 
 - Getting annotation
-- Visualising DE results
+- Visualizing DE results
 
 # Adding annotation to the DESeq2 results
 
-We have a list of significantly differentially expressed genes, but the only
+We have a list of significantly deferentially expressed genes, but the only
 annotation we can see is the Ensembl Gene ID, which is not very informative. 
 
 There are a number of ways to add annotation. One method is to do this using a 
@@ -103,33 +103,17 @@ sum(is.na(annot$entrezid)) # Why are there NAs in the ENTREZID column?
 
 ```
 
+Gene/transcript/protein IDs mapping between different databases not always perfect. 
+Although majority of IDs map between databases, small subset may not have matching ID or may have more than one match. 
+This is because feature identification algorithms, naming methodologies and versions may differ among databases. For instance NCBI and HGNC give same ID for different gene versions, whereas Ensembl assigned separate IDs for gene versions. Read interesting discussion on [biostars](https://www.biostars.org/p/119540/).
+
 There are some Ensembl IDs with no EntrezID. These gene ids has no 
 corresponding Entrez ID in the `EnsDb` database package. The 
 Ensembl and Entrez databases don't match on a 1:1 level although they have 
 started taking steps towards consolidating
 [in recent years](https://m.ensembl.org/info/genome/genebuild/mane.html).
 
-There are some genes that have multiple entries in the retrieved 
-annotation. This is because there are multiple Entrez IDs for a single Ensembl 
-gene. These one-to-many relationships come up frequently in genomic databases, 
-it is important to be aware of them and check when necessary. 
-
-We will need to do a little work to account for these one-to-many relationships
-before adding the annotation to our results table. We could decide that the 
-mappings are ambiguous and elect to discard both of the Entrez ID mappings. We 
-could concatenate the Entrez IDs so that we don't lose information. 
-Alternatively, we could spend some time manually comparing the details of the 
-genes on the Ensembl and NCBI websites and make a decision as to which Entrez
-ID to keep, e.g. Rpl13:
-
-* Ensembl: [ENSMUSG00000000740](https://www.ensembl.org/Mus_musculus/Gene/Summary?db=core;g=ENSMUSG00000000374;r=10:78022559-78080475)
-* Entrez ID: [270106](https://www.ncbi.nlm.nih.gov/gene/?term=270106)
-* Entrez ID: [100040416](https://www.ncbi.nlm.nih.gov/gene/?term=100040416)
-
-In this case it would perhaps makes most sense to discard the Entrez ID  
-**100040416**, which is for a pseudogene.
-
-In this case the problems with the annotation aren't due to the versions as we requested release 102 which is the same as the version 102 of the gtf we used  for counting reads in Day 1. It is good to keep an eye on these things so you don't miss releases and know exactly which one you are using at there are often changes albeit minor ones.
+For example [Prkcg](https://www.genecards.org/cgi-bin/carddisp.pl?gene=PRKCG) gene has two Entrez IDs but have one gene name and one EntrezID. 
 
 The is another set of databases within `AnnotationHub` which you can call instead called `OrgDb` which give you the 'latest' version and are more similar to the bioconductor packages if you are more familiar with those. They contain slightly more information than the `EnsDb` records.
 
@@ -174,7 +158,7 @@ hist(annot.interaction.11$pvalue)
 
 ## Shrinking the log2FoldChange
 
-`DESeq2` provides a functon called `lfcShrink` that shrinks log-Fold Change 
+`DESeq2` provides a function called `lfcShrink` that shrinks log-Fold Change 
 (LFC) estimates towards zero using and empirical Bayes procedure. The reason for
 doing this is that there is high variance in the LFC estimates when counts are 
 low and this results in lowly expressed genes appearing to show greater
@@ -241,7 +225,7 @@ The real advantage of `ggplot2` is the ability to change the appearance of our
 plot by mapping other variables to aspects of the plot. For example, we could 
 colour the points based on the sample group. To do this we can add metadata from
 the `sampleinfo` table to the data. The colours are automatically chosen by
-`ggplot2`, but we can specifiy particular values. For the volcano plot we will colour according whether the gene has a pvalue below 0.05. We use a `-log10` transformation for the y-axis; it's commonly used for p-values as it means that more significant genes have a higher scale.
+`ggplot2`, but we can specify particular values. For the volcano plot we will colour according whether the gene has a pvalue below 0.05. We use a `-log10` transformation for the y-axis; it's commonly used for p-values as it means that more significant genes have a higher scale.
 
 
 ```{r volcano11Plot, fig.align="center", fig.width=5, fig.height=5}
@@ -249,7 +233,7 @@ volcanoTab.11 <- shrinkTab.11 %>%
     mutate(`-log10(pvalue)` = -log10(pvalue))
 
 ggplot(volcanoTab.11, aes(x = logFC, y=`-log10(pvalue)`)) + 
-    geom_point(aes(colour=pvalue < 0.05), size=1) +
+    geom_point(aes(colour=FDR < 0.05), size=1) +
     geom_text(data=~top_n(.x, 1, wt=-FDR), aes(label=Symbol))
 ```
 
@@ -285,7 +269,7 @@ shrinkTab.33 <- as.data.frame(ddsShrink.33) %>%
 > Create a new column of -log10(pvalue) values in your shrinkTab for 33 days.
 >
 > (c) 
-> Create a plot with points coloured by P-value < 0.05 similar to how we did in 
+> Create a plot with points coloured by FDR < 0.05 similar to how we did in 
 > the first volcano plot
 
 ```{r echo=FALSE}
@@ -293,7 +277,7 @@ volcanoTab.33 <- shrinkTab.33 %>%
     mutate(`-log10(pvalue)` = -log10(pvalue))
 
 ggplot(volcanoTab.33, aes(x = logFC, y=`-log10(pvalue)`)) + 
-    geom_point(aes(colour=pvalue < 0.05), size=1)
+    geom_point(aes(colour=FDR < 0.05), size=1)
 
 ```
 
