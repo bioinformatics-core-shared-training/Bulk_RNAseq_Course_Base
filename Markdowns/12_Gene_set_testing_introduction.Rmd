@@ -1,6 +1,6 @@
 ---
 title: "Introduction to Gene Set Testing in R"
-date: "July 2021"
+date: "November 2021"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -71,7 +71,7 @@ Common sources of gene sets:
 
 ## Over Representation Analysis - Method
 
-* This method tests whether genes in specific pathway are present in a subset of 
+* This method tests whether genes in a specific pathway are present in a subset of 
   genes of interest in our data more than expected.
 
 * The genes of interest could be e.g. statistically significant 
