@@ -1,7 +1,8 @@
 ---
 title: "Introduction to RNAseq Methods"
-date: "June 2021"
+date: "February 2022"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
@@ -476,50 +477,9 @@ Poly-A transcripts + Other mRNAs e.g.:
 <p style="font-size: 14px">Image adapted from: Wang, Z., et al. (2009), Nature Reviews Genetics, 10, 57–63.</p>
 </div>
 
-## Sequencing by synthesis 
+## Sequencing by synthesis - animation
 
-<img src="images/Illumina_SBS.001.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.002.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.003.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.004.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.005.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.006.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.007.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.008.png" class="centerimg" style="width: 100%">
-
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.009.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.010.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.011.png" class="centerimg" style="width: 100%">
+https://emea.illumina.com/science/technology/next-generation-sequencing/sequencing-technology.html
 
 ## Sequencing by synthesis 
 
