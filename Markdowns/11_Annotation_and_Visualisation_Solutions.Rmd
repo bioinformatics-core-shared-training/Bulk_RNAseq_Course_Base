@@ -59,11 +59,30 @@ shrinkTab.33 <- as.data.frame(ddsShrink.33) %>%
 > Create a plot with points coloured by P-value < 0.05 similar to how we did in 
 > the first volcano plot
 
-```{r plot}
+```{r plotVol}
 volcanoTab.33 <- shrinkTab.33 %>% 
     mutate(`-log10(pvalue)` = -log10(pvalue))
 
 ggplot(volcanoTab.33, aes(x = logFC, y=`-log10(pvalue)`)) + 
-    geom_point(aes(colour=pvalue < 0.05), size=1)
+    geom_point(aes(colour=FDR < 0.05), size=1)
 
+```
+
+
+## Exercise 2 - MA plot for day 33 with ggplot2
+
+> For this exercise create an MA plot for day 33 like the ones we plotted with 
+> `plotMA` from **DESeq2** but this time using ggplot2. 
+>
+> The x-axis (M) should be the log2 of the mean gene expression across all 
+> samples, and the y-axis should be the log2 of the fold change between Infected
+> and Uninfected.
+
+```{r plotMA}
+maTab.33 <- shrinkTab.33 %>% 
+    mutate(`M` = log2(baseMean))
+
+ggplot(maTab.33, aes(x = M, y = logFC)) + 
+    geom_point(aes(colour=FDR < 0.05), size=1) +
+    scale_y_continuous(limit=c(-4,4), oob = scales::squish)
 ```

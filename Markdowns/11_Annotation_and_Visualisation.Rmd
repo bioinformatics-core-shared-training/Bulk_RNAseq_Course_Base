@@ -3,9 +3,9 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Annotation and Visualisation of Differential Expression Results
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  html_document:
-    toc: yes
   pdf_document:
+    toc: yes
+  html_document:
     toc: yes
 bibliography: ref.bib
 ---
@@ -131,7 +131,7 @@ annot <- annotations %>%
 ```
 
 
-### One-to-many relationships
+### Missing annotations
 
 Let's inspect the annotation.
 
@@ -141,7 +141,6 @@ head(annot)
 length(annot$entrezid)
 length(unique(annot$entrezid))
 sum(is.na(annot$entrezid)) # Why are there NAs in the ENTREZID column?
-
 ```
 
 Gene/transcript/protein IDs mapping between different databases not always
@@ -160,23 +159,24 @@ Ensembl and Entrez databases don't match on a 1:1 level although they have
 started taking steps towards consolidating
 [in recent years](https://m.ensembl.org/info/genome/genebuild/mane.html).
 
-For example [Prkcg](https://www.genecards.org/cgi-bin/carddisp.pl?gene=PRKCG)
-gene has two Entrez IDs but have one gene name and one EntrezID. 
+## One we prepared earlier and one-to-many relationships
 
-The is another set of databases within `AnnotationHub` which you can call
-instead called `OrgDb` which give you the 'latest' version and are more similar
-to the bioconductor packages if you are more familiar with those. They contain
-slightly more information than the `EnsDb` records.
 
-## A curated annotation - one we prepared earlier
+To ensure everyone is working with same annotation, we have created an annotation table.
 
-Dealing with all the one-to-many annotation mappings requires some manual 
-curation of your annotation table. 
+In this case we used the `biomaRt` package to download annotations directly from
+Ensembl. In this cases we can get additional columns, but will also sometimes get
+one-to-many relationships, where one Ensembl ID maps to multiple Entrez IDs. This
+sort of problem is common when mapping between annotation sources, but they have
+already been dealt with for us in AnnotationHub. If we wanted more control over
+this we would need to manually curate these one-to-many relationships ourselves.
 
-To save time we have created an annotation table in which we have modified the 
-column names and dealt with the one-to-many/missing issues for Entrez IDs.
+In annotation table below we have modified the column names and dealt with the
+one-to-many/missing issues for Entrez IDs. The code we used for doing this is
+available in the [extended materials section](S6_Annotation_With_BioMart.html).
 
-The code we used for doing this is available in the extended materials section.
+We will load out pre-created annotation table, and then combine it with our
+results table.
 
 ```{r addAnnotation, message=FALSE}
 ensemblAnnot <- readRDS("RObjects/Ensembl_annotations.rds")
@@ -301,11 +301,11 @@ ggplot(volcanoTab.11, aes(x = logFC, y=`-log10(pvalue)`)) +
 
 ## Exercise 1 - Volcano plot for 33 days
 
-Now it's your turn! We just made the volcano plot for the 11 days contrast, you
-will make the one for the 33 days contrast.
+> We just made the volcano plot for the 11 days contrast, you will make the one
+> for the 33 days contrast.
 
-If you haven't already make sure you load in our data and annotation. You can
-copy and paste the code below.
+> If you haven't already make sure you load in our data and annotation. You can
+> copy and paste the code below.
 
 ```{r eval=FALSE}
 # First load data and annotations
@@ -336,17 +336,27 @@ shrinkTab.33 <- as.data.frame(ddsShrink.33) %>%
 > Create a plot with points coloured by FDR < 0.05 similar to how we did in 
 > the first volcano plot
 
-```{r echo=FALSE}
+```{r echo=FALSE, eval=FALSE}
 volcanoTab.33 <- shrinkTab.33 %>% 
     mutate(`-log10(pvalue)` = -log10(pvalue))
 
 ggplot(volcanoTab.33, aes(x = logFC, y=`-log10(pvalue)`)) + 
     geom_point(aes(colour=FDR < 0.05), size=1)
-
 ```
 
 > (d)
 > Compare these two volcano plots, what differences can you see between the two contrasts?
+
+
+## Exercise 2 - MA plot for day 33 with ggplot2
+
+> For this exercise create an MA plot for day 33 like the ones we plotted with 
+> `plotMA` from **DESeq2** but this time using ggplot2. 
+>
+> The x-axis should be the log2 of the mean gene expression across all 
+> samples, and the y-axis should be the log2 of the fold change between Infected
+> and Uninfected.
+
 
 ## Venn Diagram
 
@@ -484,8 +494,8 @@ colours of the bars at the top of the heatmap. This is shown below.
 
 ```{r ColouredsplitHeatmap, fig.width=5, fig.height=8}
 ha1 = HeatmapAnnotation(df = colData(ddsObj.interaction)[,c("Status", "TimePoint")], 
-                        col = list(Status = c("Uninfected" = "hotpink", 
-                                              "Infected" = "purple"), 
+                        col = list(Status = c("Uninfected" = "darkgreen", 
+                                              "Infected" = "palegreen"), 
                                    TimePoint = c("d11" = "lightblue", 
                                                  "d33" = "darkblue")))
 
@@ -496,7 +506,6 @@ Heatmap(z.mat, name = "z-score",
         rect_gp = gpar(col = "lightgrey", lwd=0.3),
         top_annotation = ha1)
 ```
-
 
 
 ```{r saveEnvironment, eval=FALSE}
