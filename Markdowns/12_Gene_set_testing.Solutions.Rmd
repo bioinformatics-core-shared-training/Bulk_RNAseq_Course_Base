@@ -38,7 +38,7 @@ shrink.d11 <- readRDS("RObjects/Shrunk_Results.d11.rds")
 logFC <- shrink.d11 %>% 
   drop_na(FDR, Entrez) %>% 
   filter(FDR < 0.01) %>% 
-  pull(Entrez, logFC) 
+  pull(logFC, Entrez) 
 
 pathview(gene.data = logFC, 
          pathway.id = "mmu04659", 
