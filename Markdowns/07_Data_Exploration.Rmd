@@ -82,8 +82,7 @@ need for the analysis today: name, cell type, status.
 ```{r loadSampleInfo, message = FALSE}
 # Read the sample information into a data frame
 sampleinfo <- read_tsv("data/samplesheet.tsv", col_types = c("cccc"))
-sampleinfo %>% 
-  arrange(Status, TimePoint, Replicate)
+arrange(sampleinfo, Status, TimePoint, Replicate)
 ```
 
 ## Reading in the count data
@@ -102,9 +101,8 @@ The Salmon quantification results are per transcript, we'll want to summarise
 to gene level. To this we need a table that relates transcript IDs to gene IDs.
 
 ```{r readSalmon}
-files <- str_c("salmon/", sampleinfo$SampleName, "/quant.sf")
+files <- file.path("salmon", sampleinfo$SampleName, "quant.sf")
 files <- set_names(files, sampleinfo$SampleName)
-
 tx2gene <- read_tsv("references/tx2gene.tsv")
 
 txi <- tximport(files, type = "salmon", tx2gene = tx2gene)
@@ -138,8 +136,7 @@ saveRDS(txi, file = "salmon_outputs/txi.rds")
 One of the most complex aspects of learning to work with data in `R` is 
 getting to grips with subsetting and manipulating data tables. The package 
 `dplyr` [@Wickham2018] was developed to make this process more intuitive than it
-is using standard base `R` processes. It also makes use of a new symbol `%>%`,
-called the "pipe", which makes the code a bit tidier. 
+is using standard base `R` processes. 
 
 In particular we will use the commands:
 
