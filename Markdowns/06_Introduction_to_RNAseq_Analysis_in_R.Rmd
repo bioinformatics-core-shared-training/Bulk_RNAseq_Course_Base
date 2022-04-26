@@ -2,7 +2,6 @@
 title: "Introduction to RNAseq analysis in R"
 date: "May 2022"
 output:
-  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
