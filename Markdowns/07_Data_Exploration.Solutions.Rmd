@@ -25,7 +25,7 @@ library(ggfortify)
 # Read the sample information into R
 sampleinfo <- read_tsv("data/samplesheet.tsv", col_types = c("cccc"))
 # Read the data into R
-files <- str_c("salmon/", sampleinfo$SampleName, "/quant.sf")
+files <- file.path("salmon", sampleinfo$SampleName, "quant.sf")
 files <- set_names(files, sampleinfo$SampleName)
 
 tx2gene <- read_tsv("references/tx2gene.tsv")
