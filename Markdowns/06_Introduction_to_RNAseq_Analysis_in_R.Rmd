@@ -1,13 +1,13 @@
 ---
 title: "Introduction to RNAseq analysis in R"
-date: "April 2021"
+date: "May 2022"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
     smaller: yes
     widescreen: yes
-  beamer_presentation: default
   slidy_presentation: default
 ---
 <!--
@@ -131,7 +131,8 @@ Length, GC content, sequence
     margin-left: 27%">
 <span style="color: #2e3192;">**Library composition**</span>
 
-Highly expressed genes overrepresented at the cost of lowly expressed genes
+Quantification is relative - changes in
+relative abundance for one gene will affect the relative abundances of other genes
 
 "Composition Bias"
 
