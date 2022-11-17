@@ -1,6 +1,6 @@
 ---
 title: "Quantification of Gene Expression with Salmon"
-date: "March 2021"
+date: "November 2022"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -18,7 +18,10 @@ bibliography: ref.bib
 
 <img src="images/workflow_3Day.svg" class="centerimg" style="width: 60%; margin-top: 60px;">
 
-## A Simple Counting Approach
+## What is read quantification?
+
+* **Quantification**: How many reads have come from a genomic feature?
+  * genomic feature can be gene or transcript or exon, but usually gene
 
 We now have the locations of our reads on the genome.
 
@@ -30,48 +33,49 @@ So the simplest approach is to count how many reads overlap each gene.
 <img src="images/Read_counting_1.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
 
 
-## A Simple Counting Approach
-
-We now have the locations of our reads on the genome.
-
-We also know the locations of exons of genes on the genome.
-
-So the simplest approach is to count how many reads overlap each gene.
-
+## What is read quantification?
 
 <img src="images/Read_counting_2.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
 
-e.g. featureCounts or HTSeq
 
 
-## Problems with the Simple Counting Approach
+## Quantification tools
 
-* Genes have multiple transcripts, alternative splicing introduces ambiguity
-* Traditional alignment is (relatively) slow and computationally intensive
-* Read sampling is not uniform, there are biases
-
-## Problems with the Simple Counting Approach
-
-* Genes have multiple transcripts, alternative splicing introduces ambiguity
-* Traditional alignment is (relatively) slow and computationally intensive
-* Read sampling is not uniform, there are biases
-
-More sophisticated approaches:
-
-* CuffLinks - Trapnell *et al.* (2010) Nature Biotechnology doi:10.1038/nbt.1621
-* RSEM - Li and Dewey (2011) BMC Bioinformatics doi:10.1186/1471-2105-12-323
-* Sailfish - Patro *et al.* (2014) Nature Biotechnology doi:10.1038/nbt.2862
-* Kallisto - Bary *et al.* (2016) Nature Biotechnology doi:10.1038/nbt.3519
-* **Salmon** - Patro *et al.* (2017) Nature Methods doi:10.1038/nmeth.4197
+* Broadly classified into two types ...
+  * Alignment based:
+    * Takes bam file as input,therefore reads must be mapped prior to quantification
+    * quantifies using simple counting procedure
+    * Pros: Intuitive
+    * Cons: Slow and can not correct biases in RNAseq data
+    * Tools: HTseq, SubRead etc. 
+  
+  * Alignment-free:
+    * Also called quasi-mapping or pseudoalignment
+    * Starts from fastq files and base-to-base alignment of the reads is avoided
+    * Pros: Very fast and removes biases
+    * Cons: Not intuitive
+    * Tools: Kallisto, Sailfish, **Salmon** etc 
 
 
-## Problems with the Simple Counting Approach
+## RNA-seq data biases  
 
-* Genes have multiple transcripts, alternative splicing introduces ambiguity
+* **GC bias**: Higher GC content sequences are less likely to be observed as PCR  is not efficient with high GC content sequences.
+* **Positional bias**: for most sequencing methods, the 3 prime end of transcripts are more likely to be observed.
+* **Complexity bias**: some sequences are easier to be bound and amplified than others.
+* **Sequence-based bias**: Bias in read start positions arising from the differential binding efficiency of random hexamer primers
+* **Fragment length bias**: Induced by size selection
 
-Count against the transcriptome instead. 
+* Above biases are sample specific
+* Methods like Salmon attempt to mitigate the effect of technical biases by estimating sample-specific bias parameters.
 
-Summarise to gene level for differential gene expression analysis.
+
+
+
+## Why Pseudo-alignment methods are fatster?
+
+* Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome)
+* No base to base alignment required in pseudo-alignment methods
+
 
 ## Quasi-mapping/Pseudo-alignment
 
@@ -97,18 +101,7 @@ Switch to *quasi-mapping* or *pseudo-alignment*
     
 <img src="images/quasi_mapping_3.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
-## Bias models
 
-* Read sampling is not uniform, there are biases
-
-Include modelling for GC bias, positional bias and sequence bias in the 
-quantification algorithm
-
-<img src="images/GC_Bias.png" class="centerimg" style="width: 70%; margin-top: 10px;">
-
-<div style="text-align: right">
-  Love *et al.* (2016) Nature Biotechnology doi:10.1038/nbt.3682
-</div>
 
 ## Salmon workflow
 
