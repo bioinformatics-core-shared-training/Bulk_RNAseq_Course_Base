@@ -1,6 +1,6 @@
 ---
 title: "Introduction to RNAseq analysis in R"
-date: "May 2022"
+date: "November 2022"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -8,6 +8,7 @@ output:
     smaller: yes
     widescreen: yes
   slidy_presentation: default
+  beamer_presentation: default
 ---
 <!--
 ## The many faces of RNA-seq
@@ -58,30 +59,23 @@ output:
 
 <img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
 
-## Sources of Noise
+
+
+## General idea behind RNAseq data analysis
+
+<img src="images/RNAseq_data_ana_gen_idea.png" class="centerimg" style="width: 90%">
+
+
+
+## General idea behind any statistical test
+
+<img src="images/general_idea_statistical_test.png" class="centerimg" style="width: 90%">
+
+
+## Sources of Noise (Variance)
 
 <img src="images/Noise.svg" style="width: 65%; margin-left: 23%">
 
-## Sources of Noise - Sampling Bias
-
-<img src="images/SamplingBias.svg" class="centerimg" style="width: 60%">
-
-
-## Sources of Noise - Transcript Length
-
-<div style="margin-top: 60px; margin-bottom: 40px;">
-<img src="images/TranscriptLength.svg" class="centerimg" style="width: 65%">
-</div>
-
-<div>
-The length of the transcript affects the number of RNA fragments present in the
-library from that gene.
-</div>
-
-
-## Sources of Noise - Sequencing Artefacts
-
-<img src="images/SequencingArtefacts.png" class="centerimg" style="width: 75%">
 
 ## Normalisation
 
@@ -137,20 +131,28 @@ relative abundance for one gene will affect the relative abundances of other gen
 
 </div>
 
-## Normalisation - scaling
 
-Library Size 
+## General principle behind normalisation
 
-* Normalise each sample by total number of reads sequenced.  
+* Normalization has two steps
+  * Scaling
+    * First get size factors or normalization factors
+    * Usually one size factor per sample
+    * Scale the counts by divide the raw counts of a sample with sample specific size factor
+* Transformation: Transform the data after scaling
+  * Per million
+  * log2
+  * square root transformation
+  * Pearson residuals (eg. sctransform)
 
-* Can also use another statistic similar to total count eg. median, upper 
-quartile 
+* Normalization removes technical variance but not biological variance
+* Normalization helps in making two samples comparable
 
-* Does not account for composition bias
 
-<div style="line-height: 50%;"><br></div>
+## Normalization toy example
 
-<img src="images/scaling.svg" class="centerimg" style="width: 40%">
+<img src="images/normalisation_toy_example.png" class="centerimg" style="width: 90%">
+
 
 ## DESeq2 analysis workflow
 
@@ -159,38 +161,22 @@ quartile
 
 <img src="images/DESeq2_workflow_00.png" class="centerimg" style="width: 25%">
 
-## Normalisation - Geometric mean scaling factor
+## DESeq2 Normalisation 
 
-* Used by DESeq2
 
 <div class="smalltext" style="margin-left: 25px">
-1. For each gene calculate the geometric mean across all samples
-2. For each gene in each sample, normalise by dividing by the geometric mean for that gene
-3. For each sample calculate the scaling factor as the median of the normalised counts
+1. Geometric mean is calculated for each gene across all samples.  
+2. The counts for a gene in each sample is then divided by this mean. 
+3. The median of these ratios in a sample is the size factor (normalization factor) for that sample.
+4. DESEq2 normalization corrects for library size and RNA composition bias
+5. Composition bias: Arise for example when only a small number of genes are very highly expressed in one sample but not in the other.
 </div>
 
-<img src="images/DESeq2_workflow_01.png"  style="width: 16%; float: left">
+<img src="images/DESeq2_workflow_01.png"  style="width: 15%; float: left">
 
-<img src="images/GeometricScaling.svg" style="margin-left: 15%; width: 63%">
+<img src="images/GeometricScaling.svg" style="margin-left: 15%; width: 60%">
 
-## Differential Expression
 
-* Comparing feature abundance under different conditions
-
-*  Assumes linearity of signal
-
-*  When feature=gene, well-established pre- and post-analysis strategies exist
-
-<div style="line-height: 50%;"><br></div>
-
-<img src="images/LinearityOfCounts.png" class="centerimg" style="width: 40%;
-    border-style: solid; 
-    border-width: 1px;
-    ">
-
-<div style="text-align: right">
-    Mortazavi, A. et al (2008) Nature Methods
-</div>
 
 ## Differential Expression
 
