@@ -435,14 +435,6 @@ Poly-A transcripts + Other mRNAs e.g.:
 </div>
 </div>
 
-## Library preparation
-
-<img src="images/IlluminaLibraryPrep1.png" class="centerimg" style="width: 85%">
-
-## Library preparation
-
-<img src="images/IlluminaLibraryPrep2.png" class="centerimg" style="width: 85%">
-
 ## RNAseq Workflow
 
 
@@ -477,37 +469,10 @@ Poly-A transcripts + Other mRNAs e.g.:
 <p style="font-size: 14px">Image adapted from: Wang, Z., et al. (2009), Nature Reviews Genetics, 10, 57–63.</p>
 </div>
 
-## Sequencing by synthesis - animation
-
-https://emea.illumina.com/science/technology/next-generation-sequencing/sequencing-technology.html
-
 ## Sequencing by synthesis 
 
-<img src="images/Illumina_SBS.013.png" class="centerimg" style="width: 100%">
+<img src="images/seq_error.png" class="centerimg" style="width: 80%">
 
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.014.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.015.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.016.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.017.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.018.png" class="centerimg" style="width: 100%">
-
-## Sequencing by synthesis 
-
-<img src="images/Illumina_SBS.019.png" class="centerimg" style="width: 100%">
 
 ## RNAseq Workflow
 
