@@ -2,8 +2,8 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: QC of raw reads with FastQC
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 In our intial QC of the raw fastq file we will be interested in gathering
@@ -75,34 +75,13 @@ Note that the output directory must already exist, FastQC will not create it.
 > You should see two fastq files. These are the files for read 1 and read 2
 > of one of the samples we will be working with.
 >
-> 3. Create a new directory for the QC results called **QC** using the `mkdir`
->    command:  
->```{bash eval=FALSE}
-> mkdir QC  
->```
 >
-> 4. Run fastqc on one of the fastq files:  
+> 3. Run fastqc on one of the fastq files:  
 >```{bash eval=FALSE}
 > fastqc fastq/SRR7657883.sra_1.fastq.gz  
 >```
 >
-> 5. The previous command has written the report to the **fastq** directory -
->    the default behaviour for fastqc. We want it in the **QC** directory. 
->       a) Use the `rm` (remove) command to delete the report:  
->```{bash eval=FALSE}
-> rm SRR7657883.sra_1_fastqc.html  
->```  
->  b) Also delete the associated zip file (this contains all the figures and the
->    data tables for the report)
->
-> 6. Run the FastQC again, but this time:
->       a) have FastQC analyse both fastq files at the same time. You will need 
->          to add `-t 2` before the sequence file names. See `fastqc --help` to
->          find  out about this option.
->       b) try to use the `-o` option to have the reports written to the **QC** 
->          directory.
->  
-> 7. Open the html report in a browser and see if you can answer these questions:  
+> 4. Open the html report in a browser and see if you can answer these questions:  
 >           A) What is the read length?  
 >           B) Does the quality score vary through the read length?  
 >           C) How is the data's quality?  
