@@ -1,13 +1,13 @@
 ---
-title: "Quantification of Gene Expression with Salmon"
-date: "November 2022"
+title: "Alignment and Quantification of Gene Expression with Salmon"
+date: "March 2023"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
     smaller: yes
     widescreen: yes
-  beamer_presentation: default
   slidy_presentation: default
 bibliography: ref.bib
 ---
@@ -17,6 +17,54 @@ bibliography: ref.bib
 <div style="line-height: 50%;"><br></div>
 
 <img src="images/workflow_3Day.svg" class="centerimg" style="width: 60%; margin-top: 60px;">
+
+## Traditional Alignment
+
+AIM: Given a reference sequence and a set of short reads, align each read to
+the reference sequence finding the most likely origin of the read sequence.
+
+<img src="images/SRAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
+
+## Alignment - Gap aware alignment
+
+<img src="images/GappedAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
+
+Aligners: STAR, HISAT2
+
+
+## Why Pseudo-alignment methods are fatster?
+
+* Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome)
+* No base to base alignment required in pseudo-alignment methods
+
+
+## Quasi-mapping/Pseudo-alignment
+
+* Genes have multiple transcripts, alternative splicing introduces ambiguity
+* Traditional alignment is (relatively) slow and computationally intensive
+* Read sampling is not uniform, there are biases
+
+Switch to *quasi-mapping* or *pseudo-alignment* to transcriptome
+    
+<img src="images/quasi_mapping_1.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+
+## Quasi-mapping/Pseudo-alignment
+
+* Genes have multiple transcripts, alternative splicing introduces ambiguity
+* Traditional alignment is (relatively) slow and computationally intensive
+* Read sampling is not uniform, there are biases
+        
+Switch to *quasi-mapping* or *pseudo-alignment*
+    
+<img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+
+## Quasi-mapping/Pseudo-alignment
+
+* Traditional alignment is (relatively) slow and computationally intensive
+
+Switch to *quasi-mapping* or *pseudo-alignment*
+    
+<img src="images/quasi_mapping_3.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 ## What is read quantification?
 
@@ -32,12 +80,18 @@ So the simplest approach is to count how many reads overlap each gene.
 
 <img src="images/Read_counting_1.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
 
-
 ## What is read quantification?
 
+* **Quantification**: How many reads have come from a genomic feature?
+  * genomic feature can be gene or transcript or exon, but usually gene
+
+We now have the locations of our reads on the genome.
+
+We also know the locations of exons of genes on the genome.
+
+So the simplest approach is to count how many reads overlap each gene.
+
 <img src="images/Read_counting_2.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
-
-
 
 ## Quantification tools
 
@@ -67,41 +121,6 @@ So the simplest approach is to count how many reads overlap each gene.
 
 * Above biases are sample specific
 * Methods like Salmon attempt to mitigate the effect of technical biases by estimating sample-specific bias parameters.
-
-
-
-
-## Why Pseudo-alignment methods are fatster?
-
-* Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome)
-* No base to base alignment required in pseudo-alignment methods
-
-
-## Quasi-mapping/Pseudo-alignment
-
-* Traditional alignment is (relatively) slow and computationally intensive
-
-Switch to *quasi-mapping* or *pseudo-alignment* to transcriptome
-    
-<img src="images/quasi_mapping_1.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
-
-## Quasi-mapping/Pseudo-alignment
-
-* Traditional alignment is (relatively) slow and computationally intensive
-        
-Switch to *quasi-mapping* or *pseudo-alignment*
-    
-<img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
-
-## Quasi-mapping/Pseudo-alignment
-
-* Traditional alignment is (relatively) slow and computationally intensive
-
-Switch to *quasi-mapping* or *pseudo-alignment*
-    
-<img src="images/quasi_mapping_3.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
-
-
 
 ## Salmon workflow
 
