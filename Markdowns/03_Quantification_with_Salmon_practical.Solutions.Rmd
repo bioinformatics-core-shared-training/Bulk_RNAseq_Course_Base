@@ -75,8 +75,11 @@ mkdir salmon_output
 >       * `-l A` - Salmon needs to use some information about the library 
 >         preparation, we could explicitly give this, but it is easy enough
 >         for Salmon to **A**utomatically infer this from the data.
->       * **File containing the #1 mates** - *fastq/SRR7657883.sra_1.fastq.gz*
->       * **File containing the #2 mates** - *fastq/SRR7657883.sra_2.fastq.gz*
+>       * **File containing the #1 mates** - *fastq/SRR7657883.subset_2M.sra_1.fastq.gz*
+>       * **File containing the #2 mates** - *fastq/SRR7657883.subset_2M.sra_2.fastq.gz*
+>       * `--writeMappingssalmon_output/SRR7657883.salmon.sam` - Instructs 
+>         Salmon to output the read alignments in SAM format to the file 
+>         *salmon_output/SRR7657883.salmon.sam*.
 >       * **Output quantification directory** - *salmon_output/SRR7657883*
 >       * `--gcBias` - salmon can optionally correct for GC content bias, it is
 >         recommended to always use this
@@ -87,27 +90,19 @@ salmon quant \
     -i references/salmon_index \
     --gcBias \
     -l A \
-    -1 fastq/SRR7657883.sra_1.fastq.gz \
-    -2 fastq/SRR7657883.sra_2.fastq.gz \
+    -1 fastq/SRR7657883.subset_2M.sra_1.fastq.gz \
+    -2 fastq/SRR7657883.subset_2M.sra_2.fastq.gz \
+    --writeMappings salmon_output/SRR7657883/SRR7657883.salmon.sam \
     -o salmon_output/SRR7657883
 ```
 
-## Exercise 3 - Run multiqc
-> 1. Run `multiqc` on the `salmon_output` directory and create a report called 
-> `Salmon_quantification_report` in the `salmon_output` directory. Look back to
-> the previous session if you need a reminder on how to do this.
-```{bash eval = FALSE}
-multiqc -z -n Salmon_quantification_report -o salmon_output salmon_output
+### Exercise 3
+
+> 1. Transform your aligned SAM file in to a BAM file called 
+>   `SRR7657883.salmon.bam`. Use the option `-@ 7` to use 7 cores. This vastly 
+>   speeds up the compression.
+```{bash eval=FALSE}
+samtools view -b -@ 7 salmon_output/SRR7657883/SRR7657883.salmon.sam \
+  > salmon_output/SRR7657883/SRR7657883.salmon.bam
 ```
->> $\Rightarrow$ [salmon_output/Salmon_quantification_report.html](../additional_scripts/Salmon_quantification_report.html)
->
-> 2. Open the report and determine what percentage of the reads have been 
-> *aligned* to the transcriptome. Compare this to the QC report from the 
-> previous session.
-
-With Salmon we have ~85% of reads mapped to the transcriptome.
-
-If you look at the [RNAseq metrics section in the multiqc
-report](../additional_scripts/Alignment_QC_Report.html#picard-rna-assignment) we
-generated in the previous section, you should see that for SRR7657883 we had
-~85% reads aligned to Coding + UTR.
+>> $\Rightarrow$  *salmon_output/SRR7657883/SRR7657883.salmon.bam*

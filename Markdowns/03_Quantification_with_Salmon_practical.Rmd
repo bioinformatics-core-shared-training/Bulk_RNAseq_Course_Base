@@ -2,19 +2,18 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quantification of Gene Expression with Salmon
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 bibliography: ref.bib
 ---
 
 # Quasi-mapping and gene expression quantification
 
-So far we have QC'd our raw reads, aligned against the genome with HISAT2, and 
-done some additional QC using the alignment results. The next step is to 
-quantify the gene expression. One way would be to look at the alignments and
-use information about where genes are located on the genome to count the number
-of reads coming from each gene. This method is shown in the [extended materials
-using the `featureCounts` tool]().
+So far we have QC'd our raw reads, and the next step is to quantify the gene
+expression. One way would be to map the reads to the genome and use information
+about where genes are located on the genome to count the number of reads coming
+from each gene. This method is shown in the [extended materials using the
+`featureCounts` tool]().
 
 An alternative is to use faster methods known as *quasi-mapping* or
 *pseudo-alignment*, followed by inferential estimation of gene expression. This
@@ -120,12 +119,21 @@ itself.
 Now that we have an index we can quickly get gene expression estimates directly
 from our raw fastq files.
 
-We can use the full index here as this step is quick. The full index should
-already be in the references directory: `references/salmon_index`. For this 
-exercise we'll
-just quantify one sample: **SRR7657883**. (We've already run salmon on the
-complete data set. You can see the results in the `salmon` directory. We'll use
-this for the differential gene expression analysis in later sessions.)
+We can use the full index here as this step is relatively quick. The full index
+should already be in the references directory: `references/salmon_index`. For
+this exercise we'll just quantify one sample: **SRR7657883**. We've already run
+salmon on the complete data set. You can see the results in the `salmon`
+directory. We'll use this for the differential gene expression analysis in later
+sessions.
+
+We are going to be asking Salmon to output the read alignments as a SAM file as 
+well as the gene expression quantification results. This is optional but we
+would like this information for some QC. Unfortunately, this does cause Salmon
+to take longer and running Salmon like this on the full fastq takes about 20
+minutes. For the purposes of this practical we will use a smaller fastq file
+with just 2 million reads - this way we can run Salmon in a reasonable time.
+The files we will use are called *SRR7657883.subset_2M....*.
+
 
 ## Exercise 2 - Quantify with Salmon
 
@@ -137,8 +145,11 @@ this for the differential gene expression analysis in later sessions.)
 >       * `-l A` - Salmon needs to use some information about the library 
 >         preparation, we could explicitly give this, but it is easy enough
 >         for Salmon to **A**utomatically infer this from the data.
->       * **File containing the #1 mates** - *fastq/SRR7657883.sra_1.fastq.gz*
->       * **File containing the #2 mates** - *fastq/SRR7657883.sra_2.fastq.gz*
+>       * **File containing the #1 mates** - *SRR7657883.subset_2M.sra_1.fastq.gz*
+>       * **File containing the #2 mates** - *SRR7657883.subset_2M.sra_2.fastq.gz*
+>       * `--writeMappingssalmon_output/SRR7657883.salmon.sam` - Instructs 
+>         Salmon to output the read alignments in SAM format to the file 
+>         *salmon_output/SRR7657883.salmon.sam*.
 >       * **Output quantification directory** - *salmon_output/SRR7657883*
 >       * `--gcBias` - salmon can optionally correct for GC content bias, it is
 >         recommended to always use this
@@ -148,49 +159,29 @@ Salmon creates a separate output directory for each sample analysed. This
 directory contains a number of files; the file that contains the quantification
 data is called `quant.sf`.
 
-# 3. A quick summary of the results
+### 3.1 SAM to BAM with samtools
 
-We have generated salmon quantification results for all samples in the 
-directory `salmon`. You can run `multiqc` on these results to get some basic
-statistics regarding the percentage of reads that have been counted against the
-transcriptome.
+We can transform from SAM to BAM using `samtools`. `samtools` is a toolkit that
+provides a number of useful tools for working with SAM/BAM files. In this case
+we will use the `view` command to transform the SAM file into a BAM file.
 
-## Exercise 3 - Run multiqc
+The general command is:
 
-> 1. Run `multiqc` on the `salmon_output` directory and create a report called 
-> `Salmon_quantification_report` in the `salmon_output` directory. Look back to
-> the previous session if you need a reminder on how to do this.
-> 2. Open the report and determine what percentage of the reads have been 
-> *aligned* to the transcriptome. Compare this to the QC report from the 
-> previous session.
+`samtools view -b my_sample.sam > my_sample.bam`
 
-## Make transcript to gene table
+`view` is the tool for viewing a sam or bam file. 
 
-Salmon quantifies gene expression at the transcript level. When we come to do
-our differential gene expression analysis in R, we will want to summarise this
-to the gene level. To do this we need a table that links transcript IDs to gene
-IDs. **We have already created this for you**, but, for reference, the code
-below was used to generate this table from the sequence headers in the
-transcriptome reference file.
+By default the samtools output is in SAM format so that the results can be read
+by a human, in this case the `-b` flag tells it to output in BAM format.
 
-<p style="color:red">You do not need to run this code</p>
-```{bash eval=FALSE}
-echo -e "TxID\tGeneID" > salmon_outputs/tx2gene.tsv
-zcat references/Mus_musculus.GRCm38.cdna.all.fa.gz |
-  grep "^>" | 
-  cut -f 1,4 | 
-  sed -e 's/^>//' -e 's/gene://' -e 's/\.[0-9]*$//' |
-  tr ' ' '\t' \ 
-  >> salmon_outputs/tx2gene.tsv
-```
+By default `samtools view` outputs it's results directly to the console so that
+we can view them. The `>` redirects the output to the file `my_sample.bam`. 
 
-1. `zcat references/Mus_musculus.GRCm38.cdna.all.fa.gz` -  read the zipped fasta  
-2. `grep "^>"` -  find the sequence headers, they all start with '>'  
-3. `cut -f 1,4 -d ' '` - extract the 1st and 4th entries - transcript ID and gene ID  
-4. `sed -e 's/^>//' -e 's/gene://' -e 's/\.[0-9]*$//'` - remove the ">" from the
-beginning of the line, the "gene:" from the beginning of the gene ID, and
-the trailing ".x" number which indicates that version of the gene annotation
-5. `tr ' ' '\t'` - replace spaces with tabs so that the table is tab delimited
+### Exercise 3
+
+> 1. Transform your aligned SAM file in to a BAM file called
+> `SRR7657883.salmon.bam`. Use the option `-@ 7` to use 7 cores, this vastly
+> speeds up the compression.
 
 ----------------------------------------------------------
 
