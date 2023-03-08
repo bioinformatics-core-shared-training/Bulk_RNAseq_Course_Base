@@ -224,15 +224,16 @@ mtric, e.g. log(fold change), sorted in decreasing order.
 
 To start with we will simply use a rank the genes based on their fold change.
 
-We must exclude genes with no Entrez ID.
+We must exclude genes with no Ensembl ID.
 
 Also, we should use the shrunk LFC values.
 
 ```{r preparedata}
 rankedGenes <- shrink.d11 %>%
-  drop_na(Entrez) %>%
-  arrange(desc(logFC)) %>%
-  pull(rank,Entrez)
+  filter(!is.na(GeneID)) %>%
+  mutate(rank = logFC) %>%
+  arrange(desc(rank)) %>%
+  pull(rank, GeneID)
 ```
 
 ## Load pathways
@@ -240,11 +241,11 @@ rankedGenes <- shrink.d11 %>%
 We will load the MSigDB Hallmark gene set with `msigdbr`, setting the `category`
 parameter to 'H' for **H**allmark gene set. The object created is a `tibble`
 with information on each {gene set; gene} pair (one per row). We will only keep
-the the gene set name, gene Entrez ID.
+the the gene set name, gene Ensembl ID.
 
 ```{r loadPathways_msigdbr}
 term2gene <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  select(gs_name, entrez_gene)
+  select(gs_name, ensembl_gene)
 term2name <- msigdbr(species = "Mus musculus", category = "H") %>% 
   select(gs_name, gs_description) %>% 
   distinct()
@@ -276,15 +277,16 @@ as_tibble(gseaRes) %>%
   top_n(10, wt=-p.adjust) %>% 
   select(-core_enrichment) %>%
   mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
-  mutate(across(c("pvalue", "p.adjust", "qvalues"), scales::scientific))
+  mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific))
 ```
+
 ```{r top10GseaPrintactual, echo=FALSE}
 as_tibble(gseaRes) %>% 
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
   select(-core_enrichment) %>%
   mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
-  mutate(across(c("pvalue", "p.adjust", "qvalues"), scales::scientific)) %>% 
+  mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) %>% 
   DT::datatable(option=list(dom='t'))
 ```
 
@@ -320,6 +322,37 @@ explanation.
 > Extended: Do results differ between ranking scheme?  
 > Extended: Do results differ between day 11 and day 33, with the 
 > significance-basedranking scheme?  
+
+
+## Dot Plot?
+
+```{r DotPlot}
+library(enrichplot)
+
+dotplot(gseaRes, showCategory=10) + ggtitle("dotplot for GSEA - day 11")
+
+gseaRes2 <- pairwise_termsim(gseaRes)
+treeplot(gseaRes2)
+
+heatplot(gseaRes,
+         showCategory = 10,
+         foldChange = rankedGenes)
+
+shrink.d33 <- readRDS("RObjects/Shrunk_Results.d33.rds")
+rankedGenes33 <- shrink.d33 %>%
+  filter(!is.na(GeneID)) %>%
+  mutate(rank = logFC) %>%
+  arrange(desc(rank)) %>%
+  pull(rank, GeneID)
+gseaRes33 <- GSEA(rankedGenes33,
+                TERM2GENE = term2gene,
+                TERM2NAME = term2name,
+                pvalueCutoff = 1.00, 
+                minGSSize = 15,
+                maxGSSize = 500)
+
+dotplot(gseaRes33, showCategory=10) + ggtitle("dotplot for GSEA - day 33")
+```
 
 ---------------------------------------------------------------
 
