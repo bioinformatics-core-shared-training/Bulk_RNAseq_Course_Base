@@ -3,9 +3,9 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Annotation and Visualisation of Differential Expression Results
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  pdf_document:
-    toc: yes
   html_document:
+    toc: yes
+  pdf_document:
     toc: yes
 bibliography: ref.bib
 ---
@@ -356,6 +356,35 @@ ggplot(volcanoTab.33, aes(x = logFC, y=`-log10(pvalue)`)) +
 > The x-axis should be the log2 of the mean gene expression across all 
 > samples, and the y-axis should be the log2 of the fold change between Infected
 > and Uninfected.
+
+## Strip Charts for gene expression
+
+Before following up on the DE genes with further lab work, a recommended *sanity
+check* is to have a look at the expression levels of the individual samples for 
+the genes of interest. We can quickly look at grouped expression by using 
+`plotCounts` function of `DESeq2` to  retrieve the normalised expression values 
+from the `ddsObj` object and then plotting with  `ggplot2`.
+
+We are going investigate the Il10ra gene:
+
+
+```{r plotGeneCounts}
+geneID <- filter(shrinkTab.11, Symbol=="Il10ra") %>% pull(GeneID)
+
+plotCounts(ddsObj.interaction, 
+           gene = geneID, 
+           intgroup = c("TimePoint", "Status", "Replicate"),
+           returnData = T) %>% 
+    ggplot(aes(x=Status, y=log2(count))) +
+      geom_point(aes(fill=Replicate), shape=21, size=2) +
+      facet_wrap(~TimePoint) +
+      expand_limits(y=0) +
+      labs(title = "Normalised counts - Interleukin 10 receptor, alpha")
+```
+
+## Exercise 3
+
+> For this exercise create another strip chart for the gene Trps1 in the >day 33 data.
 
 
 ## Venn Diagram
