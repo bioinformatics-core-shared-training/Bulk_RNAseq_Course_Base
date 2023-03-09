@@ -445,6 +445,40 @@ replicate. If the PCA plot showed separation of samples by time, it might be
 worthwhile including time in the downstream analysis to account for the
 time-based effect.
 
+## Hierachical clustering
+
+Earlier, we used principle component analysis to assess sources of variation
+in the data set and the relationship between the samples. Another method for
+looking at the relationship between the samples can be to run hierarchical 
+clustering based on the Euclidean distance between the samples. Hierarchical
+clustering can often provide a clearer view of the clustering of the different
+sample groups than other methods such as PCA.
+
+We will use the package `ggdendro` to plot the clustering results using the
+function `ggdendrogram`.
+
+```{r}
+library(ggdendro)
+hclDat <-  t(rlogcounts) %>%
+   dist(method = "euclidean") %>%
+   hclust()
+ggdendrogram(hclDat, rotate=TRUE)
+```
+
+We really need to add some information about the sample groups. The simplest way
+to do this would be to replace the `labels` in the `hclust` object. Conveniently
+the labels are stored in the `hclust` object in the same order as the columns
+in our counts matrix, and therefore the same as the order of the rows in our
+sample meta data table. We can just substitute in columns from the metadata.
+
+```{r}
+hclDat2 <- hclDat
+hclDat2$labels <- sampleinfo$Status
+ggdendrogram(hclDat2, rotate=TRUE)
+```
+
+We can see from this that the infected and uninfected samples cluster separately.
+
 --------------------
 
 # References

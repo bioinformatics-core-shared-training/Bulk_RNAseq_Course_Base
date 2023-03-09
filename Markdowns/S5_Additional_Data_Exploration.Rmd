@@ -7,8 +7,8 @@ bibliography: ref.bib
 
 # Introduction
 
-In [session 07 - Initial exploration of RNA-seq 
-data](07_Data_Exploration.html) we looked at how we could use 
+In [session 05 - Initial exploration of RNA-seq 
+data](05_Data_Exploration.html) we looked at how we could use 
 principle component analysis to explore patterns in the samples related to the
 variation in the gene expression, and how these could inform us about how well
 our results conform to the experimental design.
@@ -52,7 +52,7 @@ sampleinfo
 
 # Count density
 
-In session 7 we looked at the distribution of the counts using a box plot. 
+In session 5 we looked at the distribution of the counts using a box plot. 
 Another useful visualisation is to look at the density distribution of the 
 counts.
 
@@ -169,7 +169,7 @@ function `ggdendrogram`.
 
 ```{r}
 library(ggdendro)
-hclDat <-  t(rlogCnts) %>%
+hclDat <-  t(rlogcounts) %>%
    dist(method = "euclidean") %>%
    hclust()
 ggdendrogram(hclDat, rotate=TRUE)
@@ -183,7 +183,7 @@ sample meta data table. We can just substitute in columns from the metadata.
 
 ```{r}
 hclDat2 <- hclDat
-hclDat2$labels <- sampleinfo$SampleGroup
+hclDat2$labels <- sampleinfo$Status
 ggdendrogram(hclDat2, rotate=TRUE)
 ```
 

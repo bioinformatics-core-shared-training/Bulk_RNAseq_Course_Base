@@ -1,6 +1,6 @@
 ---
 title: "Introduction to RNAseq analysis in R"
-date: "November 2022"
+date: "March 2023"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -10,48 +10,6 @@ output:
   slidy_presentation: default
   beamer_presentation: default
 ---
-<!--
-## The many faces of RNA-seq
-
-<div style="width: 31%; float: left">
-* Different flavours:
-
-    * mRNAseq
-    
-    * Targeted
-    
-    * Small RNA
-    
-    * Single Cell RNA-Seq
-
-</div>
-<div style="width: 31%; float: left">
-* Discovery:
-
-    * Transcripts
-
-    * Isoforms
-
-    * Splice junctions
-
-    * Fusion genes
-
-</div>
-<div style="float: left">
-* Differential expression:
-
-    * **Gene level expression changes**
-
-    * Relative isoform abundance
-
-    * Splicing patterns
-
-* Variant calling
-
-</div>
-
-<img src="images/attendance.gif" class="centerimg" style="width: 65%"/>
---> 
 
 ## Differential Gene Expression Analysis Workflow {#less_space_after_title}
 
@@ -399,47 +357,8 @@ abline(ewe, col="red")
 
 <div style="line-height: 50%;"><br></div>
 
-<img src="images/Heatmap.svg" style="width: %; 
-                                     display: block;
-                                     margin-left: 32%;">
-
-
-## Towards biological meaning - Gene Ontology testing {#less_space_after_title}
-
-<img src="images/GOenrichment.svg" style="width: 70%; 
-                                     display: block;
-                                     margin-left: 8%;
-                                     margin-top: 10%">
-
-## Towards biological meaning - Gene Set Enrichment Analysis {#less_space_after_title}
-
-<div style="line-height: 50%;"><br></div>
-
-<div style="float: left; width: 50%; margin-left: 5%; margin-top: 50px">
-<img src="images/GSEA-homegraphic.gif">
-
-    http://software.broadinstitute.org/gsea
-</div>
-
-<div>
-<img src="images/MSigDBTrsp.png" style="width: 45%;">
-</div>
-
-## Towards biological meaning - Pathway Analysis {#less_space_after_title}
-
-<div style="line-height: 50%;"><br></div>
-
-<img src="images/mmu03320.pathview.png" class="centerimg" style="width: 65%">
-
-## More Depth or More Reps? {#less_space_after_title}
-
-<div><br></div>
-
-<img src="images/DepthvReps.jpg" class="centerimg" style="width: 60%">
-
-<div style="text-align: right;">
-    Liu et al. (2014) Bioinformatics
-</div>
+<img src="images/BioMeaning.svg" class="centerimg" style="width: 100%; 
+                                     display: block;">
 
 ##
 
