@@ -519,9 +519,9 @@ parameters, we will need to provide the following:
 library preparation, we could explicitly give this, but it is easy
 enough for Salmon to <strong>A</strong>utomatically infer this from the
 data.</li>
-<li><strong>File containing the #1 mates</strong> -
+<li><strong>File containing the #1 reads</strong> -
 <em>SRR7657883.subset_2M.sra_1.fastq.gz</em></li>
-<li><strong>File containing the #2 mates</strong> -
+<li><strong>File containing the #2 reads</strong> -
 <em>SRR7657883.subset_2M.sra_2.fastq.gz</em></li>
 <li><code>--writeMappingssalmon_output/SRR7657883.salmon.sam</code> -
 Instructs Salmon to output the read alignments in SAM format to the file
@@ -541,25 +541,24 @@ quantification data is called <code>quant.sf</code>.</p>
 <h3>3.1 SAM to BAM with samtools</h3>
 <p>We can transform from SAM to BAM using <code>samtools</code>.
 <code>samtools</code> is a toolkit that provides a number of useful
-tools for working with SAM/BAM files. In this case we will use the
-<code>view</code> command to transform the SAM file into a BAM file.</p>
+tools for working with SAM/BAM files. The BAM file format is a binary
+(not human readable) file and is considerably smaller than the same data
+stored in SAM format. We will also sort the alignment entries by
+location (Contig/Chromosome name and the location on the contig), this
+further improves the compression of the SAM to BAM. We will use the
+<code>sort</code> tool.</p>
 <p>The general command is:</p>
-<p><code>samtools view -b my_sample.sam &gt; my_sample.bam</code></p>
-<p><code>view</code> is the tool for viewing a sam or bam file.</p>
-<p>By default the samtools output is in SAM format so that the results
-can be read by a human, in this case the <code>-b</code> flag tells it
-to output in BAM format.</p>
-<p>By default <code>samtools view</code> outputs it’s results directly
-to the console so that we can view them. The <code>&gt;</code> redirects
-the output to the file <code>my_sample.bam</code>.</p>
+<p><code>samtools sort -o my_sample.sorted.bam my_sample.sam</code></p>
+<p>Where <code>-o</code> is the output file name.</p>
 </div>
 <div id="exercise-3" class="section level3">
 <h3>Exercise 3</h3>
 <blockquote>
 <ol style="list-style-type: decimal">
-<li>Transform your aligned SAM file in to a BAM file called
-<code>SRR7657883.salmon.bam</code>. Use the option <code>-@ 7</code> to
-use 7 cores, this vastly speeds up the compression.</li>
+<li>Sort and transform your aligned SAM file into a BAM file called
+<code>SRR7657883.salmon.sorted.bam</code>. Use the option
+<code>-@ 7</code> to use 7 cores, this vastly speeds up the
+compression.</li>
 </ol>
 </blockquote>
 <hr />

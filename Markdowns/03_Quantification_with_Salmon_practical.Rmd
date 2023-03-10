@@ -2,8 +2,8 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quantification of Gene Expression with Salmon
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 bibliography: ref.bib
 ---
 
@@ -145,8 +145,8 @@ The files we will use are called *SRR7657883.subset_2M....*.
 >       * `-l A` - Salmon needs to use some information about the library 
 >         preparation, we could explicitly give this, but it is easy enough
 >         for Salmon to **A**utomatically infer this from the data.
->       * **File containing the #1 mates** - *SRR7657883.subset_2M.sra_1.fastq.gz*
->       * **File containing the #2 mates** - *SRR7657883.subset_2M.sra_2.fastq.gz*
+>       * **File containing the #1 reads** - *SRR7657883.subset_2M.sra_1.fastq.gz*
+>       * **File containing the #2 reads** - *SRR7657883.subset_2M.sra_2.fastq.gz*
 >       * `--writeMappingssalmon_output/SRR7657883.salmon.sam` - Instructs 
 >         Salmon to output the read alignments in SAM format to the file 
 >         *salmon_output/SRR7657883.salmon.sam*.
@@ -162,25 +162,22 @@ data is called `quant.sf`.
 ### 3.1 SAM to BAM with samtools
 
 We can transform from SAM to BAM using `samtools`. `samtools` is a toolkit that
-provides a number of useful tools for working with SAM/BAM files. In this case
-we will use the `view` command to transform the SAM file into a BAM file.
+provides a number of useful tools for working with SAM/BAM files. The BAM file
+format is a binary (not human readable) file and is considerably smaller than
+the same data stored in SAM format. We will also sort the alignment entries
+by location (Contig/Chromosome name and the location on the contig), this 
+further improves the compression of the SAM to BAM. We will use the `sort` tool.
 
 The general command is:
 
-`samtools view -b my_sample.sam > my_sample.bam`
+`samtools sort -o my_sample.sorted.bam my_sample.sam`
 
-`view` is the tool for viewing a sam or bam file. 
-
-By default the samtools output is in SAM format so that the results can be read
-by a human, in this case the `-b` flag tells it to output in BAM format.
-
-By default `samtools view` outputs it's results directly to the console so that
-we can view them. The `>` redirects the output to the file `my_sample.bam`. 
+Where `-o` is the output file name.
 
 ### Exercise 3
 
-> 1. Transform your aligned SAM file in to a BAM file called
-> `SRR7657883.salmon.bam`. Use the option `-@ 7` to use 7 cores, this vastly
+> 1. Sort and transform your aligned SAM file into a BAM file called
+> `SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this vastly
 > speeds up the compression.
 
 ----------------------------------------------------------

@@ -463,17 +463,20 @@ bias, it is recommended to always use this</li>
 <h3>Exercise 3</h3>
 <blockquote>
 <ol style="list-style-type: decimal">
-<li>Transform your aligned SAM file in to a BAM file called
-<code>SRR7657883.salmon.bam</code>. Use the option <code>-@ 7</code> to
-use 7 cores. This vastly speeds up the compression.</li>
+<li>Sort and transform your aligned SAM file into a BAM file called
+<code>SRR7657883.salmon.sorted.bam</code>. Use the option
+<code>-@ 7</code> to use 7 cores, this vastly speeds up the
+compression.</li>
 </ol>
 </blockquote>
-<pre class="bash"><code>samtools view -b -@ 7 salmon_output/SRR7657883/SRR7657883.salmon.sam \
-  &gt; salmon_output/SRR7657883/SRR7657883.salmon.bam</code></pre>
+<pre class="bash"><code>samtools sort \
+  -@ 7 \
+  -o salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam \
+   salmon_output/SRR7657883/SRR7657883.salmon.sam</code></pre>
 <blockquote>
 <blockquote>
 <p><span class="math inline">\(\Rightarrow\)</span>
-<em>salmon_output/SRR7657883/SRR7657883.salmon.bam</em></p>
+<em>salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam</em></p>
 </blockquote>
 </blockquote>
 </div>

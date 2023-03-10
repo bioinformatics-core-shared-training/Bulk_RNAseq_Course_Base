@@ -98,11 +98,13 @@ salmon quant \
 
 ### Exercise 3
 
-> 1. Transform your aligned SAM file in to a BAM file called 
->   `SRR7657883.salmon.bam`. Use the option `-@ 7` to use 7 cores. This vastly 
->   speeds up the compression.
+> 1. Sort and transform your aligned SAM file into a BAM file called
+> `SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this vastly
+> speeds up the compression.
 ```{bash eval=FALSE}
-samtools view -b -@ 7 salmon_output/SRR7657883/SRR7657883.salmon.sam \
-  > salmon_output/SRR7657883/SRR7657883.salmon.bam
+samtools sort \
+  -@ 7 \
+  -o salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam \
+   salmon_output/SRR7657883/SRR7657883.salmon.sam
 ```
->> $\Rightarrow$  *salmon_output/SRR7657883/SRR7657883.salmon.bam*
+>> $\Rightarrow$  *salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam*
