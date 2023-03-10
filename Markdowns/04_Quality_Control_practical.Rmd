@@ -11,9 +11,9 @@ output:
 Once we have aligned our reads and quantified gene expression with Salmon, it is
 then possible to run some additional quality checks on our data. We will use a 
 tool call [Picard](https://broadinstitute.github.io/picard/) to gather some 
-information about the distribution of reads within each gene in order to assess
-RNA integrity. We will also gather some QC metrics from the Salmon outputs, such
-as alignment rate and insert size.
+information about duplication reates and the distribution of reads within each
+gene in order to assess RNA integrity. We will also gather some QC metrics from
+the Salmon outputs, such as alignment rate and insert size.
 
 ## 2. Detailed metrics with Picard Tools
 
@@ -44,7 +44,45 @@ command:
 java -jar picard/picard.jar PicardToolName --help
 ```
 
-### 2.1 RNA alignment metrics
+### 2.1 Duplication metrics
+
+The first tool we are going to use is `MarkDuplicates`. This tool
+actually performs two tasks. 
+
+First, Picard reads through the bam file and finds any duplicate reads - these
+are reads with the same 5' position. For each group of duplicate reads, Picard
+selects a "primary" read based on the base quality scores and then marks all
+other reads in the group as "duplicates" by adding **1024** to the sam flag. 
+For paired end reads, the entire fragment is considered, this essentially means
+both ends must be duplicated for the read pair to be marked as a duplicate.
+
+Once the duplicate reads are marked, Picard then also generates a metrics file
+that contains information about the duplication rate.
+
+### Exercise 2.1
+
+> 1. Run Picard's MarkDuplicates tool on the sorted bam file using the
+>    following command:  
+> ```{bash eval=FALSE}
+> java -jar picard/picard.jar MarkDuplicates \
+>          INPUT=bam/SRR7657883.chr14.sorted.bam \
+>          OUTPUT=bam/SRR7657883.chr14.mkdup.bam \
+>          METRICS_FILE=bam/SRR7657883.chr14.mkdup_metrics.txt \
+>          CREATE_INDEX=true
+> ```
+> **Note**: The `\` at the end of each line tells the terminal that when you press 
+> `Enter`, you have not yet finished typing the command. You can if you wish, type
+> the whole command on a single line, omitting the `\`. The command is written across
+> multiple lines here just to make it easier to read.
+>
+> Q. What is the duplication rate for this bam file? You'll need to look at the
+> metrics file. The easiest way is to open in a spreadsheet. On the course 
+> machines we have LibreOffice Calc. You can find this in the launcher bar at 
+> the bottom of the desktop.
+![](images/Launcher_bar_cacl.png)
+
+
+### 2.2 RNA alignment metrics
 
 The `CollectRnaSeqMetrics` tool produces metrics describing the distribution of
 the reads across different genomic locations - intronic, exonic, intergenic,
@@ -111,7 +149,7 @@ Note that we only have to do this once, we do not need to create a separate
 refFlat file for each sample as they have all been quantified using the same
 transcriptome reference.
 
-### Exercise 2.1
+### Exercise 2.2
 
 For the purposes of this exercise we will work with a bam file that only
 contains 2 million reads. Running Picard on the full bam file would take too
@@ -129,10 +167,11 @@ than the bam file you created in the previous session.
 <details><summary>Answer</summary>
 ```{bash eval=FALSE}
 java -jar picard/picard.jar CollectRnaSeqMetrics \
-          INPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.bam \
+          INPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
           OUTPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.RNA_metrics.txt \
           REF_FLAT=references/GRCm38_transriptome_refFlat.txt \
-          STRAND=NONE
+          STRAND=NONE \
+          VALIDATION_STRINGENCY=SILENT
 ```
 > **Note**: The `\` at the end of each line tells the terminal that when you press 
 > `Enter`, you have not yet finished typing the command. You can if you wish, type
@@ -141,13 +180,6 @@ java -jar picard/picard.jar CollectRnaSeqMetrics \
 >
 
 </details>
-
->
-> If you wish to look at the metrics file, the easiest way is to open it in a
-> spreadsheet. On the course machines we have LibreOffice Calc. You can find
-> this in the launcher bar at the bottom of the desktop.
-
-![](images/Launcher_bar_cacl.png)
 
 > The results of this analysis are best viewed graphically, we will do this in
 > the next exercise.
