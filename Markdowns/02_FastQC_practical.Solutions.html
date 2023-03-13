@@ -381,9 +381,13 @@ should be directory called <strong>fastq</strong><br />
 </ol>
 <pre class="bash"><code>ls fastq</code></pre>
 <blockquote>
-<p>SRR7657883.sra_1.fastq.gz SRR7657883.sra_2.fastq.gz</p>
+<p>SRR7657883.sra_1.fastq.gz SRR7657883.subset_2M.sra_1.fastq.gz<br />
+SRR7657883.sra_2.fastq.gz Test_adapter_contamination.gq.gz.<br />
+SRR7657883.subset_2M.sra_2.fastq.gz</p>
 </blockquote>
-<p>You should see two fastq files. These are the files for read 1 and
+<p>You should see two fastq files called
+<em>SRR7657883.sra_1.fastq.gz</em> and
+<em>SRR7657883.sra_1.fastq.gz</em>. These are the files for read 1 and
 read 2 of one of the samples we will be working with.</p>
 <ol start="3" style="list-style-type: decimal">
 <li>Run fastqc on one of the fastq files:</li>

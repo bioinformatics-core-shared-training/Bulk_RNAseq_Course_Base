@@ -2,8 +2,8 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: QC of raw reads with FastQC
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 In our intial QC of the raw fastq file we will be interested in gathering
@@ -72,8 +72,10 @@ Note that the output directory must already exist, FastQC will not create it.
 > ls fastq
 >```
 >
-> You should see two fastq files. These are the files for read 1 and read 2
-> of one of the samples we will be working with.
+> You should see two fastq files called *SRR7657883.sra_1.fastq.gz* and
+> *SRR7657883.sra_1.fastq.gz*. These are the files for read 1 and read 2
+> of one of the samples we will be working with (you can ignore the other fastq
+> files for now).
 >
 >
 > 3. Run fastqc on one of the fastq files:  
