@@ -6,54 +6,25 @@ output:
   html_document: default
 ---
 
-## 1. A quick look at the alignment metrics with `samtools`
+## More detailed metrics with Picard Tools
+
+### Duplication metrics
 
 ### Exercise 1
-
-> 1. Use the `samtools flagstat` command to generate alignment metrics for
->    the bam file `bam/SRR7657883.chr14.sorted.bam`.
-```{bash eval=FALSE}
-samtools flagstat bam/SRR7657883.chr14.sorted.bam
-```
->>```
->> 1924847 + 0 in total (QC-passed reads + QC-failed reads)
->> 84642 + 0 secondary
->> 0 + 0 supplementary
->> 0 + 0 duplicates
->> 1863232 + 0 mapped (96.80% : N/A)
->> 1840205 + 0 paired in sequencing
->> 920031 + 0 read1
->> 920174 + 0 read2
->> 1705884 + 0 properly paired (92.70% : N/A)
->> 1716975 + 0 with itself and mate mapped
->> 61615 + 0 singletons (3.35% : N/A)
->> 5261 + 0 with mate mapped to a different chr
->> 4640 + 0 with mate mapped to a different chr (mapQ>=5)
->>```
->
-> Q) What percentage of the reads have aligned to the genome? 
-
-96.80% of reads have been mapped to the reference genome.
-
-
-## 2. More detailed metrics with Picard Tools
-
-### 2.1 Duplication metrics
-
-### Exercise 2.1
 
 > 1. Run Picard's MarkDuplicates tool on the sorted bam file using the
 >    following command:
 > ```{bash eval=FALSE}
 > java -jar picard/picard.jar MarkDuplicates \
->          INPUT=bam/SRR7657883.chr14.sorted.bam \
->          OUTPUT=bam/SRR7657883.chr14.mkdup.bam \
->          METRICS_FILE=bam/SRR7657883.chr14.mkdup_metrics.txt \
->          CREATE_INDEX=true
+>          INPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
+>          OUTPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.mkdup.bam \
+>          METRICS_FILE=salmon_qc_demo/SRR7657883/SRR7657883.mkdup_metrics.txt \
+>          CREATE_INDEX=true \
+>          VALIDATION_STRINGENCY=SILENT
 > ```
->> $\Rightarrow$ *bam/SRR7657883.chr14.mkdup.bam*  - The new bam file with 
+>> $\Rightarrow$ *salmon_qc_demo/SRR7657883/SRR7657883.salmon.mkdup.bam*  - The new bam file with 
 >> duplicated marked  
->> $\Rightarrow$ *bam/SRR7657883.chr14.mkdup.bai* - The index for the new bam
+>> $\Rightarrow$ *salmon_qc_demo/SRR7657883/SRR7657883.salmon.mkdup.bai* - The index for the new bam
 >> file  
 >> $\Rightarrow$ *bam/SRR7657883.chr14.mkdup_metrics.txt* - The duplication 
 >> metrics  
@@ -72,82 +43,38 @@ samtools flagstat bam/SRR7657883.chr14.sorted.bam
 
 ![](images/MarkDuplicates_results.png)
 
-~19%. 
+The duplication rate reported ~5%. 
+
 Note that although the column headers for Picard say "PERCENT" or "PCT" the
 number is in fact the decimal fraction and need to be multiplied by 100 for
 percent. Just an odd quirk of Picard.
 
-### 2.2 Alignment metrics
+### RNA alignment metrics
 
-### Exercise 2.2
+#### Generate the refFlat file
 
-> 1. Run Picard's `CollectAlignmentSummaryMetrics` tool on the chr14 sorted bam 
->    providing the following options.
->     * INPUT - The sorted chr 14 only bam file
->     * OUTPUT - `bam/SRR7657883.chr14.alignment_metrics.txt`
->     * REFERENCE_SEQUENCE - `references/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa`
-```{bash eval=FALSE}
-java -jar picard/picard.jar CollectAlignmentSummaryMetrics \
-     INPUT=bam/SRR7657883.chr14.sorted.bam \
-     OUTPUT=bam/SRR7657883.chr14.alignment_metrics.txt \
-     REFERENCE_SEQUENCE=references/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa
 ```
->> $\Rightarrow$ *bam/SRR7657883.chr14.alignment_metrics.txt* - The alignment
->> metrics  
-
-### 2.3 Insert Size metrics
-
-### Exercise 2.3
-
-> 1. Run Picard's `CollectInsertSizeMetrics` tool on the chr1 sorted bam 
->    providing the following options.
->     * INPUT - The sorted chr 1 only bam file
->     * OUTPUT - bam/SRR7657883.chr1.insert_size.txt
->     * HISTOGRAM_FILE - bam/SRR7657883.chr1.insert_size.pdf
->
-```{bash eval=FALSE}
-java -jar picard/picard.jar CollectInsertSizeMetrics \
-     INPUT=bam/SRR7657883.chr14.sorted.bam \
-     OUTPUT=bam/SRR7657883.chr14.insert_size.txt \
-     HISTOGRAM_FILE=bam/SRR7657883.chr14.insert_size.pdf
+create_refflat_from_sam_header.py \
+  -b salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
+  -o references/GRCm38_transriptome_refFlat.txt
 ```
->> $\Rightarrow$ *bam/SRR7657883.chr14.insert_size.txt* - The insert size 
->> metrics  
->> $\Rightarrow$ *bam/SRR7657883.chr14.insert_size.pdf* - The PDF with a plot
->> showing the insert size distribution
->
-> Open the PDF and look at the distribution fragment lengths (insert sizes) 
-> in the library.
-![](images/SRR7657883_chr14_insert_size.png){width=75%}  
-> 
-> Q. Considering this data is from paired 150 base reads, what are the 
-> implications of the fragment length distributions.
+> $\Rightarrow$ references/GRCm38_transriptome_refFlat.txt
 
-As we have PE 150 reads, the total amount of sequencing from each fragment is
-300 bases. Looking at the distribution only ~25% of the fragments have lengths
-greater than 300 bases. This means that for about 80% of the fragments the reads
-are overlapping. From the perspective of our gene expression analysis, this
-doesn't matter, however, from a design perspective it means that we have
-unnecessarily sequenced a lot of bases twice and he more sequencing we carry
-out, the more expensive the study is. It would have been optimal to use a
-shorter read length.
-
-### 2.4 RNA alignment metrics
-
-### Exercise 2.4
+### Exercise 2
 
 > 1. Run Picard's `CollectRnaSeqMetrics` tool on the sorted bam file providing
 >    the following options:
 >       * INPUT - The sorted bam file
->       * OUTPUT - `bam/SRR7657883.chr14.RNA_metrics.txt`
+>       * OUTPUT - *salmon_qc_demo/SRR7657883/SRR7657883.salmon.RNA_metrics.txt*
 >       * REF_FLAT - the RefFlat reference file
 >       * STRAND - `NONE`
 ```{bash eval=FALSE}
 java -jar picard/picard.jar CollectRnaSeqMetrics \
-     INPUT=bam/SRR7657883.chr14.sorted.bam \
-     REF_FLAT=references/Mus_musculus.GRCm38.102.txt \
-     OUTPUT=bam/SRR7657883.chr14.RNA_metrics.txt \
-     STRAND=NONE
+     INPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
+     OUTPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.RNA_metrics.txt \
+     REF_FLAT=references/GRCm38_transriptome_refFlat.txt \
+     STRAND=NONE \
+     VALIDATION_STRINGENCY=SILENT
 ```
 >> $\Rightarrow$ *bam/SRR7657883.chr14.RNA_metrics.txt* - The RNAseq metrics  
 >
@@ -156,31 +83,35 @@ java -jar picard/picard.jar CollectRnaSeqMetrics \
 
 ## 3. Visualising QC results with MultiQC
 
-### Exercise 3.1
+### Exercise 3
 
 > 1. Run multiqc on the bam directory: 
 > ```{bash eval=FALSE}
-> multiqc -n Alignment_QC_Report.html -o bam bam
+> multiqc \
+>     -n Salmon_QC_Report.html \
+>     -o salmon_qc_demo \
+>     salmon_qc_demo
 > ```   
 >
 > * `-n` - a name for the report
 > * `-o` - the directory in which to place the report
 > 2. Open the html report that was generated by multiqc and inspect the QC plots
->    The easiest way to do this is type `xdg-open multiqc_report.html`, which 
->    will open the report in a web browser.
+>    The easiest way to do this is type 
+> `xdg-open salmon_qc_demo/Salmon_QC_Report.html`, which will open the report in
+> a web browser.
 
 
 ### Exercise 3.2
 
-> In the `metrics` directory you should find Picard metrics for all of the 
-> samples.
+> In the `salmon` directory you should find Salmon outputs, duplication metrics
+> and RNAseq metrics for all of the samples.  
 >
-> 1. Run multiqc on the contents of the metrics directory.  
+> 1. Run multiqc on the contents of the salmon directory.  
 >
 ```{bash eval=FALSE}
-multiqc -z -n Alignment_QC_Report.html -o metrics metrics
+multiqc -z -n Salmon_QC_Report.html -o salmon salmon
 ```
->> $\Rightarrow$ [metrics/Alignment_QC_Report.html](../additional_scripts/Alignment_QC_Report.html)   
+>> $\Rightarrow$ [salmon/Salmon_QC_Report.html](../additional_scripts/Alignment_QC_Report.html)   
 >  
 > 2. Open the html report that was generated by multiqc and inspect the QC plots   
 >

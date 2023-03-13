@@ -15,7 +15,7 @@ information about duplication reates and the distribution of reads within each
 gene in order to assess RNA integrity. We will also gather some QC metrics from
 the Salmon outputs, such as alignment rate and insert size.
 
-## 2. Detailed metrics with Picard Tools
+## Detailed metrics with Picard Tools
 
 [**Picard Tools**](https://broadinstitute.github.io/picard/) is a suite of
 tools for analysing and manipulating sequencing data. It is maintained by the
@@ -37,43 +37,54 @@ java -jar picard/picard.jar PicardToolName OPTION1=value1 OPTION2=value2 ...
 This is then followed by a series of options/arguments for that particular
 tool. Each tool has specific options and arguments and you can check these
 most easily by going to the [Picard
-website](https://broadinstitute.github.io/picard/), or by using the `--help``
+website](https://broadinstitute.github.io/picard/), or by using the `--help`
 command:
 
 ```
 java -jar picard/picard.jar PicardToolName --help
 ```
 
-### 2.1 Duplication metrics
+### Duplication metrics
 
 The first tool we are going to use is `MarkDuplicates`. This tool
 actually performs two tasks. 
 
 First, Picard reads through the bam file and finds any duplicate reads - these
-are reads with the same 5' position. For each group of duplicate reads, Picard
-selects a "primary" read based on the base quality scores and then marks all
-other reads in the group as "duplicates" by adding **1024** to the sam flag. 
-For paired end reads, the entire fragment is considered, this essentially means
-both ends must be duplicated for the read pair to be marked as a duplicate.
+are reads with the same genomic location at the 5' end. For each group of
+duplicate reads, Picard selects a "primary" read based on the base quality
+scores and then marks all other reads in the group as "duplicates" by adding
+**1024** to the sam flag. For paired end reads, the entire fragment is
+considered, this essentially means both ends must be duplicated for the read
+pair to be marked as a duplicate.
 
-Once the duplicate reads are marked, Picard then also generates a metrics file
-that contains information about the duplication rate.
+Once the duplicate reads are marked, Picard outputs a new bam file in which the 
+duplicate reads are marked and then also generates a metrics file that contains
+information about the duplication rate.
 
-### Exercise 2.1
+### Exercise 1
+
+For the purposes of this exercise we will work with a bam file that only
+contains 2 million reads. Running Picard on the full bam file would take too
+long for the practical. You should find a file called
+`SRR7657883.salmon.sorted.bam` under the directory `salmon_qc_demo/SRR7657883`,
+please use this file rather than the bam file you created in the previous
+session.
 
 > 1. Run Picard's MarkDuplicates tool on the sorted bam file using the
 >    following command:  
 > ```{bash eval=FALSE}
 > java -jar picard/picard.jar MarkDuplicates \
->          INPUT=bam/SRR7657883.chr14.sorted.bam \
->          OUTPUT=bam/SRR7657883.chr14.mkdup.bam \
->          METRICS_FILE=bam/SRR7657883.chr14.mkdup_metrics.txt \
->          CREATE_INDEX=true
+>          INPUT= salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
+>          OUTPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.mkdup.bam \
+>          METRICS_FILE=salmon_qc_demo/SRR7657883/SRR7657883.mkdup_metrics.txt \
+>          CREATE_INDEX=true \
+>          VALIDATION_STRINGENCY=SILENT
+
 > ```
-> **Note**: The `\` at the end of each line tells the terminal that when you press 
-> `Enter`, you have not yet finished typing the command. You can if you wish, type
-> the whole command on a single line, omitting the `\`. The command is written across
-> multiple lines here just to make it easier to read.
+> **Note**: The `\` at the end of each line tells the terminal that when you 
+> press `Enter`, you have not yet finished typing the command. You can if you
+> wish, type the whole command on a single line, omitting the `\`. The command
+> is written across > multiple lines here just to make it easier to read.
 >
 > Q. What is the duplication rate for this bam file? You'll need to look at the
 > metrics file. The easiest way is to open in a spreadsheet. On the course 
@@ -82,7 +93,7 @@ that contains information about the duplication rate.
 ![](images/Launcher_bar_cacl.png)
 
 
-### 2.2 RNA alignment metrics
+### RNA alignment metrics
 
 The `CollectRnaSeqMetrics` tool produces metrics describing the distribution of
 the reads across different genomic locations - intronic, exonic, intergenic,
@@ -149,13 +160,7 @@ Note that we only have to do this once, we do not need to create a separate
 refFlat file for each sample as they have all been quantified using the same
 transcriptome reference.
 
-### Exercise 2.2
-
-For the purposes of this exercise we will work with a bam file that only
-contains 2 million reads. Running Picard on the full bam file would take too
-long for the practical. You should find a file called `SRR7657883.salmon.bam`
-under the directory `salmon_qc_demo/SRR7657883`, please use this file rather
-than the bam file you created in the previous session.
+### Exercise 2
 
 > 1. Run Picard's `CollectRnaSeqMetrics` tool on the sorted bam file using the
 >    following command:  
@@ -184,7 +189,7 @@ java -jar picard/picard.jar CollectRnaSeqMetrics \
 > The results of this analysis are best viewed graphically, we will do this in
 > the next exercise.
 
-## 3. Visualising QC results with MultiQC
+## Visualising QC results with MultiQC
 
 [MultiQC](https://multiqc.info/) is a tool for collating multiple QC results
 files into a single report. Its use is simple, you just run the command
@@ -197,27 +202,28 @@ multiqc <directory containing metrics files>
 We will add a couple of options to control the output directory and the name
 of the report.
 
-### Exercise 3.1
+### Exercise 3
 
 > 1. Run multiqc on the salmon directory: 
 > ```{bash eval=FALSE}
 > multiqc \
 >     -n Salmon_QC_Report.html \
->     -o salmon_qc_demo/SRR7657883 \
->     salmon_qc_demo/SRR7657883
+>     -o salmon_qc_demo \
+>     salmon_qc_demo
 > ```   
 >
 > * `-n` - a name for the report
 > * `-o` - the directory in which to place the report
 >
 > 2. Open the html report that was generated by multiqc and inspect the QC plots
->    The easiest way to do this is type `xdg-open multiqc_report.html`, which 
->    will open the report in a web browser.
+>    The easiest way to do this is type 
+>    `xdg-open salmon_qc_demo/Salmon_QC_Report.html`, which will open the report
+>    in a web browser.
 
-### Exercise 3.2
+### Exercise 4
 
-> In the `salmon` directory you should find Salmon outputs and RNAseq metrics 
-> for all of the sampless.  
+> In the `salmon` directory you should find Salmon outputs, duplication metrics
+> and RNAseq metrics for all of the samples.  
 >
 > 1. Run multiqc on the contents of the metrics directory.   
 > 2. Open the html report that was generated by multiqc and inspect the QC plots 
