@@ -473,11 +473,12 @@ sample meta data table. We can just substitute in columns from the metadata.
 
 ```{r}
 hclDat2 <- hclDat
-hclDat2$labels <- sampleinfo$Status
+hclDat2$labels <- str_c(sampleinfo$Status, ":", sampleinfo$TimePoint)
 ggdendrogram(hclDat2, rotate=TRUE)
 ```
-
-We can see from this that the infected and uninfected samples cluster separately.
+We can see from this that the infected and uninfected samples cluster separately
+and that day 11 and day 33 samples cluster separately for infected samples, but
+not for uninfected samples.
 
 --------------------
 
