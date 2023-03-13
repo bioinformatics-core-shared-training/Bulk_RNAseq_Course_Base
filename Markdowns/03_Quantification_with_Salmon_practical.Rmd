@@ -147,12 +147,12 @@ The files we will use are called *SRR7657883.subset_2M....*.
 >         for Salmon to **A**utomatically infer this from the data.
 >       * **File containing the #1 reads** - *SRR7657883.subset_2M.sra_1.fastq.gz*
 >       * **File containing the #2 reads** - *SRR7657883.subset_2M.sra_2.fastq.gz*
->       * `--writeMappingssalmon_output/SRR7657883.salmon.sam` - Instructs 
->         Salmon to output the read alignments in SAM format to the file 
->         *salmon_output/SRR7657883.salmon.sam*.
 >       * **Output quantification directory** - *salmon_output/SRR7657883*
 >       * `--gcBias` - salmon can optionally correct for GC content bias, it is
 >         recommended to always use this
+>       * `--writeMappingssalmon_output/SRR7657883.salmon.sam` - Instructs 
+>         Salmon to output the read alignments in SAM format to the file 
+>         *salmon_output/SRR7657883.salmon.sam*.
 >       * **The number of threads to use** - *7*
 
 Salmon creates a separate output directory for each sample analysed. This 

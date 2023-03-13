@@ -439,11 +439,11 @@ data.</li>
 <em>fastq/SRR7657883.subset_2M.sra_1.fastq.gz</em></li>
 <li><strong>File containing the #2 mates</strong> -
 <em>fastq/SRR7657883.subset_2M.sra_2.fastq.gz</em></li>
+<li><strong>Output quantification directory</strong> -
+<em>salmon_output/SRR7657883</em></li>
 <li><code>--writeMappingssalmon_output/SRR7657883.salmon.sam</code> -
 Instructs Salmon to output the read alignments in SAM format to the file
 <em>salmon_output/SRR7657883.salmon.sam</em>.</li>
-<li><strong>Output quantification directory</strong> -
-<em>salmon_output/SRR7657883</em></li>
 <li><code>--gcBias</code> - salmon can optionally correct for GC content
 bias, it is recommended to always use this</li>
 <li><strong>The number of threads to use</strong> - <em>7</em></li>
@@ -451,14 +451,14 @@ bias, it is recommended to always use this</li>
 </ol>
 </blockquote>
 <pre class="bash"><code>salmon quant \
-    -p 7 \
     -i references/salmon_index \
-    --gcBias \
     -l A \
     -1 fastq/SRR7657883.subset_2M.sra_1.fastq.gz \
     -2 fastq/SRR7657883.subset_2M.sra_2.fastq.gz \
+    -o salmon_output/SRR7657883 \
     --writeMappings salmon_output/SRR7657883/SRR7657883.salmon.sam \
-    -o salmon_output/SRR7657883</code></pre>
+    --gcBias \
+    -p 7</code></pre>
 <div id="exercise-3" class="section level3">
 <h3>Exercise 3</h3>
 <blockquote>
