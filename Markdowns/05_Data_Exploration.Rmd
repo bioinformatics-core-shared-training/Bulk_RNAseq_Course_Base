@@ -3,9 +3,9 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Initial exploration of RNA-seq data
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  html_document:
-    toc: yes
   pdf_document:
+    toc: yes
+  html_document:
     toc: yes
 bibliography: ref.bib
 ---
@@ -243,8 +243,6 @@ Because some genes are not expressed (detected) in some samples, their count are
 ```{r logTransform}
 # Get log2 counts
 logcounts <- log2(filtCounts + 1)
-# summary(logcounts[,1]) # summary for first column
-# summary(logcounts) # summary for each column
 ```
 
 We will check the distribution of read counts using a boxplot and add some
@@ -252,7 +250,8 @@ colour to see if there is any difference between sample groups.
 
 ```{r plotLogCounts}
 # make a colour vector
-statusCols <- str_replace_all(sampleinfo$Status, c(Infected="red", Uninfected="orange"))
+statusCols <- case_when(sampleinfo$Status=="Infected" ~ "red", 
+                        sampleinfo$Status=="Uninfected" ~ "orange")
 
 # Check distributions of samples using boxplots
 boxplot(logcounts,
@@ -266,9 +265,9 @@ abline(h=median(logcounts), col="blue")
 ```
 
 From the boxplots we see that overall the density distributions of raw
-log-counts are not identical but still not very different. If a sample is
-really far above or below the blue horizontal line (overall median) we may need to investigate
-that sample further.
+log-counts are not identical but still not very different. If a sample is really
+far above or below the blue horizontal line (overall median) we may need to
+investigate that sample further.
 
 ```{r log2_mean_vs_sd}
 # Log2 counts standard deviation (sd) vs mean expression
@@ -399,9 +398,9 @@ autoplot(pcDat,
     geom_text_repel(aes(x=PC1, y=PC2, label=SampleName), box.padding = 0.8)
 ```
 
-The mislabelled samples are *SRR7657882*, which is labelled as *Test* but should
-be *Control*, and *SRR7657873*, which is labelled as *Control* but should be *Test*.
-Let's fix the sample sheet.
+The mislabelled samples are *SRR7657882*, which is labelled as *Infected* but
+should be *Uninfected*, and *SRR7657873*, which is labelled as *Uninfected* but
+should be *Infected*. Let's fix the sample sheet.
 
 We're going to use another `dplyr` command `mutate`. 
 
@@ -435,8 +434,8 @@ The biological signal of interest is stronger than the noise (biological and
 technical) and can be detected. 
 
 Also, there appears to be a strong difference between days 11 and 33 post 
-infection for the test group, but the day 11 and day 33 samples for the controls
-are mixed together.
+infection for the infected group, but the day 11 and day 33 samples for the
+uninfected are mixed together.
 
 Clustering in the PCA plot can be used to motivate changes to the design
 matrix in light of potential batch effects. For example, imagine that the
