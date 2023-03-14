@@ -384,10 +384,10 @@ the same directory as the fastqc file, however, if you would like to
 gather the QC in a different directory, you can specify this using the
 <code>-o</code> flag followed by the name of the directory, e.g:</p>
 <pre><code>fastqc -o QC fastq/my_fastq_file.fastq.gz</code></pre>
-<p>In this case we wish to generate a report for the file
+<p>In this case the above command will generate a report for the file
 <strong>my_fastq_file.fastq.gz</strong>, which is in the folder
-<strong>fastq</strong>, and to have the report written into a directory
-called <strong>QC</strong>.</p>
+<strong>fastq</strong>, and will have the report written into a
+directory called <strong>QC</strong>.</p>
 <p>Note that the output directory must already exist, FastQC will not
 create it.</p>
 <div id="exercise" class="section level3">
@@ -424,6 +424,7 @@ other fastq files for now).</p>
 <li>Run fastqc on one of the fastq files:</li>
 </ol>
 <pre class="bash"><code>fastqc fastq/SRR7657883.sra_1.fastq.gz  </code></pre>
+<p>This will write the QC report to the <em>fastq</em> directory.</p>
 <ol start="4" style="list-style-type: decimal">
 <li>Open the html report in a browser and see if you can answer these
 questions:<br />

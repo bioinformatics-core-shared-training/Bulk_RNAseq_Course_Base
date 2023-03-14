@@ -46,8 +46,8 @@ using the `-o` flag followed by the name of the directory, e.g:
 fastqc -o QC fastq/my_fastq_file.fastq.gz
 ```
 
-In this case we wish to generate a report for the file
-**my_fastq_file.fastq.gz**, which is in the folder **fastq**, and to have the
+In this case the above command will generate a report for the file
+**my_fastq_file.fastq.gz**, which is in the folder **fastq**, and will have the
 report written into a directory called **QC**.
 
 Note that the output directory must already exist, FastQC will not create it.
@@ -82,6 +82,7 @@ Note that the output directory must already exist, FastQC will not create it.
 >```{bash eval=FALSE}
 > fastqc fastq/SRR7657883.sra_1.fastq.gz  
 >```
+> This will write the QC report to the *fastq* directory.
 >
 > 4. Open the html report in a browser and see if you can answer these questions:  
 >           A) What is the read length?  
