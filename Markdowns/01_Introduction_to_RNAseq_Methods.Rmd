@@ -1,14 +1,15 @@
 ---
 title: "Introduction to RNAseq Methods"
-date: "February 2022"
+date: "March 2023"
 output:
-  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
     smaller: yes
     widescreen: yes
+  beamer_presentation: default
 ---
+
 ## HTS Applications - Overview
 
 <div style="width: 28%; 
@@ -242,7 +243,53 @@ Each replicate is from an indepent biological individual
 
 ## Designing the right experiment - Replication
 
-### Technical Replication
+### Technical Replication<div style="width: 28%; 
+    float: left;
+    border-style: solid; 
+    border-width: 4px;
+    border-radius: 28px; 
+    border-color: #2e3192;
+    padding: 20px;
+    display: block;
+    height: 330px;
+    margin-left: 1.6%;
+    margin-top: 20px">
+<div style="text-align: center;">
+<a href="https://emea.illumina.com/content/dam/illumina-marketing/documents/applications/ngs-library-prep/for-all-you-seq-rna.pdf" style="color: #2e2892;">**RNA Sequencing**</a>
+</div>
+
+* Transcriptome Assembly
+
+* **Differential Gene Expression**
+
+* Fusion Genes
+
+* Splice variants
+
+</div>
+
+<div style="width: 28%; 
+    float: right;
+    border-style: solid; 
+    border-width: 1px;
+    border-radius: 28px; 
+    padding: 20px;
+    display: block;
+    height: 330px;
+    margin-top: 20px">
+<div style="text-align: center;">
+<span style="color: #2e2892;">**Single-Cell**</span>
+</div>
+
+* RNA/DNA
+
+* Low-level RNA/DNA detection
+
+* Cell-type classification
+
+* Dissection of heterogenous cell populations
+
+</div>
 
 <div style="width: 45%;
             float: left;">
@@ -473,6 +520,67 @@ Poly-A transcripts + Other mRNAs e.g.:
 
 <img src="images/seq_error.png" class="centerimg" style="width: 80%">
 
+## Sequencing by synthesis 
+
+A complimentary strand is synthesized using the cDNA fragment as template. 
+
+Each nucleotide includes a fluorescent tag and as the new strand is synthesized,
+the colour of the fluorescence indicates which base is being added.
+
+The sequencer records the order of these flashes of light and translates them to
+a base sequence.  
+
+[see this animation](https://emea.illumina.com/science/technology/next-generation-sequencing/sequencing-technology.html)
+
+<div style="width: 45%; float: left;">
+  <img src="images/Illumina_SBS.A.png" class="centerimg" style="width: 70%">
+</div>
+
+<div style="width: 45%; float: right;">
+  <img src="images/Illumina_SBS.B.png" class="centerimg" style="width: 70%">
+</div>
+
+## Sequencing by synthesis - sequencing errors
+
+Sequencing errors cause uncertainty in calling the nucleotide at a given
+location. These reductions in confidence would be reflected int he quality
+scores in your fastq output.
+
+<div style="width: 40%; 
+    float: left;
+    border-style: solid; 
+    border-width: 1px;
+    border-radius: 28px; 
+    padding: 20px;
+    display: block;
+    height: 300px;
+    margin-left: 1.6%;
+    margin-top: 20px">
+
+If a probe doesn't shine as bright as it should, the sequencer is less confident
+in calling that base.
+
+<img src="images/seq_error.A.svg" class="centerimg" style="width: 70%">
+
+
+</div>
+
+<div style="width: 40%; 
+    float: right;
+    border-style: solid; 
+    border-width: 1px;
+    border-radius: 28px; 
+    padding: 20px;
+    display: block;
+    height: 300px;
+    margin-top: 20px">
+
+If there are lots of probes the same colour in the same region the sequencer
+finds it harder to identify the individual reads.
+
+<img src="images/seq_error.B.svg" class="centerimg" style="width: 70%">
+
+</div>
 
 ## RNAseq Workflow
 
