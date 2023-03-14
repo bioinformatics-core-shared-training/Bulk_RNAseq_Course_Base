@@ -520,16 +520,16 @@ library preparation, we could explicitly give this, but it is easy
 enough for Salmon to <strong>A</strong>utomatically infer this from the
 data.</li>
 <li><strong>File containing the #1 reads</strong> -
-<em>SRR7657883.subset_2M.sra_1.fastq.gz</em></li>
+<em>fastq/SRR7657883.subset_2M.sra_1.fastq.gz</em></li>
 <li><strong>File containing the #2 reads</strong> -
-<em>SRR7657883.subset_2M.sra_2.fastq.gz</em></li>
+<em>fastq/SRR7657883.subset_2M.sra_2.fastq.gz</em></li>
 <li><strong>Output quantification directory</strong> -
 <em>salmon_output/SRR7657883</em></li>
-<li><code>--gcBias</code> - salmon can optionally correct for GC content
-bias, it is recommended to always use this</li>
-<li><code>--writeMappingssalmon_output/SRR7657883.salmon.sam</code> -
+<li><code>--writeMappings salmon_output/SRR7657883.salmon.sam</code> -
 Instructs Salmon to output the read alignments in SAM format to the file
 <em>salmon_output/SRR7657883.salmon.sam</em>.</li>
+<li><code>--gcBias</code> - salmon can optionally correct for GC content
+bias, it is recommended to always use this</li>
 <li><strong>The number of threads to use</strong> - <em>7</em></li>
 </ul></li>
 </ol>
@@ -546,10 +546,14 @@ tools for working with SAM/BAM files. The BAM file format is a binary
 stored in SAM format. We will also sort the alignment entries by
 location (Contig/Chromosome name and the location on the contig), this
 further improves the compression of the SAM to BAM. We will use the
-<code>sort</code> tool.</p>
+<code>samtools sort</code> function.</p>
 <p>The general command is:</p>
 <p><code>samtools sort -o my_sample.sorted.bam my_sample.sam</code></p>
-<p>Where <code>-o</code> is the output file name.</p>
+<p>Where the <code>-o</code> option is used to provide the output file
+name. There are many other options, e.g. reads can be sorted by the read
+name instead of the position or we can specify the number of parallel
+threads to be used - to find out more use
+<code>samtools sort --help</code>.</p>
 </div>
 <div id="exercise-3" class="section level3">
 <h3>Exercise 3</h3>

@@ -145,14 +145,14 @@ The files we will use are called *SRR7657883.subset_2M....*.
 >       * `-l A` - Salmon needs to use some information about the library 
 >         preparation, we could explicitly give this, but it is easy enough
 >         for Salmon to **A**utomatically infer this from the data.
->       * **File containing the #1 reads** - *SRR7657883.subset_2M.sra_1.fastq.gz*
->       * **File containing the #2 reads** - *SRR7657883.subset_2M.sra_2.fastq.gz*
+>       * **File containing the #1 reads** - *fastq/SRR7657883.subset_2M.sra_1.fastq.gz*
+>       * **File containing the #2 reads** - *fastq/SRR7657883.subset_2M.sra_2.fastq.gz*
 >       * **Output quantification directory** - *salmon_output/SRR7657883*
->       * `--gcBias` - salmon can optionally correct for GC content bias, it is
->         recommended to always use this
->       * `--writeMappingssalmon_output/SRR7657883.salmon.sam` - Instructs 
+>       * `--writeMappings salmon_output/SRR7657883.salmon.sam` - Instructs 
 >         Salmon to output the read alignments in SAM format to the file 
 >         *salmon_output/SRR7657883.salmon.sam*.
+>       * `--gcBias` - salmon can optionally correct for GC content bias, it is
+>         recommended to always use this
 >       * **The number of threads to use** - *7*
 
 Salmon creates a separate output directory for each sample analysed. This 
@@ -166,19 +166,23 @@ provides a number of useful tools for working with SAM/BAM files. The BAM file
 format is a binary (not human readable) file and is considerably smaller than
 the same data stored in SAM format. We will also sort the alignment entries
 by location (Contig/Chromosome name and the location on the contig), this 
-further improves the compression of the SAM to BAM. We will use the `sort` tool.
+further improves the compression of the SAM to BAM. We will use the 
+`samtools sort` function.
 
 The general command is:
 
 `samtools sort -o my_sample.sorted.bam my_sample.sam`
 
-Where `-o` is the output file name.
+Where the `-o` option is used to provide the output file name. There are many
+other options, e.g. reads can be sorted by the read name instead of the position
+or we can specify the number of parallel threads to be used -  to find out more
+use `samtools sort --help`.
 
 ### Exercise 3
 
 > 1. Sort and transform your aligned SAM file into a BAM file called
-> `SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this vastly
-> speeds up the compression.
+> `SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this
+> vastly speeds up the compression.
 
 ----------------------------------------------------------
 
