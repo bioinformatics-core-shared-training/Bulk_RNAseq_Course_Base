@@ -26,7 +26,7 @@ output:
 >> duplicated marked  
 >> $\Rightarrow$ *salmon_qc_demo/SRR7657883/SRR7657883.salmon.mkdup.bai* - The index for the new bam
 >> file  
->> $\Rightarrow$ *bam/SRR7657883.chr14.mkdup_metrics.txt* - The duplication 
+>> $\Rightarrow$ *salmon_qc_demo/SRR7657883/SRR7657883.salmon.mkdup_metrics.txt* - The duplication 
 >> metrics  
 >
 > **Note**: The `\` at the end of each line tells the terminal that when you press 
@@ -37,7 +37,7 @@ output:
 > Q. What is the duplication rate for this bam file? You'll need to look at the
 > metrics file. The easiest way is to open in a spreadsheet. On the course 
 > machines we have LibreOffice Calc. You can find this in the launcher bar at 
-> the bottom of the desktop.
+> the bottom or side of the desktop, e.g.:
 
 ![](images/Launcher_bar_cacl.png){width=50%}
 
@@ -54,7 +54,7 @@ percent. Just an odd quirk of Picard.
 #### Generate the refFlat file
 
 ```
-create_refflat_from_sam_header.py \
+./scripts/create_refflat_from_sam_header.py \
   -b salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
   -o references/GRCm38_transriptome_refFlat.txt
 ```
@@ -104,7 +104,7 @@ java -jar picard/picard.jar CollectRnaSeqMetrics \
 ### Exercise 3.2
 
 > In the `salmon` directory you should find Salmon outputs, duplication metrics
-> and RNAseq metrics for all of the samples.  
+> and RNAseq metrics for all of the samples from the study.  
 >
 > 1. Run multiqc on the contents of the salmon directory.  
 >
