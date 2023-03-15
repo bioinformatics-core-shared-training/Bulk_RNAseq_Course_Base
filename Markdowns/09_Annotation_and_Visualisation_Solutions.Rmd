@@ -3,8 +3,8 @@ title: "Introduction to Bulk RNAseq data analysis"
 author: "Abbi Edwards"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 subtitle: Annotation and Visualisation of Differential Expression Results - Solutions
 ---
 
@@ -87,20 +87,20 @@ ggplot(maTab.33, aes(x = M, y = logFC)) +
     scale_y_continuous(limit=c(-4,4), oob = scales::squish)
 ```
 
-## Exercise 3
+## Exercise 3 - Strip Chart
 
-> For this exercise create another strip chart for the gene Trps1 in the >day 33 data.
+> For this exercise create another strip chart for the gene Jchain.
 
 ```{r Exercise3}
-geneID_33 <- filter(shrinkTab.33, Symbol=="Trps1") %>% pull(GeneID)
+geneID_33 <- filter(shrinkTab.33, Symbol=="Jchain") %>% pull(GeneID)
 
 plotCounts(ddsObj.interaction, 
-           gene = geneID, 
+           gene = geneID_33, 
            intgroup = c("TimePoint", "Status", "Replicate"),
            returnData = T) %>% 
     ggplot(aes(x=Status, y=log2(count))) +
       geom_point(aes(fill=Replicate), shape=21, size=2) +
       facet_wrap(~TimePoint) +
       expand_limits(y=0) +
-      labs(title = "Normalised counts - Transcriptional repressor GATA binding 1")
+      labs(title = "Normalised counts - Immunoglobulin Joining Chain")
 ```

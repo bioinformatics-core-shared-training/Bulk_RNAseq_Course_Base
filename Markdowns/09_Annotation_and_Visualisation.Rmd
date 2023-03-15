@@ -384,7 +384,7 @@ plotCounts(ddsObj.interaction,
 
 ## Exercise 3
 
-> For this exercise create another strip chart for the gene Trps1 in the >day 33 data.
+> For this exercise create another strip chart for the gene Jchain.
 
 
 ## Venn Diagram
