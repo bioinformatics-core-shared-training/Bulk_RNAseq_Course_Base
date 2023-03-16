@@ -22,7 +22,6 @@ output:
 * Alignment Rate
 * Duplication Rate
 * Insert Size
-* Genomic location of reads
 * Transcript coverage
 
 ## QC of aligned reads - Alignment Rate
@@ -44,12 +43,6 @@ derived
 
 <img src="images/Insert_Size_QC.svg" class="centerimg">
 <img src="images/Insert_Size.svg" class="centerimg" style="width: 80%">
-
-## QC of aligned reads - Genomic location of reads
-
-<div style="line-height: 50%;"><br></div>
-
-<img src="images/GenomicLocations.svg" class="centerimg" style="margin-top: 70px">
 
 ## QC of aligned reads - Transcript coverage
 
