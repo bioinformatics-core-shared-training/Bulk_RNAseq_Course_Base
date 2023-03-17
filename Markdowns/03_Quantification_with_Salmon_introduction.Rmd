@@ -16,7 +16,7 @@ bibliography: ref.bib
 
 <div style="line-height: 50%;"><br></div>
 
-<img src="images/workflow_3Day.svg" class="centerimg" style="width: 60%; margin-top: 60px;">
+<img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
 
 ## Traditional Alignment
 
@@ -32,31 +32,35 @@ the reference sequence finding the most likely origin of the read sequence.
 Aligners: STAR, HISAT2
 
 
+## Alignment
+
+* Traditional alignment is (relatively) slow and computationally intensive
+
+    
+<img src="images/quasi_mapping_1.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+
+## Alignment
+
+
+* Traditional alignment is (relatively) slow and computationally intensive
+    
+<img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+
+## Alignment
+
+
+* Traditional alignment is (relatively) slow and computationally intensive
+    
+<img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+        
+Switch to *quasi-mapping* or *pseudo-alignment*
+
+
 ## Why Pseudo-alignment methods are fatster?
 
 * Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome)
 * No base to base alignment required in pseudo-alignment methods
 
-
-## Quasi-mapping/Pseudo-alignment
-
-* Genes have multiple transcripts, alternative splicing introduces ambiguity
-* Traditional alignment is (relatively) slow and computationally intensive
-* Read sampling is not uniform, there are biases
-
-Switch to *quasi-mapping* or *pseudo-alignment* to transcriptome
-    
-<img src="images/quasi_mapping_1.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
-
-## Quasi-mapping/Pseudo-alignment
-
-* Genes have multiple transcripts, alternative splicing introduces ambiguity
-* Traditional alignment is (relatively) slow and computationally intensive
-* Read sampling is not uniform, there are biases
-        
-Switch to *quasi-mapping* or *pseudo-alignment*
-    
-<img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 ## Quasi-mapping/Pseudo-alignment
 
@@ -92,6 +96,13 @@ We also know the locations of exons of genes on the genome.
 So the simplest approach is to count how many reads overlap each gene.
 
 <img src="images/Read_counting_2.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
+
+
+## What is read quantification?
+
+* Traditional alignment is (relatively) slow and computationally intensive
+* Genes have multiple transcripts, alternative splicing introduces ambiguity
+* Read sampling is not uniform, there are biases
 
 ## Quantification tools
 
