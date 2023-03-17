@@ -518,10 +518,6 @@ Poly-A transcripts + Other mRNAs e.g.:
 
 ## Sequencing by synthesis 
 
-<img src="images/seq_error.png" class="centerimg" style="width: 80%">
-
-## Sequencing by synthesis 
-
 A complimentary strand is synthesized using the cDNA fragment as template. 
 
 Each nucleotide includes a fluorescent tag and as the new strand is synthesized,
