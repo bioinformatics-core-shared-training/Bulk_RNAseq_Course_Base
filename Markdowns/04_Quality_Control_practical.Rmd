@@ -2,8 +2,8 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quality Control
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 # Checking the quality of the data
@@ -160,7 +160,7 @@ addition to the python script, you will also need to have
 
 ```
 ./scripts/create_refflat_from_sam_header.py \
-  -b salmon_qc_demo/SRR7657883/SRR7657883.salmon.bam \
+  -b salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
   -o references/GRCm38_transriptome_refFlat.txt
 ```
 
@@ -176,6 +176,7 @@ transcriptome reference.
 >       * OUTPUT - `salmon_qc_demo/SRR7657883/SRR7657883.salmon.RNA_metrics.txt`
 >       * REF_FLAT - the refFlat reference file
 >       * STRAND - `NONE`
+>       * VALIDATION_STRINGENCY - SILENT
 
 <details><summary>Answer</summary>
 ```{bash eval=FALSE}

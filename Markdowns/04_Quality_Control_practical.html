@@ -297,17 +297,23 @@ overflow-y: auto;
 border: 1px solid #ddd;
 border-radius: 4px;
 }
-.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
-content: "\e259";
+.tabset-dropdown > .nav-tabs > li.active:before {
+content: "";
 font-family: 'Glyphicons Halflings';
 display: inline-block;
 padding: 10px;
 border-right: 1px solid #ddd;
 }
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
-content: "\e258";
-font-family: 'Glyphicons Halflings';
+content: "";
 border: none;
+}
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+content: "";
+font-family: 'Glyphicons Halflings';
+display: inline-block;
+padding: 10px;
+border-right: 1px solid #ddd;
 }
 .tabset-dropdown > .nav-tabs > li.active {
 display: block;
@@ -500,7 +506,7 @@ parameters:</p>
 <li><code>-o</code> - the output file name</li>
 </ul>
 <pre><code>./scripts/create_refflat_from_sam_header.py \
-  -b salmon_qc_demo/SRR7657883/SRR7657883.salmon.bam \
+  -b salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
   -o references/GRCm38_transriptome_refFlat.txt</code></pre>
 <p>Note that we only have to do this once, we do not need to create a
 separate refFlat file for each sample as they have all been quantified
@@ -519,6 +525,7 @@ bam file using the following command:
 <code>salmon_qc_demo/SRR7657883/SRR7657883.salmon.RNA_metrics.txt</code></li>
 <li>REF_FLAT - the refFlat reference file</li>
 <li>STRAND - <code>NONE</code></li>
+<li>VALIDATION_STRINGENCY - SILENT</li>
 </ul></li>
 </ol>
 </blockquote>
