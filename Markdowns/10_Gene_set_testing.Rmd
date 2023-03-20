@@ -3,9 +3,9 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: "Gene Set Testing for RNA-seq"
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  pdf_document:
-    toc: yes
   html_document:
+    toc: yes
+  pdf_document:
     toc: yes
 bibliography: ref.bib
 always_allow_html: true
@@ -203,6 +203,14 @@ divided by the number of genes in that GO term.
 dotplot(ego, font.size = 14)
 ```
 
+Another visualisation that can be nice to try is the `emapplot` which shows the overlap between genes in the different GO terms.
+
+```{r emap}
+library(enrichplot)
+ego_pt <- pairwise_termsim(ego)
+emapplot(ego_pt, cex_label_category = 0.25)
+```
+
 
 # GSEA analysis
 
@@ -292,7 +300,7 @@ Arguments passed to `GSEA` include:
 * gene set minimum size
 * gene set maximum size
 
-```{r runGsea}
+```{r runGsea, warning=FALSE}
 gseaRes <- GSEA(rankedGenes,
                 TERM2GENE = term2gene,
                 TERM2NAME = term2name,
@@ -353,38 +361,8 @@ explanation.
 > 3. Conduct the same analysis for the day 33 Infected vs Uninfected contrast.
 > Extended: Do results differ between ranking scheme?  
 > Extended: Do results differ between day 11 and day 33, with the 
-> significance-basedranking scheme?  
+> significance-based ranking scheme?  
 
-
-## Dot Plot?
-
-```{r DotPlot}
-library(enrichplot)
-
-dotplot(gseaRes, showCategory=10) + ggtitle("dotplot for GSEA - day 11")
-
-gseaRes2 <- pairwise_termsim(gseaRes)
-treeplot(gseaRes2)
-
-heatplot(gseaRes,
-         showCategory = 10,
-         foldChange = rankedGenes)
-
-shrink.d33 <- readRDS("RObjects/Shrunk_Results.d33.rds")
-rankedGenes33 <- shrink.d33 %>%
-  filter(!is.na(GeneID)) %>%
-  mutate(rank = logFC) %>%
-  arrange(desc(rank)) %>%
-  pull(rank, GeneID)
-gseaRes33 <- GSEA(rankedGenes33,
-                TERM2GENE = term2gene,
-                TERM2NAME = term2name,
-                pvalueCutoff = 1.00, 
-                minGSSize = 15,
-                maxGSSize = 500)
-
-dotplot(gseaRes33, showCategory=10) + ggtitle("dotplot for GSEA - day 33")
-```
 
 ---------------------------------------------------------------
 
