@@ -50,53 +50,7 @@ mmu04659.pathview.png:
 
 ![mmu04659 - Th17 cell differentiation](images/mmu04659_pathview.png)
 
-## Exercise 2 - GO term enrichment analysis
-
-> `clusterProfiler` can also perform over-representation analysis on GO terms.
-> using the commmand `enrichGO`. Look at the help page for the command 
-> `enrichGO` (`?enrichGO`) and have a look at the instructions in the 
-> [clusterProfiler book](http://yulab-smu.top/clusterProfiler-book/chapter5.html#go-over-representation-test).
->
-> 1. Run the over-representation analysis for GO terms 
->     - Use genes that have an adjusted p-value (FDR) of less than 0.01 and
-> an absolute fold change greater than 2.    
->     - For this analysis you can use Ensembl IDs rather then Entrez
->     - You'll need to provide the background (`universe`) genes, this should be
-> all the genes in our analysis.
->     - The mouse database package is called `org.Mm.eg.db`. You'll need to load
->  it using `library` before running the analysis.    
->     - As we are using Ensembl IDs, you'll need to set the `keyType` 
-> parameter in the `enrichGO` command to indicate this.
->     - Only test terms in the "Biological Processes" ontology 
-
-```{r solution2}
-library(org.Mm.eg.db)
-
-sigGenes <-  shrink.d11 %>% 
-    drop_na(FDR) %>% 
-    filter(FDR < 0.01 & abs(logFC) > 1) %>% 
-    pull(GeneID)
-
-universe <- shrink.d11$GeneID
-
-ego <- enrichGO(gene          = sigGenes, 
-                universe      = universe,
-                OrgDb         = org.Mm.eg.db,
-                keyType       = "ENSEMBL",
-                ont           = "BP",
-                pvalueCutoff  = 0.01,
-                readable      = TRUE)
-```
-
-> 2. Use the `dotplot` function to visualise the results.
-
-```{r solution2b, fig.width=12, fig.height=8}
-dotplot(ego, font.size = 14)
-```
-
-
-
-## Exercise 3 - GSEA
+## Exercise 2 - GSEA
 
 > Another common way to rank the genes is to order by pvalue, but also, sorting
 > so that upregulated genes are at the start and downregulated at the end - 

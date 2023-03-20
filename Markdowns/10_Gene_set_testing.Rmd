@@ -148,28 +148,60 @@ pathview(gene.data = logFC,
 > 1. Use `pathview` to export a figure for "mmu04659" or "mmu04658", but this 
 > time only use genes that are statistically significant at FDR < 0.01
 >
-> ### Exercise 2 - GO term enrichment analysis
->
-> `clusterProfiler` can also perform over-representation analysis on GO terms 
-using the command `enrichGO`. Check:
->
-> * the help page for the command `enrichGO` (type `?enrichGO` at the console
-> prompt) 
-> * the instructions in the
-> [clusterProfiler book](http://yulab-smu.top/clusterProfiler-book/chapter5.html#go-over-representation-test).
-> 
-> 1. Run the over-representation analysis for GO terms 
->     - Use genes that have an adjusted p-value (FDR) of less than 0.01 and
-> an absolute fold change greater than 2.    
->     - For this analysis you can use Ensembl IDs rather than Entrez
->     - You'll need to provide the background (`universe`) genes, this should be
-> all the genes in our analysis.
->     - The mouse database package is called `org.Mm.eg.db`. You'll need to load
->  it using `library` before running the analysis.    
->     - As we are using Ensembl IDs, you'll need to set the `keyType` 
-> parameter in the `enrichGO` command to indicate this.
->     - Only test terms in the "Biological Processes" ontology 
-> 2. Use the `dotplot` function to visualise the results.
+
+# GO term enrichment analysis
+
+`clusterProfiler` can also perform over-representation analysis on GO terms 
+using the command `enrichGO`. For this analysis we will use Ensembl gene IDs 
+instead of Entrez IDs and in order to do this we need to load another package 
+which contains the mouse database called `org.Mm.eg.db`. 
+
+To run the GO enrichment analysis, this time we also need a couple of extra 
+things. Firstly, we should provide a list of the 'universe' of all the genes in 
+our DE analysis not just the ones we have selected as significant. 
+
+Gene Ontology terms are divided into 3 categories. 
+- Metabolic Functions
+- Biological Processes
+- Cellular Components
+
+For this analysis we will narrow our search terms in the 'Biological Processes'
+Ontology so we can add the parameter "BP" with the 'ont' argument (the default 
+is Molecular Functions). 
+
+```{r GO analysis, message=FALSE, warning = FALSE}
+
+library(org.Mm.eg.db)
+
+sigGenes_GO <-  shrink.d11 %>% 
+    drop_na(FDR) %>% 
+    filter(FDR < 0.01 & abs(logFC) > 2) %>% 
+    pull(GeneID)
+
+universe <- shrink.d11$GeneID
+
+ego <- enrichGO(gene          = sigGenes_GO, 
+                universe      = universe,
+                OrgDb         = org.Mm.eg.db,
+                keyType       = "ENSEMBL",
+                ont           = "BP",
+                pvalueCutoff  = 0.01,
+                readable      = TRUE)
+```
+
+We can use the `barplot` function to visualise the results. Count is the number 
+of differentially expressed in each gene ontology term.
+
+```{r barplot}
+barplot(ego, showCategory=20)
+```
+
+or perhaps the `dotplot` version is more informative. Gene ratio is Count 
+divided by the number of genes in that GO term.
+
+```{r dotplot}
+dotplot(ego, font.size = 14)
+```
 
 
 # GSEA analysis
@@ -245,9 +277,9 @@ the the gene set name, gene Ensembl ID.
 
 ```{r loadPathways_msigdbr}
 term2gene <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  select(gs_name, ensembl_gene)
+  dplyr::select(gs_name, ensembl_gene)
 term2name <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  select(gs_name, gs_description) %>% 
+  dplyr::select(gs_name, gs_description) %>% 
   distinct()
 ```
 
@@ -275,16 +307,16 @@ Let's look at the top 10 results.
 as_tibble(gseaRes) %>% 
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
-  select(-core_enrichment) %>%
+  dplyr::select(-core_enrichment) %>%
   mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
   mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific))
 ```
 
-```{r top10GseaPrintactual, echo=FALSE}
+```{r top10GseaPrintactual, echo=FALSE, warning=FALSE}
 as_tibble(gseaRes) %>% 
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
-  select(-core_enrichment) %>%
+  dplyr::select(-core_enrichment) %>%
   mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
   mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) %>% 
   DT::datatable(option=list(dom='t'))
@@ -309,7 +341,7 @@ Remember to check the [GSEA
 article](http://www.pnas.org/content/102/43/15545.full) for the complete 
 explanation.
 
-> ## Exercise 3 {.exercise}
+> ## Exercise 2 {.exercise}
 >
 > Another common way to rank the genes is to order by pvalue while sorting
 > so that upregulated genes are at the start and downregulated at the end.
