@@ -1,6 +1,6 @@
 ---
 title: "Introduction to Gene Set Testing in R"
-date: "November 2021"
+date: "March 2023"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -33,7 +33,6 @@ theme_update(panel.background = element_rect(fill = "transparent", colour = NA),
 <div style="line-height: 50%;"><br></div>
 
 <img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
-<!-- <img src="images/workflow.svg" class="centerimg" style="width: 60%;"> -->
 
 ## Gene Set Testing - Overview
 
@@ -113,7 +112,7 @@ Contingency table:
 
 * Ranking by Fold Change - unsorted logFC
 
-```{r loadGSEAdata, include=FALSE, message=FALSE}
+```{r loadGSEAdata, include=FALSE, message=FALSE, warning=FALSE}
 set.seed(1)
 tab <- readRDS("RObjects/Shrunk_Results.d11.rds") %>% 
     slice(1:150) %>% 
@@ -146,7 +145,7 @@ tab %>%
 * Ranking by Fold Change - sorted logFC, in decreasing order
 
 <div style="width: 80%; margin-left: 13%">
-```{r FoldchangesSorted, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5}
+```{r FoldchangesSorted, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5, warning=FALSE, message=FALSE}
 tab %>% 
     ggplot(aes(x=Index2, y=logFC)) +
     geom_segment(aes(xend=Index2), yend=0) +
@@ -159,7 +158,7 @@ tab %>%
 * Identify genes in set
 
 <div style="width: 80%; margin-left: 13%">
-```{r FoldchangesWithGeneSet, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5}
+```{r FoldchangesWithGeneSet, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5, warning=FALSE, message=FALSE}
 tab %>%  
     ggplot(aes(x=Index2, y=logFC)) +
     geom_segment(aes(xend=Index2, colour=inGeneSetA), yend=0) +
@@ -175,7 +174,7 @@ tab %>%
 of 0
 
 <div style="width: 80%; margin-left: 13%">
-```{r Ranking, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5}
+```{r Ranking, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5, warning=FALSE, message=FALSE}
 tab %>%  
     ggplot(aes(x=Index2)) +
     geom_segment(aes(xend=Index2, colour=inGeneSetA), y=-0.5, yend=0.5) +
@@ -215,7 +214,7 @@ animate(p, nframes=150, fps = 8, renderer = gifski_renderer(loop=FALSE),
 * A different gene set
 
 <div style="width: 80%; margin-left: 13%">
-```{r genesetB, echo=FALSE, dpi = 300, fig.width= 4, fig.height=2.5}
+```{r genesetB, echo=FALSE, dpi = 300, fig.width= 4, fig.height=2.5, message=FALSE, warning=FALSE}
 tab %>% 
     ggplot(aes(x=Index2)) +
     geom_segment(aes(xend=Index2, colour=inGeneSetB), y=-0.5, yend=0.5) +
@@ -232,7 +231,7 @@ tab %>%
 * A different gene set
 
 <div style="width: 80%; margin-left: 13%">
-```{r anim2, echo=FALSE}
+```{r anim2, echo=FALSE, warning=FALSE, message=FALSE}
 p <- tab %>% 
     ggplot(aes(x=Index2)) +
     geom_segment(aes(xend=Index2, colour=inGeneSetB,
@@ -257,7 +256,7 @@ animate(p, nframes=75, fps = 8, renderer = gifski_renderer(loop=FALSE),
 * From a distribution of our permuted enrichment scores determine how likely our ES.
 
 <div style="width: 60%; margin-left: 20%; padding-top: 30px">
-```{r pvalue, echo=FALSE}
+```{r pvalue, echo=FALSE, message=FALSE, warning=FALSE}
 x1 <- seq(-6, 6, length=100)
 hx1 <- dnorm(x1, mean = 0, sd = 1.5)
 par(bg=NA, mar=c(5, 4, 0, 4) + 0.1) 
