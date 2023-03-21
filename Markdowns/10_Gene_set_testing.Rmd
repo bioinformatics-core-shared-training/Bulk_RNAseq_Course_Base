@@ -214,8 +214,7 @@ emapplot(ego_pt, cex_label_category = 0.25)
 
 # GSEA analysis
 
-Gene Set Enrichment Analysis (GSEA) identifies gene sets that are related to the
-difference of interest between samples [@Subramanian15545].
+Gene Set Enrichment Analysis (GSEA) identifies gene sets that are enriched in the dataset between samples [@Subramanian15545].
 
 The software is distributed by the 
 [Broad Institute](http://software.broadinstitute.org/gsea/index.jsp)
@@ -357,11 +356,8 @@ explanation.
 > 
 > 1. Rank the genes by statistical significance - you will need to create
 > a new ranking value using `-log10({p value}) * sign({Fold Change})`.
-> 2. Run `fgsea` using the new ranked genes and the H pathways.
+> 2. Run GSEA using the new ranked genes and the H pathways.
 > 3. Conduct the same analysis for the day 33 Infected vs Uninfected contrast.
-> Extended: Do results differ between ranking scheme?  
-> Extended: Do results differ between day 11 and day 33, with the 
-> significance-based ranking scheme?  
 
 
 ---------------------------------------------------------------

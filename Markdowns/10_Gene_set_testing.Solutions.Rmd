@@ -2,10 +2,10 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: "Gene Set Testing for RNA-seq - Solutions"
 output:
-  pdf_document:
-    toc: yes  
   html_document:
     toc: yes
+  pdf_document:
+    toc: yes  
 layout: page
 always_allow_html: true
 ---
@@ -61,9 +61,9 @@ First load the pathway details if you have not already done so.
 ```{r solution3_GSEA_a}
 library(msigdbr)
 term2gene <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  select(gs_name, entrez_gene)
+  dplyr::select(gs_name, entrez_gene)
 term2name <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  select(gs_name, gs_description) %>% 
+  dplyr::select(gs_name, gs_description) %>% 
   distinct()
 ```
 
@@ -80,7 +80,7 @@ rankedGenes.e11 <- shrink.d11 %>%
 ```
 
 
-> 2. Run `fgsea` using the new ranked genes and the Hallmark pathways.
+> 2. Run GSEA using the new ranked genes and the Hallmark pathways.
 
 ```{r solution3_GSEA_2}
 # conduct analysis:
@@ -98,18 +98,18 @@ View the results:
 as_tibble(gseaRes.e11) %>% 
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
-  select(-core_enrichment) %>%
+  dplyr::select(-core_enrichment) %>%
   mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
-  mutate(across(c("pvalue", "p.adjust", "qvalues"), scales::scientific))
+  mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) 
 ```
 
 ```{r top10GseaPrintactual, echo=FALSE}
 as_tibble(gseaRes.e11) %>% 
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
-  select(-core_enrichment) %>%
+  dplyr::select(-core_enrichment) %>%
   mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
-  mutate(across(c("pvalue", "p.adjust", "qvalues"), scales::scientific)) %>% 
+  mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) %>% 
   DT::datatable(option=list(dom='t'))
 ```
 
@@ -142,17 +142,17 @@ View the results:
 as_tibble(gseaRes.e33) %>% 
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
-  select(-core_enrichment) %>%
+  dplyr::select(-core_enrichment) %>%
   mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
-  mutate(across(c("pvalue", "p.adjust", "qvalues"), scales::scientific))
+  mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific))
 ```
 
 ```{r top10GseaPrintactual33, echo=FALSE}
 as_tibble(gseaRes.e33) %>% 
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
-  select(-core_enrichment) %>%
+  dplyr::select(-core_enrichment) %>%
   mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
-  mutate(across(c("pvalue", "p.adjust", "qvalues"), scales::scientific)) %>% 
+  mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) %>% 
   DT::datatable(option=list(dom='t'))
 ```
