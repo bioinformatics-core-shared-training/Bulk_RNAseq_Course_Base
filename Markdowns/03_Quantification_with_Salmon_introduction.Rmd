@@ -7,8 +7,6 @@ output:
     logo: images/CRUK_Cambridge_Institute.png
     smaller: yes
     widescreen: yes
-  beamer_presentation: default
-  slidy_presentation: default
 bibliography: ref.bib
 ---
 
@@ -41,13 +39,11 @@ Aligners: STAR, HISAT2
 
 ## Alignment
 
-
 * Traditional alignment is (relatively) slow and computationally intensive
     
 <img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 ## Alignment
-
 
 * Traditional alignment is (relatively) slow and computationally intensive
     
@@ -56,7 +52,7 @@ Aligners: STAR, HISAT2
 Switch to *quasi-mapping* or *pseudo-alignment*
 
 
-## Why Pseudo-alignment methods are fatster?
+## Why Pseudo-alignment methods are faster?
 
 * Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome)
 * No base to base alignment required in pseudo-alignment methods
@@ -132,14 +128,6 @@ So the simplest approach is to count how many reads overlap each gene.
 
 * Above biases are sample specific
 * Methods like Salmon attempt to mitigate the effect of technical biases by estimating sample-specific bias parameters.
-
-## Salmon workflow
-
-<img src="images/Salmon_workflow_1.png" class="centerimg" style="width: 57%;">
-
-<div style="text-align: right">
-  Patro *et al.* (2017) Nature Methods doi:10.1038/nmeth.4197
-</div>
 
 ## Salmon workflow
 
