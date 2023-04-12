@@ -959,7 +959,7 @@ How can you explain this apparent contradiction?
 
 We have four coefficients, which we can relate to that model notation as meaning:
 
-- $\beta_0$ = `Intercept` is the average expression of the reference group. In this case the reference group is "MUT" genotype in treatment "A". 
+- $\beta_0$ = `Intercept` is the average expression of the reference group. In this case the reference group is "WT" genotype in treatment "A". 
 - $\beta_1$ = `genotype_MUT_vs_WT` is the average difference of "MUT" genotype versus the "WT", both in treatment "A". 
 - $\beta_2$ = `treatment_B_vs_A` is the average difference of treament "B" versus "A", both for "MUT" genotype. 
 - $\beta_3$ = `genotypeMUT.treatmentB` is the "difference of differences", i.e. whether "WT" and "MUT" respond differently to the treatment.
