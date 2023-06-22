@@ -2,8 +2,8 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quantification of Gene Expression with Salmon
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ## Exercise 1 - Create Salmon index
@@ -104,7 +104,14 @@ salmon quant \
 ```{bash eval=FALSE}
 samtools sort \
   -@ 7 \
+  -O BAM \
   -o salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam \
    salmon_output/SRR7657883/SRR7657883.salmon.sam
 ```
 >> $\Rightarrow$  *salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam*
+
+> 2. Check your bam file
+```{bash eval=FALSE}
+samtools view salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam | more
+```
+

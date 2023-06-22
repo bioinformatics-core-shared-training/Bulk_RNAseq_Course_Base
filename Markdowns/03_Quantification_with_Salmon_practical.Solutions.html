@@ -471,6 +471,7 @@ compression.</li>
 </blockquote>
 <pre class="bash"><code>samtools sort \
   -@ 7 \
+  -O BAM \
   -o salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam \
    salmon_output/SRR7657883/SRR7657883.salmon.sam</code></pre>
 <blockquote>
@@ -479,6 +480,12 @@ compression.</li>
 <em>salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam</em></p>
 </blockquote>
 </blockquote>
+<blockquote>
+<ol start="2" style="list-style-type: decimal">
+<li>Check your bam file</li>
+</ol>
+</blockquote>
+<pre class="bash"><code>samtools view salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam | more</code></pre>
 </div>
 </div>
 
