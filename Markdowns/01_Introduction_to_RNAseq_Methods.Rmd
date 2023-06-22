@@ -243,56 +243,9 @@ Each replicate is from an indepent biological individual
 
 ## Designing the right experiment - Replication
 
-### Technical Replication<div style="width: 28%; 
-    float: left;
-    border-style: solid; 
-    border-width: 4px;
-    border-radius: 28px; 
-    border-color: #2e3192;
-    padding: 20px;
-    display: block;
-    height: 330px;
-    margin-left: 1.6%;
-    margin-top: 20px">
-<div style="text-align: center;">
-<a href="https://emea.illumina.com/content/dam/illumina-marketing/documents/applications/ngs-library-prep/for-all-you-seq-rna.pdf" style="color: #2e2892;">**RNA Sequencing**</a>
-</div>
+### Technical Replication
 
-* Transcriptome Assembly
 
-* **Differential Gene Expression**
-
-* Fusion Genes
-
-* Splice variants
-
-</div>
-
-<div style="width: 28%; 
-    float: right;
-    border-style: solid; 
-    border-width: 1px;
-    border-radius: 28px; 
-    padding: 20px;
-    display: block;
-    height: 330px;
-    margin-top: 20px">
-<div style="text-align: center;">
-<span style="color: #2e2892;">**Single-Cell**</span>
-</div>
-
-* RNA/DNA
-
-* Low-level RNA/DNA detection
-
-* Cell-type classification
-
-* Dissection of heterogenous cell populations
-
-</div>
-
-<div style="width: 45%;
-            float: left;">
 Replicates are from the same individual but processed separately
 
 * Experimental protocol
