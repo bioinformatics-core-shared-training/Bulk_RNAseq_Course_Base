@@ -23,7 +23,7 @@ the reference sequence finding the most likely origin of the read sequence.
 
 <img src="images/SRAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
 
-## Alignment - Gap aware alignment
+## Alignment - Splicing aware alignment
 
 <img src="images/GappedAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
 
@@ -49,56 +49,16 @@ Aligners: STAR, HISAT2
     
 <img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
         
-Switch to *quasi-mapping* or *pseudo-alignment*
+Switch to *quasi-mapping* (Salmon) or *pseudo-alignment* (Kallisto)
 
 
-## Why Pseudo-alignment methods are faster?
+## Why are Pseudo-alignment methods faster?
 
-* Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome)
-* No base to base alignment required in pseudo-alignment methods
-
-
-## Quasi-mapping/Pseudo-alignment
-
-* Traditional alignment is (relatively) slow and computationally intensive
-
-Switch to *quasi-mapping* or *pseudo-alignment*
+* Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome in human)
+* Use exact kmer matching rather than aligning whole reads with mismatches and indels
     
 <img src="images/quasi_mapping_3.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
-## What is read quantification?
-
-* **Quantification**: How many reads have come from a genomic feature?
-  * genomic feature can be gene or transcript or exon, but usually gene
-
-We now have the locations of our reads on the genome.
-
-We also know the locations of exons of genes on the genome.
-
-So the simplest approach is to count how many reads overlap each gene.
-
-
-<img src="images/Read_counting_1.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
-
-## What is read quantification?
-
-* **Quantification**: How many reads have come from a genomic feature?
-  * genomic feature can be gene or transcript or exon, but usually gene
-
-We now have the locations of our reads on the genome.
-
-We also know the locations of exons of genes on the genome.
-
-So the simplest approach is to count how many reads overlap each gene.
-
-<img src="images/Read_counting_2.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
-
-
-## What is read quantification?
-
-* Traditional alignment is (relatively) slow and computationally intensive
-* Genes have multiple transcripts, alternative splicing introduces ambiguity
-* Read sampling is not uniform, there are biases
 
 ## Quantification tools
 
@@ -116,17 +76,36 @@ So the simplest approach is to count how many reads overlap each gene.
     * Pros: Very fast and removes biases
     * Cons: Not intuitive
     * Tools: Kallisto, Sailfish, **Salmon** etc 
+    
+    
+## What is read quantification?
 
+* **Quantification**: How many reads have come from a genomic feature?
+  * genomic feature can be gene or transcript or exon, but usually gene
 
-## RNA-seq data biases  
+If we had mapped our reads to the genome (rather than the transcript sequences),
+our mapping would look like this:
 
+We also know the locations of exons of genes on the genome, from an annotation 
+file (e.g. GFF or GTF)
+
+So the simplest approach is to count how many reads overlap each gene.
+
+<img src="images/Read_counting_2.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
+
+## What is read quantification?
+
+However, Salmon does not work this way. We have mapped to the transcript sequences, not the genome. Quantification is performed as part of the quasi-mapping process.
+
+Salmon also takes account of biases:
+
+* **Multimapping**: Reads which map equally well to multiple locations
 * **GC bias**: Higher GC content sequences are less likely to be observed as PCR  is not efficient with high GC content sequences.
 * **Positional bias**: for most sequencing methods, the 3 prime end of transcripts are more likely to be observed.
 * **Complexity bias**: some sequences are easier to be bound and amplified than others.
 * **Sequence-based bias**: Bias in read start positions arising from the differential binding efficiency of random hexamer primers
 * **Fragment length bias**: Induced by size selection
 
-* Above biases are sample specific
 * Methods like Salmon attempt to mitigate the effect of technical biases by estimating sample-specific bias parameters.
 
 ## Salmon workflow

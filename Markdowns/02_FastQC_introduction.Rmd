@@ -2,12 +2,12 @@
 title: "Basic quality control with FastQC"
 date: "March 2023"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
     smaller: yes
     widescreen: yes
-  beamer_presentation: default
   slidy_presentation: default
 ---
 
@@ -39,25 +39,24 @@ Sequence quality scores are transformed and translated p-values
 <div style="width: 100%; 
             float: left"> 
             
-* Sequence bases are derived after image processing (base calling) 
-  * This process is probabilistic in nature 
-  * Each base in sequence has _p-value_ associated with it 
-  * p-values range: 0-1 (e.g.: 0.05, 0.01, 1e-30) 
-  * p-value of 0.01 inferred as 1 in 100 chance that called base is  wrong 
+* Sequence bases are called after image processing (base calling) 
+  * Each base in a sequence has a _p-value_ associated with it 
+  * p-values range from 0-1 (e.g.: 0.05, 0.01, 1e-30) 
+  * p-value of 0.01 inferred as 1 in 100 chance that called base is wrong 
 </div>
 
 ## (Phred) Quality Scores  ... 
 
 
-How to assign p-values to bases in fastq file?
+How do we assign p-values to bases in the fastq file?
 
 <div style="width: 50%; 
             float: left"> 
             
-* Base (one letter) but p-vales can be long (e.g.:0.000005)
+* P-vales can be many characters long (e.g.:0.000005)
 * Transform to Phred quality scores _Q_
 * $Q = -10(log_{10} P)$ (e.g.: 0.01 = Q value of 20,  0.001 = Q value of 30)
-* Translate _Q_ values to ASCII characters (Q value of 1 = !, Q value of 30 = ? )
+* Translate _Q_ values to ASCII characters (adding 33) (Q value of 30 = ?, Q value of 40 = I )
 </div>
 
 <div style="margin-left: 60px;
@@ -191,6 +190,23 @@ The spike is due to severe adapter contamination.
 * Go to: https://ushers.bio.cam.ac.uk/guacamole2
 
 * Log on with YOUR credentials that were emailed to you
+
+## A quick intro to the environment
+ 
+- The terminal is just a text based version of the operating system 
+- We will look at an example with side by side GUI and text file system...
+- You use commands instead of mouse clicks - commands are case-senstitve and can be followed by arguments with spaces 
+  - cd
+  - pwd
+  - ls 
+  - flags - e.g. ls -a 
+  - the directory structure is like a tree, you can go back with cd ..
+  - Up arrows to get through history 
+  - tab complete to avoid errors
+  - More to look at the files and q to exit
+  - ctrl-c
+
+
 
 
 

@@ -409,12 +409,11 @@ settings with just a few extras.</p>
 <div id="indexing-the-transcriptome-for-salmon" class="section level1">
 <h1>1. Indexing the transcriptome for Salmon</h1>
 <p>Salmon encompasses both alignment and quantification in a single
-tool. As with HISAT2, we will need a reference to map the reads to,
-however, in this case we will be aligning to the transcriptome rather
-than the genome. The transcriptome reference is a fasta file containing
+tool. Here we will be aligning directly to the transcriptome rather than
+the genome. The transcriptome reference is a fasta file containing
 sequences for all transcripts. Before we can run <code>Salmon</code> we
-need to create an index, just as we did for <code>HISAT2</code>. For
-common species is possible to <a href="http://refgenomes.databio.org/">download</a> pre-generated Salmon
+need to create an index, that allows the Salmon to process the sequences
+more efficiently. For common species is possible to <a href="http://refgenomes.databio.org/">download</a> pre-generated Salmon
 indexes, however, it is worth knowing how to create your own. This
 process is more computationally intensive and will not run on standard
 laptop or desktop.</p>
@@ -426,7 +425,7 @@ non-transcriptomic reads will not be erroneously counted against
 transcripts.</p>
 <p>The indexing takes too long with the full transcriptome for the
 purposes of this training session, so we will work with the
-transcriptome for just genes on Chromosome 14.</p>
+transcriptome for just genes on mouse Chromosome 14.</p>
 <p>The full transcriptome has been downloaded from Ensembl:</p>
 <p><a href="ftp://ftp.ensembl.org/pub/release-102/fasta/mus_musculus/cdna/Mus_musculus.GRCm38.cdna.all.fa.gz" class="uri">ftp://ftp.ensembl.org/pub/release-102/fasta/mus_musculus/cdna/Mus_musculus.GRCm38.cdna.all.fa.gz</a></p>
 <div id="indexing-the-transcriptome" class="section level2">
@@ -525,7 +524,7 @@ data.</li>
 <em>fastq/SRR7657883.subset_2M.sra_2.fastq.gz</em></li>
 <li><strong>Output quantification directory</strong> -
 <em>salmon_output/SRR7657883</em></li>
-<li><code>--writeMappings salmon_output/SRR7657883.salmon.sam</code> -
+<li><code>--writeMappings=salmon_output/SRR7657883.salmon.sam</code> -
 Instructs Salmon to output the read alignments in SAM format to the file
 <em>salmon_output/SRR7657883.salmon.sam</em>.</li>
 <li><code>--gcBias</code> - salmon can optionally correct for GC content
@@ -548,7 +547,7 @@ location (Contig/Chromosome name and the location on the contig), this
 further improves the compression of the SAM to BAM. We will use the
 <code>samtools sort</code> function.</p>
 <p>The general command is:</p>
-<p><code>samtools sort -o my_sample.sorted.bam my_sample.sam</code></p>
+<p><code>samtools sort -O BAM -o my_sample.sorted.bam my_sample.sam</code></p>
 <p>Where the <code>-o</code> option is used to provide the output file
 name. There are many other options, e.g. reads can be sorted by the read
 name instead of the position or we can specify the number of parallel
@@ -563,6 +562,12 @@ threads to be used - to find out more use
 <code>SRR7657883.salmon.sorted.bam</code>. Use the option
 <code>-@ 7</code> to use 7 cores, this vastly speeds up the
 compression.</li>
+</ol>
+</blockquote>
+<blockquote>
+<ol start="2" style="list-style-type: decimal">
+<li>Use, for example, <code>samtools view my_sample.sorted.bam</code> to
+check your BAM file</li>
 </ol>
 </blockquote>
 <hr />

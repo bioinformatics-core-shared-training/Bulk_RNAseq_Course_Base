@@ -2,8 +2,8 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quantification of Gene Expression with Salmon
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 bibliography: ref.bib
 ---
 
@@ -40,11 +40,11 @@ a few extras.
 
 # 1. Indexing the transcriptome for Salmon
 
-Salmon encompasses both alignment and quantification in a single tool. As with
-HISAT2, we will need a reference to map the reads to, however, in this case we
-will be aligning to the transcriptome rather than the genome. The transcriptome
+Salmon encompasses both alignment and quantification in a single tool. Here we
+will be aligning directly to the transcriptome rather than the genome. The transcriptome
 reference is a fasta file containing sequences for all transcripts. Before we
-can run `Salmon` we need to create an index, just as we did for `HISAT2`. For
+can run `Salmon` we need to create an index, that allows the Salmon to process the 
+sequences more efficiently. For
 common species is possible to [download](http://refgenomes.databio.org/)
 pre-generated Salmon indexes, however, it is worth knowing how to create your
 own. This process is more computationally intensive and will not run on
@@ -60,7 +60,7 @@ be erroneously counted against transcripts.
 
 The indexing takes too long with the full transcriptome for the purposes of this
 training session, so we will work with the transcriptome for 
-just genes on Chromosome 14. 
+just genes on mouse Chromosome 14. 
 
 The full transcriptome has been downloaded from Ensembl:
 
@@ -148,7 +148,7 @@ The files we will use are called *SRR7657883.subset_2M....*.
 >       * **File containing the #1 reads** - *fastq/SRR7657883.subset_2M.sra_1.fastq.gz*
 >       * **File containing the #2 reads** - *fastq/SRR7657883.subset_2M.sra_2.fastq.gz*
 >       * **Output quantification directory** - *salmon_output/SRR7657883*
->       * `--writeMappings salmon_output/SRR7657883.salmon.sam` - Instructs 
+>       * `--writeMappings=salmon_output/SRR7657883.salmon.sam` - Instructs 
 >         Salmon to output the read alignments in SAM format to the file 
 >         *salmon_output/SRR7657883.salmon.sam*.
 >       * `--gcBias` - salmon can optionally correct for GC content bias, it is
@@ -171,7 +171,7 @@ further improves the compression of the SAM to BAM. We will use the
 
 The general command is:
 
-`samtools sort -o my_sample.sorted.bam my_sample.sam`
+`samtools sort -O BAM -o my_sample.sorted.bam my_sample.sam`
 
 Where the `-o` option is used to provide the output file name. There are many
 other options, e.g. reads can be sorted by the read name instead of the position
@@ -183,6 +183,8 @@ use `samtools sort --help`.
 > 1. Sort and transform your aligned SAM file into a BAM file called
 > `SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this
 > vastly speeds up the compression.
+
+> 2. Use, for example, `samtools view my_sample.sorted.bam` to check your BAM file
 
 ----------------------------------------------------------
 
