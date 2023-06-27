@@ -61,7 +61,7 @@ First load the pathway details if you have not already done so.
 ```{r solution3_GSEA_a}
 library(msigdbr)
 term2gene <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  dplyr::select(gs_name, entrez_gene)
+  dplyr::select(gs_name, ensembl_gene)
 term2name <- msigdbr(species = "Mus musculus", category = "H") %>% 
   dplyr::select(gs_name, gs_description) %>% 
   distinct()
