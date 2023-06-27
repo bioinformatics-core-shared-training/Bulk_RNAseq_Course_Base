@@ -73,10 +73,10 @@ term2name <- msigdbr(species = "Mus musculus", category = "H") %>%
 ```{r solution3_GSEA_1}
 # rank genes
 rankedGenes.e11 <- shrink.d11 %>%
-  drop_na(Entrez, pvalue, logFC) %>%
+  drop_na(GeneID, pvalue, logFC) %>%
   mutate(rank = -log10(pvalue) * sign(logFC)) %>%
   arrange(desc(rank)) %>%
-  pull(rank, Entrez)
+  pull(rank, GeneID)
 ```
 
 
@@ -122,10 +122,10 @@ shrink.d33 <- readRDS("RObjects/Shrunk_Results.d33.rds")
 
 # rank genes
 rankedGenes.e33 <- shrink.d33 %>%
-  drop_na(Entrez, pvalue, logFC) %>%
+  drop_na(GeneID, pvalue, logFC) %>%
   mutate(rank = -log10(pvalue) * sign(logFC)) %>%
   arrange(desc(rank)) %>%
-  pull(rank,Entrez)
+  pull(rank,GeneID)
 
 # perform analysis
 gseaRes.e33 <- GSEA(rankedGenes.e33,
