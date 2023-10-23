@@ -8,7 +8,12 @@ output:
 subtitle: Annotation and Visualisation of Differential Expression Results - Solutions
 ---
 
-```{r setup, include=FALSE}
+```{r setup, echo=FALSE, cache=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
+knitr::opts_knit$set(root.dir = here::here("Course_Materials"))
+```
+
+```{r packages, include=FALSE}
 library(AnnotationHub)
 library(AnnotationDbi)
 library(ensembldb)
@@ -47,25 +52,18 @@ ddsShrink.33 <- lfcShrink(ddsObj.interaction,
 
 shrinkTab.33 <- as.data.frame(ddsShrink.33) %>%
     rownames_to_column("GeneID") %>% 
-    left_join(ensemblAnnot, "GeneID") %>% 
-    rename(logFC=log2FoldChange, FDR=padj)
-
+    left_join(ensemblAnnot, "GeneID")
 ```
 
 > (b) 
-> Create a new column of -log10(pvalue) values in your shrinkTab for 33 days.
->
-> (c) 
 > Create a plot with points coloured by P-value < 0.05 similar to how we did in 
 > the first volcano plot
 
 ```{r plotVol}
-volcanoTab.33 <- shrinkTab.33 %>% 
-    mutate(`-log10(pvalue)` = -log10(pvalue))
-
-ggplot(volcanoTab.33, aes(x = logFC, y=`-log10(pvalue)`)) + 
-    geom_point(aes(colour=FDR < 0.05), size=1)
-
+ggplot(shrinkTab.33, aes(x = log2FoldChange, y = -log10(pvalue))) + 
+    geom_point(aes(colour = padj < 0.05), size = 1) +
+    labs(x = "log2(Fold Change)", y = "-log10(p-value)", colour = "FDR < 5%",
+         title = "Infected vs Uninfected (day 33)")
 ```
 
 
@@ -79,12 +77,11 @@ ggplot(volcanoTab.33, aes(x = logFC, y=`-log10(pvalue)`)) +
 > and Uninfected.
 
 ```{r plotMA}
-maTab.33 <- shrinkTab.33 %>% 
-    mutate(`M` = log2(baseMean))
-
-ggplot(maTab.33, aes(x = M, y = logFC)) + 
-    geom_point(aes(colour=FDR < 0.05), size=1) +
-    scale_y_continuous(limit=c(-4,4), oob = scales::squish)
+ggplot(shrinkTab.33, aes(x = log2(baseMean), y = log2FoldChange)) + 
+    geom_point(aes(colour = padj < 0.05), size = 1) +
+    scale_y_continuous(limit = c(-4, 4), oob = scales::squish) +
+    labs(x = "log2(Mean Expression)", y = "log2(Fold Change)", colour = "FDR < 5%",
+         title = "Infected vs Uninfected (day 33)")
 ```
 
 ## Exercise 3 - Strip Chart
@@ -92,15 +89,17 @@ ggplot(maTab.33, aes(x = M, y = logFC)) +
 > For this exercise create another strip chart for the gene Jchain.
 
 ```{r Exercise3}
-geneID_33 <- filter(shrinkTab.33, Symbol=="Jchain") %>% pull(GeneID)
+geneID_33 <- shrinkTab.33 %>% 
+    filter(Symbol == "Jchain") %>% 
+    pull(GeneID)
 
 plotCounts(ddsObj.interaction, 
            gene = geneID_33, 
            intgroup = c("TimePoint", "Status", "Replicate"),
            returnData = T) %>% 
-    ggplot(aes(x=Status, y=log2(count))) +
-      geom_point(aes(fill=Replicate), shape=21, size=2) +
-      facet_wrap(~TimePoint) +
-      expand_limits(y=0) +
-      labs(title = "Normalised counts - Immunoglobulin Joining Chain")
+    ggplot(aes(x = Status, y = log2(count))) +
+    geom_point(aes(fill = Replicate), shape = 21, size = 2) +
+    facet_wrap(~ TimePoint) +
+    expand_limits(y = 0) +
+    labs(title = "Normalised counts - Immunoglobulin Joining Chain")
 ```

@@ -5,14 +5,16 @@ date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
   html_document:
     toc: yes
+    toc_float: true
   pdf_document:
     toc: yes
 bibliography: ref.bib
 always_allow_html: true
 ---
 
-```{r setup, include=FALSE, cache=FALSE}
-library(tidyverse)
+```{r setup, echo=FALSE, cache=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
+knitr::opts_knit$set(root.dir = here::here("Course_Materials"))
 ```
 
 The list of differentially expressed genes is sometimes so long that its 
@@ -87,7 +89,7 @@ shrink.d11 <- readRDS("RObjects/Shrunk_Results.d11.rds")
 
 We will only use genes that have:
 
-* an adjusted p-value (FDR) of less than 0.05
+* an adjusted p-value (FDR, False Discovery Rate) of less than 0.05
 * and an absolute fold change greater than 2.
 
 We need to remember to eliminate genes with missing values in the FDR as a result
@@ -98,8 +100,8 @@ with a missing Entrez ID (NA values in the 'Entrez' column).
 
 ```{r enrichKEGGprint}
 sigGenes <- shrink.d11 %>% 
-    drop_na(Entrez, FDR) %>% 
-    filter(FDR < 0.05 & abs(logFC) > 1) %>% 
+    drop_na(Entrez, padj) %>% 
+    filter(padj < 0.05 & abs(log2FoldChange) > 1) %>% 
     pull(Entrez)
 
 keggRes <- enrichKEGG(gene = sigGenes, organism = 'mmu')
@@ -131,7 +133,7 @@ The package plots the KEGG pathway to a `png` file in the working directory.
 
 ```{r pathview, message=F}
 library(pathview)
-logFC <- shrink.d11$logFC
+logFC <- shrink.d11$log2FoldChange
 names(logFC) <- shrink.d11$Entrez
 pathview(gene.data = logFC, 
          pathway.id = "mmu04612", 
@@ -146,7 +148,7 @@ pathview(gene.data = logFC,
 > ### Exercise 1 {.challenge}
 >
 > 1. Use `pathview` to export a figure for "mmu04659" or "mmu04658", but this 
-> time only use genes that are statistically significant at FDR < 0.01
+> time only use genes that are statistically significant at padj < 0.01
 >
 
 # GO term enrichment analysis
@@ -174,8 +176,8 @@ is Molecular Functions).
 library(org.Mm.eg.db)
 
 sigGenes_GO <-  shrink.d11 %>% 
-    drop_na(FDR) %>% 
-    filter(FDR < 0.01 & abs(logFC) > 2) %>% 
+    drop_na(padj) %>% 
+    filter(padj < 0.01 & abs(log2FoldChange) > 2) %>% 
     pull(GeneID)
 
 universe <- shrink.d11$GeneID
@@ -269,8 +271,8 @@ Also, we should use the shrunk LFC values.
 
 ```{r preparedata}
 rankedGenes <- shrink.d11 %>%
-  filter(!is.na(GeneID)) %>%
-  mutate(rank = logFC) %>%
+  drop_na(GeneID, padj, log2FoldChange) %>%
+  mutate(rank = log2FoldChange) %>%
   arrange(desc(rank)) %>%
   pull(rank, GeneID)
 ```
@@ -355,7 +357,7 @@ explanation.
 > You can do this combining the sign of the fold change and the pvalue. 
 > 
 > 1. Rank the genes by statistical significance - you will need to create
-> a new ranking value using `-log10({p value}) * sign({Fold Change})`.
+> a new ranking value using `-log10(pvalue) * sign(log2FoldChange)`.
 > 2. Run GSEA using the new ranked genes and the H pathways.
 > 3. Conduct the same analysis for the day 33 Infected vs Uninfected contrast.
 

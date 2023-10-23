@@ -137,8 +137,7 @@ ensemblAnnot <- readRDS("RObjects/Ensembl_annotations.rds")
 colnames(ensemblAnnot)
 annot.interaction.11 <- as.data.frame(results.interaction.11) %>% 
     rownames_to_column("GeneID") %>% 
-    left_join(ensemblAnnot, "GeneID") %>% 
-    rename(logFC=log2FoldChange, FDR=padj)
+    left_join(ensemblAnnot, "GeneID")
 ```
 
 Finally we can output the annotation DE results using `write_tsv`.
@@ -179,8 +178,7 @@ ddsShrink.11 <- lfcShrink(ddsObj.interaction,
 
 shrinkTab.11 <- as.data.frame(ddsShrink.11) %>%
     rownames_to_column("GeneID") %>% 
-    left_join(ensemblAnnot, "GeneID") %>% 
-    rename(logFC=log2FoldChange, FDR=padj)
+    left_join(ensemblAnnot, "GeneID")
 ```
 
 ## MA plots
@@ -224,7 +222,7 @@ In brief:-
 - `shrinkTab.11` is our data frame containing the variables we wish to plot
 - `aes` creates a mapping between the variables in our data frame to the 
 **_aes_**thetic properties of the plot:
-    + the x-axis will be mapped to `logFC`
+    + the x-axis will be mapped to `log2FoldChange`
     + the y-axis will be mapped to the `-log10(pvalue)`
 - `geom_point` specifies the particular type of plot we want (in this case a scatter 
 plot)
@@ -242,12 +240,10 @@ We use a `-log10` transformation for the y-axis; it's commonly used for p-values
 
 
 ```{r volcano11Plot, fig.align="center", fig.width=5, fig.height=5}
-volcanoTab.11 <- shrinkTab.11 %>% 
-    mutate(`-log10(pvalue)` = -log10(pvalue))
-
-ggplot(volcanoTab.11, aes(x = logFC, y=`-log10(pvalue)`)) + 
+ggplot(volcanoTab.11, aes(x = log2FoldChange, y= -log10(pvalue))) + 
     geom_point(aes(colour=pvalue < 0.05), size=1) +
-    geom_text(data=~top_n(.x, 1, wt=-FDR), aes(label=Symbol))
+    geom_text(data=~top_n(.x, 1, wt=-padj), aes(label=Symbol)) +
+    labs(x = "log2(Fold Change)", y = "-log10(p-value)")
 ```
 
 ## Exercise 1 - Volcano plot for 33 days
@@ -273,8 +269,7 @@ ddsShrink.33 <- lfcShrink(ddsObj.interaction,
 
 shrinkTab.33 <- as.data.frame(ddsShrink.33) %>%
     rownames_to_column("GeneID") %>% 
-    left_join(ensemblAnnot, "GeneID") %>% 
-    rename(logFC=log2FoldChange, FDR=padj)
+    left_join(ensemblAnnot, "GeneID")
 
 ```
 
@@ -286,12 +281,9 @@ shrinkTab.33 <- as.data.frame(ddsShrink.33) %>%
 > the first volcano plot
 
 ```{r echo=FALSE}
-volcanoTab.33 <- shrinkTab.33 %>% 
-    mutate(`-log10(pvalue)` = -log10(pvalue))
-
-ggplot(volcanoTab.33, aes(x = logFC, y=`-log10(pvalue)`)) + 
-    geom_point(aes(colour=pvalue < 0.05), size=1)
-
+ggplot(volcanoTab.33, aes(x = log2FoldChange, y= -log10(pvalue))) + 
+    geom_point(aes(colour=pvalue < 0.05), size=1) +
+    labs(x = "log2(Fold Change)", y = "-log10(p-value)")
 ```
 
 > (d)
@@ -336,7 +328,7 @@ library(ComplexHeatmap)
 library(circlize)
 ```
 
-We can't plot the entire data set, let's just select the top 300 by FDR. 
+We can't plot the entire data set, let's just select the top 300 by false discovery rate (`padj`). 
 
 wt means weight, - for reverse order
 
@@ -347,7 +339,7 @@ assay pulls out the counts.
 ```{r selectGenes}
 # get the top genes
 sigGenes <- shrinkTab.11 %>% 
-    top_n(300, wt=-FDR) %>% 
+    top_n(300, wt=-padj) %>% 
     pull("GeneID")
 
 # filter the data for the top 300 by padj
@@ -442,5 +434,3 @@ saveRDS(shrinkTab.11, file="results/Shrunk_Results.d11.rds")
 saveRDS(annot.interaction.33, file="results/Annotated_Results.d33.rds")
 saveRDS(shrinkTab.33, file="results/Shrunk_Results.d33.rds")
 ```
-
---------------------------------------------------------------------

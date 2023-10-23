@@ -10,19 +10,16 @@ layout: page
 always_allow_html: true
 ---
 
-```{r setup, include=FALSE}
-library(org.Mm.eg.db)
-library(msigdbr)
-library(clusterProfiler)
-library(pathview)
-library(tidyverse)
+```{r setup, echo=FALSE, cache=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
+knitr::opts_knit$set(root.dir = here::here("Course_Materials"))
 ```
 
 ## Exercise 1 - pathview
 
 Load the required packages and data for Day 11 if you have not already done so. 
 
-```{r prepareORAData,}
+```{r prepareORAData}
 library(msigdbr)
 library(clusterProfiler)
 library(pathview)
@@ -36,9 +33,9 @@ shrink.d11 <- readRDS("RObjects/Shrunk_Results.d11.rds")
 
 ```{r solution1}
 logFC <- shrink.d11 %>% 
-  drop_na(FDR, Entrez) %>% 
-  filter(FDR < 0.01) %>% 
-  pull(logFC, Entrez) 
+  drop_na(padj, Entrez) %>% 
+  filter(padj < 0.01) %>% 
+  pull(log2FoldChange, Entrez) 
 
 pathview(gene.data = logFC, 
          pathway.id = "mmu04659", 
@@ -73,8 +70,8 @@ term2name <- msigdbr(species = "Mus musculus", category = "H") %>%
 ```{r solution3_GSEA_1}
 # rank genes
 rankedGenes.e11 <- shrink.d11 %>%
-  drop_na(GeneID, pvalue, logFC) %>%
-  mutate(rank = -log10(pvalue) * sign(logFC)) %>%
+  drop_na(GeneID, pvalue, log2FoldChange) %>%
+  mutate(rank = -log10(pvalue) * sign(log2FoldChange)) %>%
   arrange(desc(rank)) %>%
   pull(rank, GeneID)
 ```
@@ -122,8 +119,8 @@ shrink.d33 <- readRDS("RObjects/Shrunk_Results.d33.rds")
 
 # rank genes
 rankedGenes.e33 <- shrink.d33 %>%
-  drop_na(GeneID, pvalue, logFC) %>%
-  mutate(rank = -log10(pvalue) * sign(logFC)) %>%
+  drop_na(GeneID, pvalue, log2FoldChange) %>%
+  mutate(rank = -log10(pvalue) * sign(log2FoldChange)) %>%
   arrange(desc(rank)) %>%
   pull(rank,GeneID)
 
