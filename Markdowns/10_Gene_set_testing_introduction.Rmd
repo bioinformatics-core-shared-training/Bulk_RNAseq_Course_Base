@@ -110,46 +110,46 @@ Contingency table:
 
 ## GSEA - Calculate the enrichment score
 
-* Ranking by Fold Change - unsorted logFC
+* Ranking by Fold Change - unsorted log2FoldChange
 
 ```{r loadGSEAdata, include=FALSE, message=FALSE, warning=FALSE}
 set.seed(1)
 tab <- readRDS("RObjects/Shrunk_Results.d11.rds") %>% 
     slice(1:150) %>% 
-    select(logFC) %>% 
+    select(log2FoldChange) %>% 
     rowid_to_column("Index") %>% 
-    arrange(desc(logFC)) %>% 
+    arrange(desc(log2FoldChange)) %>% 
     rowid_to_column("Index2") %>% 
-    mutate(inGeneSetA=Index2%in%c(2,3,6,8,
-                                  10,13,19,21,
-                                  11,28,12,35,
-                                  24,41,90,100,
-                                  110,125,136,148)) %>%  
-    mutate(Score=ifelse(inGeneSetA, 8/20, -8/130)) %>% 
-    mutate(CumScoreA=cumsum(Score)) %>% 
-    mutate(inGeneSetB=Index2%in%sample(1:150, 20, replace = FALSE)) %>%  
-    mutate(Score=ifelse(inGeneSetB, 8/20, -8/130)) %>% 
-    mutate(CumScoreB=cumsum(Score))
+    mutate(inGeneSetA = Index2 %in% c(2,3,6,8,
+                                      10,13,19,21,
+                                      11,28,12,35,
+                                      24,41,90,100,
+                                      110,125,136,148)) %>%  
+    mutate(Score = ifelse(inGeneSetA, 8/20, -8/130)) %>% 
+    mutate(CumScoreA = cumsum(Score)) %>% 
+    mutate(inGeneSetB = Index2 %in% sample(1:150, 20, replace = FALSE)) %>%  
+    mutate(Score = ifelse(inGeneSetB, 8/20, - 8/130)) %>% 
+    mutate(CumScoreB = cumsum(Score))
 ```
 
 <div style="width: 80%; margin-left: 13%">
 ```{r Foldchanges, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5}
 tab %>% 
-    ggplot(aes(x=Index, y=logFC)) +
-        geom_segment(aes(xend=Index), yend=0)
+  ggplot(aes(x = Index, y = log2FoldChange)) +
+  geom_segment(aes(xend = Index), yend = 0)
 ```
 </div> 
 
 ## GSEA - Calculate the enrichment score
 
-* Ranking by Fold Change - sorted logFC, in decreasing order
+* Ranking by Fold Change - sorted log2FoldChange, in decreasing order
 
 <div style="width: 80%; margin-left: 13%">
 ```{r FoldchangesSorted, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5, warning=FALSE, message=FALSE}
 tab %>% 
-    ggplot(aes(x=Index2, y=logFC)) +
-    geom_segment(aes(xend=Index2), yend=0) +
-    labs(x="Ranking Index")
+  ggplot(aes(x = Index2, y = log2FoldChange)) +
+  geom_segment(aes(xend = Index2), yend = 0) +
+  labs(x = "Ranking Index")
 ```
 </div>
 
@@ -160,11 +160,11 @@ tab %>%
 <div style="width: 80%; margin-left: 13%">
 ```{r FoldchangesWithGeneSet, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5, warning=FALSE, message=FALSE}
 tab %>%  
-    ggplot(aes(x=Index2, y=logFC)) +
-    geom_segment(aes(xend=Index2, colour=inGeneSetA), yend=0) +
-    scale_colour_manual(values=c("darkgrey", "red")) +
-    guides(colour=FALSE) +
-    labs(x="Ranking Index")
+  ggplot(aes(x = Index2, y = log2FoldChange)) +
+  geom_segment(aes(xend = Index2, colour = inGeneSetA), yend = 0) +
+  scale_colour_manual(values = c("darkgrey", "red")) +
+  guides(colour = FALSE) +
+  labs(x = "Ranking Index")
 ```
 </div>
 
@@ -176,13 +176,13 @@ of 0
 <div style="width: 80%; margin-left: 13%">
 ```{r Ranking, echo = FALSE, dpi = 300, fig.width= 4, fig.height=2.5, warning=FALSE, message=FALSE}
 tab %>%  
-    ggplot(aes(x=Index2)) +
-    geom_segment(aes(xend=Index2, colour=inGeneSetA), y=-0.5, yend=0.5) +
-    geom_point(x=0, y=0, size=1, colour = "black") +
-    scale_y_continuous(limits=c(-2,4)) +
-    labs(x="Ranking Index", y="Enrichment Score") +
-    scale_colour_manual(values=c("darkgrey", "red")) +
-    guides(colour=FALSE)
+  ggplot(aes(x = Index2)) +
+  geom_segment(aes(xend = Index2, colour = inGeneSetA), y = -0.5, yend = 0.5) +
+  geom_point(x = 0, y = 0, size = 1, colour = "black") +
+  scale_y_continuous(limits = c(-2,4)) +
+  labs(x = "Ranking Index", y = "Enrichment Score") +
+  scale_colour_manual(values = c("darkgrey", "red")) +
+  guides(colour = FALSE)
 ```
 </div>
 
@@ -194,18 +194,18 @@ tab %>%
 ```{r anim1, echo=FALSE, message=FALSE, warning=FALSE}
 p <- tab %>% 
     ggplot() +
-    geom_segment(aes(x=Index2, xend=Index2, colour=inGeneSetA, 
-                     group=seq_along(Index2)), 
-                  y=-0.5, yend=0.5) +
-    geom_line(aes(x=Index2, y=CumScoreA)) +
-    scale_y_continuous(limits=c(-2,4)) +
-    scale_colour_manual(values=c("darkgrey", "red")) +
-    guides(colour=FALSE) +
-    labs(x="Ranking Index", y="Enrichment Score") +
+    geom_segment(aes(x = Index2, xend = Index2, colour = inGeneSetA, 
+                     group = seq_along(Index2)), 
+                  y = -0.5, yend = 0.5) +
+    geom_line(aes(x = Index2, y = CumScoreA)) +
+    scale_y_continuous(limits = c(-2,4)) +
+    scale_colour_manual(values = c("darkgrey", "red")) +
+    guides(colour = FALSE) +
+    labs(x = "Ranking Index", y = "Enrichment Score") +
     transition_reveal(Index2)
 
-animate(p, nframes=150, fps = 8, renderer = gifski_renderer(loop=FALSE), 
-        res = 300, width= 4, height=2.5, units="in", bg="transparent")
+animate(p, nframes = 150, fps = 10, renderer = gifski_renderer(loop = FALSE), 
+        res = 300, width = 4, height = 2.5, units = "in", bg = "transparent")
 ```
 </div>
 
@@ -216,12 +216,12 @@ animate(p, nframes=150, fps = 8, renderer = gifski_renderer(loop=FALSE),
 <div style="width: 80%; margin-left: 13%">
 ```{r genesetB, echo=FALSE, dpi = 300, fig.width= 4, fig.height=2.5, message=FALSE, warning=FALSE}
 tab %>% 
-    ggplot(aes(x=Index2)) +
-    geom_segment(aes(xend=Index2, colour=inGeneSetB), y=-0.5, yend=0.5) +
-    scale_y_continuous(limits=c(-2,4)) +
-    labs(x="Ranking Index", y="Enrichment Score") +
-    scale_colour_manual(values=c("darkgrey", "red")) +
-    guides(colour=FALSE)
+    ggplot(aes(x = Index2)) +
+    geom_segment(aes(xend = Index2, colour = inGeneSetB), y = -0.5, yend = 0.5) +
+    scale_y_continuous(limits = c(-2,4)) +
+    labs(x = "Ranking Index", y = "Enrichment Score") +
+    scale_colour_manual(values = c("darkgrey", "red")) +
+    guides(colour = FALSE)
 ```
 </div>
 
@@ -233,19 +233,19 @@ tab %>%
 <div style="width: 80%; margin-left: 13%">
 ```{r anim2, echo=FALSE, warning=FALSE, message=FALSE}
 p <- tab %>% 
-    ggplot(aes(x=Index2)) +
-    geom_segment(aes(xend=Index2, colour=inGeneSetB,
-                     group=seq_along(Index2)), 
-                  y=-0.5, yend=0.5) +
-    geom_line(aes(y=CumScoreB)) +
-    scale_y_continuous(limits=c(-2,4)) +
-    labs(x="Ranking Index", y="Enrichment Score") +
-    scale_colour_manual(values=c("darkgrey", "red")) +
-    guides(colour=FALSE) +
+    ggplot(aes(x = Index2)) +
+    geom_segment(aes(xend = Index2, colour = inGeneSetB,
+                     group = seq_along(Index2)), 
+                  y = -0.5, yend = 0.5) +
+    geom_line(aes(y = CumScoreB)) +
+    scale_y_continuous(limits = c(-2,4)) +
+    labs(x = "Ranking Index", y = "Enrichment Score") +
+    scale_colour_manual(values = c("darkgrey", "red")) +
+    guides(colour = FALSE) +
     transition_reveal(Index2)
 
-animate(p, nframes=75, fps = 8, renderer = gifski_renderer(loop=FALSE), 
-        res = 300, width= 4, height=2.5, units="in", bg="transparent")
+animate(p, nframes = 150, fps = 15, renderer = gifski_renderer(loop = FALSE), 
+        res = 300, width = 4, height = 2.5, units = "in", bg = "transparent")
 ```
 </div>
 
@@ -259,12 +259,12 @@ animate(p, nframes=75, fps = 8, renderer = gifski_renderer(loop=FALSE),
 ```{r pvalue, echo=FALSE, message=FALSE, warning=FALSE}
 x1 <- seq(-6, 6, length=100)
 hx1 <- dnorm(x1, mean = 0, sd = 1.5)
-par(bg=NA, mar=c(5, 4, 0, 4) + 0.1) 
+par(bg = NA, mar = c(5, 4, 0, 4) + 0.1) 
 
-plot(x1, hx1, type="l", lty=1, lwd=2,
-     xlab="Enrichment Score", ylab="Density",
-     col="tomato", ylim=c(0, 0.3), xlim=c(-7, 7))
-abline(v=4, col="darkgreen", lty=2, lwd=2)
+plot(x1, hx1, type = "l", lty = 1, lwd = 2,
+     xlab = "Enrichment Score", ylab = "Density",
+     col = "tomato", ylim = c(0, 0.3), xlim = c(-7, 7))
+abline(v = 4, col = "darkgreen", lty = 2, lwd = 2)
 ```
 </div>
 
@@ -284,10 +284,8 @@ Two methods:
 
 * Gene Set Enrichment Analysis (GSEA)
 
-    - rank all genes using significance and/or logFC
+    - rank all genes using significance and/or log2FoldChange
     - compute enrichment score
     - compute its significance
 
 Both methods are applicable to series of gene sets
-
-
