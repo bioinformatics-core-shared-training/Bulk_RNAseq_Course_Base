@@ -1,11 +1,11 @@
 /*---- "details" element ----*/
-  /* usually used for exercise answers */
-  
-  details {
-    /*  background: #373c3e;
-      color: #f1f3f4;*/
-      padding: .5rem 1rem;
-  }
+/* usually used for exercise answers */
+
+details {
+  /*  background: #373c3e;
+    color: #f1f3f4;*/
+    padding: .5rem 1rem;
+}
 
 details summary {
   cursor: pointer;
@@ -14,6 +14,15 @@ details summary {
 
 details summary > * {
   display: inline;
+}
+
+/* Tabset panels */
+.tab-content {
+  padding-left: 10px;
+  padding-right: 10px;
+  border-right: 1px solid #ddd;
+  border-left: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
 }
 
 
