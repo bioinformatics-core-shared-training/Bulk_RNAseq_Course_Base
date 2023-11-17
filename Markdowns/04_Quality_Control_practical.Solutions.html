@@ -297,17 +297,23 @@ overflow-y: auto;
 border: 1px solid #ddd;
 border-radius: 4px;
 }
-.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
-content: "\e259";
+.tabset-dropdown > .nav-tabs > li.active:before {
+content: "";
 font-family: 'Glyphicons Halflings';
 display: inline-block;
 padding: 10px;
 border-right: 1px solid #ddd;
 }
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
-content: "\e258";
-font-family: 'Glyphicons Halflings';
+content: "";
 border: none;
+}
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+content: "";
+font-family: 'Glyphicons Halflings';
+display: inline-block;
+padding: 10px;
+border-right: 1px solid #ddd;
 }
 .tabset-dropdown > .nav-tabs > li.active {
 display: block;
@@ -469,8 +475,8 @@ open the report in a web browser.</li>
 </ol>
 </blockquote>
 </div>
-<div id="exercise-3.2" class="section level3">
-<h3>Exercise 3.2</h3>
+<div id="exercise-4" class="section level3">
+<h3>Exercise 4</h3>
 <blockquote>
 <p>In the <code>salmon</code> directory you should find Salmon outputs,
 duplication metrics and RNAseq metrics for all of the samples from the

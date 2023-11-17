@@ -2,7 +2,6 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: QC of Aligned Reads - exercise solutions
 output:
-  pdf_document: default
   html_document: default
 ---
 
@@ -101,7 +100,7 @@ java -jar picard/picard.jar CollectRnaSeqMetrics \
 > a web browser.
 
 
-### Exercise 3.2
+### Exercise 4
 
 > In the `salmon` directory you should find Salmon outputs, duplication metrics
 > and RNAseq metrics for all of the samples from the study.  
