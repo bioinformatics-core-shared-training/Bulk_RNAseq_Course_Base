@@ -2,6 +2,7 @@
 title: "Alignment and Quantification of Gene Expression with Salmon"
 date: "March 2023"
 output:
+  beamer_presentation: default
   ioslides_presentation:
     css: css/stylesheet.css
     logo: images/CRUK_Cambridge_Institute.png
@@ -32,19 +33,20 @@ Aligners: STAR, HISAT2
 
 ## Alignment
 
-* Traditional alignment is (relatively) slow and computationally intensive
+* Traditional alignment perform base-by-base alignment  
+* It is (relatively) slow and computationally intensive
 
     
 <img src="images/quasi_mapping_1.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 ## Alignment
-
+* Traditional alignment perform base-by-base alignment
 * Traditional alignment is (relatively) slow and computationally intensive
     
 <img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 ## Alignment
-
+* Traditional alignment perform base-by-base alignment
 * Traditional alignment is (relatively) slow and computationally intensive
     
 <img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
@@ -53,7 +55,8 @@ Switch to *quasi-mapping* (Salmon) or *pseudo-alignment* (Kallisto)
 
 
 ## Why are Pseudo-alignment methods faster?
-
+* These tools avoids base-to-base alignment of the reads
+* ~ 20 times faster than the traditional alignment tools like STAR, HISAT2 etc
 * Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome in human)
 * Use exact kmer matching rather than aligning whole reads with mismatches and indels
     
@@ -106,7 +109,7 @@ Salmon also takes account of biases:
 * **Sequence-based bias**: Bias in read start positions arising from the differential binding efficiency of random hexamer primers
 * **Fragment length bias**: Induced by size selection
 
-* Methods like Salmon attempt to mitigate the effect of technical biases by estimating sample-specific bias parameters.
+* Because salmon searches transcription, not genome, it's not the right tool for finding new genes or isoforms
 
 ## Salmon workflow
 
