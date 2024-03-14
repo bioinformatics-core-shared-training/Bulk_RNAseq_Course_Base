@@ -2,8 +2,8 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quantification of Gene Expression with Salmon
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ## Exercise 1 - Create Salmon index
@@ -91,7 +91,7 @@ salmon quant \
     -1 fastq/SRR7657883.subset_2M.sra_1.fastq.gz \
     -2 fastq/SRR7657883.subset_2M.sra_2.fastq.gz \
     -o salmon_output/SRR7657883 \
-    --writeMappings salmon_output/SRR7657883/SRR7657883.salmon.sam \
+    --writeMappings=salmon_output/SRR7657883/SRR7657883.salmon.sam \
     --gcBias \
     -p 7
 ```
