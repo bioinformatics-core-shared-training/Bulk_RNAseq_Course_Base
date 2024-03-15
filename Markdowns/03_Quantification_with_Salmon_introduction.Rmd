@@ -18,6 +18,11 @@ bibliography: ref.bib
 <img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
 
 
+## Alignment and Quantification overview {#less_space_after_title}
+
+<div style="line-height: 10%;"><br></div>
+
+<img src="images/aln_quant_overview.png" class="centerimg" style="width: 48%; margin-top: 60px;">
 
 
 ## Traditional Alignment
@@ -49,11 +54,7 @@ Aligners: STAR, HISAT2
 <img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 
-## Alignment and Quantification overview {#less_space_after_title}
 
-<div style="line-height: 10%;"><br></div>
-
-<img src="images/aln_quant_overview.png" class="centerimg" style="width: 48%; margin-top: 60px;">
 
 
 ## Alignment
