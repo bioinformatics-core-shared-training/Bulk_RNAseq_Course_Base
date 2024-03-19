@@ -1,3 +1,5 @@
+*_cache
+*_files
 *DS_Store*
 .Rproj.user
 .Rhistory
