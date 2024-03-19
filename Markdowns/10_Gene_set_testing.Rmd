@@ -238,11 +238,10 @@ query(eh , c('msigdb', 'mm', '2023'))
 
 The most recent available release of MSigDb is "msigdb.v2023.1", so we'll
 download this one. We have the option to use Entrez IDs or gene symbols. As we
-already have gene symbols in our annotation, we'll use these. We could, on the
-other hand, choose to map our Ensembl IDs to Entrez IDs and use those instead.
+already have Entrez IDs in our annotation, we'll use these. 
 
 ```{r}
-msigdb.mm <- getMsigdb(org = 'mm', id = 'SYM', version = '2023.1')
+msigdb.mm <- getMsigdb(org = 'mm', id = 'EZID', version = '2023.1')
 
 msigdb.mm
 
@@ -281,7 +280,7 @@ mtric, e.g. log(fold change), sorted in decreasing order.
 
 To start with we will simply use a rank the genes based on their fold change.
 
-We must exclude genes with no Ensembl ID.
+We must exclude genes with no Entrez ID.
 
 Also, we should use the shrunk LFC values.
 
@@ -289,8 +288,9 @@ Also, we should use the shrunk LFC values.
 rankedGenes <- shrink.d11 %>%
   drop_na(GeneID, padj, log2FoldChange) %>%
   mutate(rank = log2FoldChange) %>%
+  filter(!is.na(Entrez)) %>%
   arrange(desc(rank)) %>%
-  pull(rank, Symbol)
+  pull(rank, Entrez)
 head(rankedGenes)
 ```
 
@@ -303,8 +303,8 @@ with information on each {gene set; gene} pair in the rows.
 hallmarks = subsetCollection(msigdb.mm, 'h')
 msigdb_ids = geneIds(hallmarks)
 
-term2gene <- enframe(msigdb_ids, name = "gs_name", value = "symbol") %>%
-  unnest(symbol)
+term2gene <- enframe(msigdb_ids, name = "gs_name", value = "entrez") %>%
+  unnest(entrez)
 
 head(term2gene)
 ```

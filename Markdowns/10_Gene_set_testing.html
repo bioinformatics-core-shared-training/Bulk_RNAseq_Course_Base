@@ -4250,19 +4250,17 @@ query(eh , c(&#39;msigdb&#39;, &#39;mm&#39;, &#39;2023&#39;))</code></pre>
 ##   EH8300 | imex_hsmm_0722</code></pre>
 <p>The most recent available release of MSigDb is “msigdb.v2023.1”, so
 we’ll download this one. We have the option to use Entrez IDs or gene
-symbols. As we already have gene symbols in our annotation, we’ll use
-these. We could, on the other hand, choose to map our Ensembl IDs to
-Entrez IDs and use those instead.</p>
-<pre class="r"><code>msigdb.mm &lt;- getMsigdb(org = &#39;mm&#39;, id = &#39;SYM&#39;, version = &#39;2023.1&#39;)</code></pre>
+symbols. As we already have Entrez IDs in our annotation, we’ll use
+these.</p>
+<pre class="r"><code>msigdb.mm &lt;- getMsigdb(org = &#39;mm&#39;, id = &#39;EZID&#39;, version = &#39;2023.1&#39;)</code></pre>
 <pre><code>## see ?msigdb and browseVignettes(&#39;msigdb&#39;) for documentation</code></pre>
 <pre><code>## loading from cache</code></pre>
-<pre><code>## require(&quot;GSEABase&quot;)</code></pre>
 <pre class="r"><code>msigdb.mm</code></pre>
 <pre><code>## GeneSetCollection
 ##   names: 10qA1, 10qA2, ..., ZZZ3_TARGET_GENES (45953 total)
-##   unique identifiers: Epm2a, Esr1, ..., Gm52481 (56208 total)
+##   unique identifiers: 13853, 13982, ..., 115489304 (56211 total)
 ##   types in collection:
-##     geneIdType: SymbolIdentifier (1 total)
+##     geneIdType: EntrezIdentifier (1 total)
 ##     collectionType: BroadCollection (1 total)</code></pre>
 <pre class="r"><code>listCollections(msigdb.mm)</code></pre>
 <pre><code>## [1] &quot;c1&quot; &quot;c3&quot; &quot;c2&quot; &quot;c8&quot; &quot;c6&quot; &quot;c7&quot; &quot;c4&quot; &quot;c5&quot; &quot;h&quot;</code></pre>
@@ -4293,16 +4291,17 @@ for a given gene mtric, e.g. log(fold change), sorted in decreasing
 order.</p>
 <p>To start with we will simply use a rank the genes based on their fold
 change.</p>
-<p>We must exclude genes with no Ensembl ID.</p>
+<p>We must exclude genes with no Entrez ID.</p>
 <p>Also, we should use the shrunk LFC values.</p>
 <pre class="r"><code>rankedGenes &lt;- shrink.d11 %&gt;%
   drop_na(GeneID, padj, log2FoldChange) %&gt;%
   mutate(rank = log2FoldChange) %&gt;%
+  filter(!is.na(Entrez)) %&gt;%
   arrange(desc(rank)) %&gt;%
-  pull(rank, Symbol)
+  pull(rank, Entrez)
 head(rankedGenes)</code></pre>
-<pre><code>##   Cxcl10      Ubd    Gbp10     Saa3    Cxcl9   Cxcl11 
-## 8.439020 8.307955 7.818902 7.787435 7.783766 7.669303</code></pre>
+<pre><code>##    15945    24108   626578    20210    17329    64380 
+## 8.439020 8.307955 7.818902 7.787435 7.783766 7.525960</code></pre>
 </div>
 <div id="load-pathways" class="section level2">
 <h2>Load pathways</h2>
@@ -4312,19 +4311,19 @@ set; gene} pair in the rows.</p>
 <pre class="r"><code>hallmarks = subsetCollection(msigdb.mm, &#39;h&#39;)
 msigdb_ids = geneIds(hallmarks)
 
-term2gene &lt;- enframe(msigdb_ids, name = &quot;gs_name&quot;, value = &quot;symbol&quot;) %&gt;%
-  unnest(symbol)
+term2gene &lt;- enframe(msigdb_ids, name = &quot;gs_name&quot;, value = &quot;entrez&quot;) %&gt;%
+  unnest(entrez)
 
 head(term2gene)</code></pre>
 <pre><code>## # A tibble: 6 × 2
-##   gs_name               symbol
+##   gs_name               entrez
 ##   &lt;chr&gt;                 &lt;chr&gt; 
-## 1 HALLMARK_ADIPOGENESIS Abca1 
-## 2 HALLMARK_ADIPOGENESIS Abca4 
-## 3 HALLMARK_ADIPOGENESIS Abca7 
-## 4 HALLMARK_ADIPOGENESIS Abca13
-## 5 HALLMARK_ADIPOGENESIS Abca12
-## 6 HALLMARK_ADIPOGENESIS Abca17</code></pre>
+## 1 HALLMARK_ADIPOGENESIS 11303 
+## 2 HALLMARK_ADIPOGENESIS 11304 
+## 3 HALLMARK_ADIPOGENESIS 27403 
+## 4 HALLMARK_ADIPOGENESIS 268379
+## 5 HALLMARK_ADIPOGENESIS 74591 
+## 6 HALLMARK_ADIPOGENESIS 381072</code></pre>
 </div>
 <div id="conduct-analysis" class="section level2">
 <h2>Conduct analysis</h2>

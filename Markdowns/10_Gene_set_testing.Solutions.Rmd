@@ -58,12 +58,12 @@ First load the pathway details if you have not already done so.
 
 library(msigdb)
 
-msigdb.mm <- getMsigdb(org = 'mm', id = 'SYM', version = '2023.1')
+msigdb.mm <- getMsigdb(org = 'mm', id = 'EZID', version = '2023.1')
 hallmarks = subsetCollection(msigdb.mm, 'h')
 msigdb_ids = geneIds(hallmarks)
 
-term2gene <- enframe(msigdb_ids, name = "gs_name", value = "symbol") %>%
-  unnest(symbol)
+term2gene <- enframe(msigdb_ids, name = "gs_name", value = "entrez") %>%
+  unnest(entrez)
 ```
 
 > 1. Rank the genes by statistical significance - you will need to create
@@ -72,10 +72,10 @@ term2gene <- enframe(msigdb_ids, name = "gs_name", value = "symbol") %>%
 ```{r solution3_GSEA_1}
 # rank genes
 rankedGenes.e11 <- shrink.d11 %>%
-  drop_na(GeneID, pvalue, log2FoldChange) %>%
+  drop_na(Entrez, pvalue, log2FoldChange) %>%
   mutate(rank = -log10(pvalue) * sign(log2FoldChange)) %>%
   arrange(desc(rank)) %>%
-  pull(rank, Symbol)
+  pull(rank, Entrez)
 ```
 
 
@@ -120,10 +120,10 @@ shrink.d33 <- readRDS("RObjects/Shrunk_Results.d33.rds")
 
 # rank genes
 rankedGenes.e33 <- shrink.d33 %>%
-  drop_na(GeneID, pvalue, log2FoldChange) %>%
+  drop_na(Entrez, pvalue, log2FoldChange) %>%
   mutate(rank = -log10(pvalue) * sign(log2FoldChange)) %>%
   arrange(desc(rank)) %>%
-  pull(rank, Symbol)
+  pull(rank, Entrez)
 
 # perform analysis
 gseaRes.e33 <- GSEA(rankedGenes.e33,

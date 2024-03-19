@@ -2920,15 +2920,14 @@ pvalue.</p>
 <p>First load the pathway details if you have not already done so.</p>
 <pre class="r"><code>library(msigdb)
 
-msigdb.mm &lt;- getMsigdb(org = &#39;mm&#39;, id = &#39;SYM&#39;, version = &#39;2023.1&#39;)</code></pre>
+msigdb.mm &lt;- getMsigdb(org = &#39;mm&#39;, id = &#39;EZID&#39;, version = &#39;2023.1&#39;)</code></pre>
 <pre><code>## see ?msigdb and browseVignettes(&#39;msigdb&#39;) for documentation</code></pre>
 <pre><code>## loading from cache</code></pre>
-<pre><code>## require(&quot;GSEABase&quot;)</code></pre>
 <pre class="r"><code>hallmarks = subsetCollection(msigdb.mm, &#39;h&#39;)
 msigdb_ids = geneIds(hallmarks)
 
-term2gene &lt;- enframe(msigdb_ids, name = &quot;gs_name&quot;, value = &quot;symbol&quot;) %&gt;%
-  unnest(symbol)</code></pre>
+term2gene &lt;- enframe(msigdb_ids, name = &quot;gs_name&quot;, value = &quot;entrez&quot;) %&gt;%
+  unnest(entrez)</code></pre>
 <blockquote>
 <ol style="list-style-type: decimal">
 <li>Rank the genes by statistical significance - you will need to create
@@ -2938,10 +2937,10 @@ a new ranking value using
 </blockquote>
 <pre class="r"><code># rank genes
 rankedGenes.e11 &lt;- shrink.d11 %&gt;%
-  drop_na(GeneID, pvalue, log2FoldChange) %&gt;%
+  drop_na(Entrez, pvalue, log2FoldChange) %&gt;%
   mutate(rank = -log10(pvalue) * sign(log2FoldChange)) %&gt;%
   arrange(desc(rank)) %&gt;%
-  pull(rank, Symbol)</code></pre>
+  pull(rank, Entrez)</code></pre>
 <blockquote>
 <ol start="2" style="list-style-type: decimal">
 <li>Run GSEA using the new ranked genes and the Hallmark pathways.</li>
@@ -2985,10 +2984,10 @@ shrink.d33 &lt;- readRDS(&quot;RObjects/Shrunk_Results.d33.rds&quot;)
 
 # rank genes
 rankedGenes.e33 &lt;- shrink.d33 %&gt;%
-  drop_na(GeneID, pvalue, log2FoldChange) %&gt;%
+  drop_na(Entrez, pvalue, log2FoldChange) %&gt;%
   mutate(rank = -log10(pvalue) * sign(log2FoldChange)) %&gt;%
   arrange(desc(rank)) %&gt;%
-  pull(rank, Symbol)
+  pull(rank, Entrez)
 
 # perform analysis
 gseaRes.e33 &lt;- GSEA(rankedGenes.e33,
@@ -2998,9 +2997,6 @@ gseaRes.e33 &lt;- GSEA(rankedGenes.e33,
                 maxGSSize = 500)</code></pre>
 <pre><code>## preparing geneSet collections...</code></pre>
 <pre><code>## GSEA analysis...</code></pre>
-<pre><code>## Warning in preparePathwaysAndStats(pathways, stats, minSize, maxSize,
-## gseaParam, : There are duplicate gene names, fgsea may produce unexpected
-## results.</code></pre>
 <pre><code>## Warning in fgseaMultilevel(pathways = pathways, stats = stats, minSize =
 ## minSize, : There were 2 pathways for which P-values were not calculated
 ## properly due to unbalanced (positive and negative) gene-level statistic values.
