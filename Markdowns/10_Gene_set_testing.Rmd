@@ -13,8 +13,7 @@ always_allow_html: true
 ---
 
 ```{r setup, echo=FALSE, cache=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
-knitr::opts_knit$set(root.dir = here::here("Course_Materials"))
+knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3, cache=TRUE)
 ```
 
 The list of differentially expressed genes is sometimes so long that its 
@@ -194,23 +193,23 @@ ego <- enrichGO(gene          = sigGenes_GO,
 We can use the `barplot` function to visualise the results. Count is the number 
 of differentially expressed in each gene ontology term.
 
-```{r barplot}
+```{r barplot, fig.height=10, fig.width=8}
 barplot(ego, showCategory=20)
 ```
 
 or perhaps the `dotplot` version is more informative. Gene ratio is Count 
 divided by the number of genes in that GO term.
 
-```{r dotplot}
+```{r dotplot, fig.height=7, fig.width=8}
 dotplot(ego, font.size = 14)
 ```
 
 Another visualisation that can be nice to try is the `emapplot` which shows the overlap between genes in the different GO terms.
 
-```{r emap}
+```{r emap, fig.height=8, fig.width=8}
 library(enrichplot)
 ego_pt <- pairwise_termsim(ego)
-emapplot(ego_pt, cex_label_category = 0.25)
+emapplot(ego_pt, cex.params = list(category_label = 0.8))
 ```
 
 
@@ -223,18 +222,35 @@ The software is distributed by the
 and is freely available for use by academic and non-profit organisations.
 The Broad also provide a number of very well curated gene sets
 for testing against your data - the [Molecular Signatures Database (MSigDB)](http://software.broadinstitute.org/gsea/msigdb/index.jsp). 
-These are collections of human genes. Fortunately, these lists
-have been translated to mouse equivalents by the Walter+Eliza Hall Institute
-Bioinformatics service and made available for 
-[download](http://bioinf.wehi.edu.au/MSigDB/index.html).
-They are now also available from a recent R package
-[msigdbr](https://cran.r-project.org/web/packages/msigdbr/index.html), which we will use.
 
-Let's load `msigdbr` now.
+These gene lists are made availalble for R in the Bioconductor package `msigdb`
+and the available dataset can be explored via `ExperimentHub`.
+
+First, we need to locate the correct database and download the data.
 
 ```{r}
-library(msigdbr)
+library(msigdb)
+library(ExperimentHub)
+
+eh = ExperimentHub()
+query(eh , c('msigdb', 'mm', '2023'))
 ```
+
+The most recent available release of MSigDb is "msigdb.v2023.1", so we'll
+download this one. We have the option to use Entrez IDs or gene symbols. As we
+already have gene symbols in our annotation, we'll use these. We could, on the
+other hand, choose to map our Ensembl IDs to Entrez IDs and use those instead.
+
+```{r}
+msigdb.mm <- getMsigdb(org = 'mm', id = 'SYM', version = '2023.1')
+
+msigdb.mm
+
+listCollections(msigdb.mm)
+```
+
+
+
 
 ## Method
 
@@ -274,22 +290,23 @@ rankedGenes <- shrink.d11 %>%
   drop_na(GeneID, padj, log2FoldChange) %>%
   mutate(rank = log2FoldChange) %>%
   arrange(desc(rank)) %>%
-  pull(rank, GeneID)
+  pull(rank, Symbol)
+head(rankedGenes)
 ```
 
 ## Load pathways
 
-We will load the MSigDB Hallmark gene set with `msigdbr`, setting the `category`
-parameter to 'H' for **H**allmark gene set. The object created is a `tibble`
-with information on each {gene set; gene} pair (one per row). We will only keep
-the the gene set name, gene Ensembl ID.
+For `clusterProfiler` we need the genes and genesets to be in the form of is a `tibble`
+with information on each {gene set; gene} pair in the rows.
 
-```{r loadPathways_msigdbr}
-term2gene <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  dplyr::select(gs_name, ensembl_gene)
-term2name <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  dplyr::select(gs_name, gs_description) %>% 
-  distinct()
+```{r loadPathways_msigdb}
+hallmarks = subsetCollection(msigdb.mm, 'h')
+msigdb_ids = geneIds(hallmarks)
+
+term2gene <- enframe(msigdb_ids, name = "gs_name", value = "symbol") %>%
+  unnest(symbol)
+
+head(term2gene)
 ```
 
 ## Conduct analysis
@@ -304,7 +321,6 @@ Arguments passed to `GSEA` include:
 ```{r runGsea, warning=FALSE}
 gseaRes <- GSEA(rankedGenes,
                 TERM2GENE = term2gene,
-                TERM2NAME = term2name,
                 pvalueCutoff = 1.00, 
                 minGSSize = 15,
                 maxGSSize = 500)
@@ -317,7 +333,7 @@ as_tibble(gseaRes) %>%
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
   dplyr::select(-core_enrichment) %>%
-  mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
+  mutate(across(c("enrichmentScore", "NES"), ~round(.x, digits=3))) %>% 
   mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific))
 ```
 
@@ -326,7 +342,7 @@ as_tibble(gseaRes) %>%
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
   dplyr::select(-core_enrichment) %>%
-  mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
+  mutate(across(c("enrichmentScore", "NES"), ~round(.x, digits=3))) %>% 
   mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) %>% 
   DT::datatable(option=list(dom='t'))
 ```
@@ -340,7 +356,7 @@ pathway (no tick for genes not in the pathway)
 * the enrichment score: the green curve shows the difference between the observed
 rankings and that which would be expected assuming a random rank distribution.
 
-```{r gseaEnrichmentPlot_both}
+```{r gseaEnrichmentPlot_both, fig.height=8, fig.width=10}
 gseaplot(gseaRes, 
          geneSetID = "HALLMARK_INFLAMMATORY_RESPONSE", 
          title = "HALLMARK_INFLAMMATORY_RESPONSE")

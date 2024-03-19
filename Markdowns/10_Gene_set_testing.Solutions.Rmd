@@ -11,8 +11,7 @@ always_allow_html: true
 ---
 
 ```{r setup, echo=FALSE, cache=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
-knitr::opts_knit$set(root.dir = here::here("Course_Materials"))
+knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
 ```
 
 ## Exercise 1 - pathview
@@ -35,7 +34,7 @@ shrink.d11 <- readRDS("RObjects/Shrunk_Results.d11.rds")
 logFC <- shrink.d11 %>% 
   drop_na(padj, Entrez) %>% 
   filter(padj < 0.01) %>% 
-  pull(log2FoldChange, Entrez) 
+  pull(log2FoldChange, Symbol) 
 
 pathview(gene.data = logFC, 
          pathway.id = "mmu04659", 
@@ -56,12 +55,15 @@ mmu04659.pathview.png:
 First load the pathway details if you have not already done so.
 
 ```{r solution3_GSEA_a}
-library(msigdbr)
-term2gene <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  dplyr::select(gs_name, ensembl_gene)
-term2name <- msigdbr(species = "Mus musculus", category = "H") %>% 
-  dplyr::select(gs_name, gs_description) %>% 
-  distinct()
+
+library(msigdb)
+
+msigdb.mm <- getMsigdb(org = 'mm', id = 'SYM', version = '2023.1')
+hallmarks = subsetCollection(msigdb.mm, 'h')
+msigdb_ids = geneIds(hallmarks)
+
+term2gene <- enframe(msigdb_ids, name = "gs_name", value = "symbol") %>%
+  unnest(symbol)
 ```
 
 > 1. Rank the genes by statistical significance - you will need to create
@@ -73,7 +75,7 @@ rankedGenes.e11 <- shrink.d11 %>%
   drop_na(GeneID, pvalue, log2FoldChange) %>%
   mutate(rank = -log10(pvalue) * sign(log2FoldChange)) %>%
   arrange(desc(rank)) %>%
-  pull(rank, GeneID)
+  pull(rank, Symbol)
 ```
 
 
@@ -83,7 +85,6 @@ rankedGenes.e11 <- shrink.d11 %>%
 # conduct analysis:
 gseaRes.e11 <- GSEA(rankedGenes.e11,
                 TERM2GENE = term2gene,
-                TERM2NAME = term2name,
                 pvalueCutoff = 1.00, 
                 minGSSize = 15,
                 maxGSSize = 500)
@@ -96,7 +97,7 @@ as_tibble(gseaRes.e11) %>%
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
   dplyr::select(-core_enrichment) %>%
-  mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
+  mutate(across(c("enrichmentScore", "NES"), ~round(.x, digits=3))) %>% 
   mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) 
 ```
 
@@ -105,7 +106,7 @@ as_tibble(gseaRes.e11) %>%
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
   dplyr::select(-core_enrichment) %>%
-  mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
+  mutate(across(c("enrichmentScore", "NES"), ~round(.x, digits=3))) %>% 
   mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) %>% 
   DT::datatable(option=list(dom='t'))
 ```
@@ -122,12 +123,11 @@ rankedGenes.e33 <- shrink.d33 %>%
   drop_na(GeneID, pvalue, log2FoldChange) %>%
   mutate(rank = -log10(pvalue) * sign(log2FoldChange)) %>%
   arrange(desc(rank)) %>%
-  pull(rank,GeneID)
+  pull(rank, Symbol)
 
 # perform analysis
 gseaRes.e33 <- GSEA(rankedGenes.e33,
                 TERM2GENE = term2gene,
-                TERM2NAME = term2name,
                 pvalueCutoff = 1.00, 
                 minGSSize = 15,
                 maxGSSize = 500)
@@ -140,7 +140,7 @@ as_tibble(gseaRes.e33) %>%
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
   dplyr::select(-core_enrichment) %>%
-  mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
+  mutate(across(c("enrichmentScore", "NES"), ~round(.x, digits=3))) %>% 
   mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific))
 ```
 
@@ -149,7 +149,7 @@ as_tibble(gseaRes.e33) %>%
   arrange(desc(abs(NES))) %>% 
   top_n(10, wt=-p.adjust) %>% 
   dplyr::select(-core_enrichment) %>%
-  mutate(across(c("enrichmentScore", "NES"), round, digits=3)) %>% 
+  mutate(across(c("enrichmentScore", "NES"), ~round(.x, digits=3))) %>% 
   mutate(across(c("pvalue", "p.adjust", "qvalue"), scales::scientific)) %>% 
   DT::datatable(option=list(dom='t'))
 ```
