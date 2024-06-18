@@ -5,10 +5,13 @@ date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
   html_document:
     toc: yes
+    toc_float: true
 bibliography: ref.bib
 ---
 
 ```{r setup, echo=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
+knitr::opts_knit$set(root.dir = here::here("course_files"))
 library(DT)
 library(DESeq2)
 library(tidyverse)
@@ -33,10 +36,10 @@ sampleinfo <- read_tsv("data/samplesheet_corrected.tsv")
 shrinkTab.33 <- readRDS("RObjects/Shrunk_Results.d33.rds")
 
 candGenes <- shrinkTab.11 %>% 
-  filter(FDR<0.05 & abs(logFC) > 1 & abs(logFC) < 2) %>%
+  filter(padj<0.05 & abs(log2FoldChange) > 1 & abs(log2FoldChange) < 2) %>%
   dplyr::select(GeneID) %>% 
   left_join(shrinkTab.33) %>% 
-  filter(FDR<0.05 & abs(logFC) > 2 & abs(logFC) < 3) %>% 
+  filter(padj<0.05 & abs(log2FoldChange) > 2 & abs(log2FoldChange) < 3) %>% 
   dplyr::select(GeneID, baseMean, Symbol, Description, medianTxLength)
   
 txMm <- loadDb("RObjects/TxDb.GRCm38.102.sqlite")
@@ -78,9 +81,9 @@ We are going investigate the following gene:
 ```{r echo=FALSE}
 shrinkTab.11 %>% 
   filter(Symbol=="Il10ra") %>% 
-  dplyr::select(GeneID, Symbol, Description, logFC, FDR) %>% 
-  mutate(across(logFC, signif, digits=3)) %>%
-  mutate(across(FDR,  format, digits = 3)) %>% 
+  dplyr::select(GeneID, Symbol, Description, log2FoldChange, padj) %>% 
+  mutate(across(log2FoldChange, signif, digits=3)) %>%
+  mutate(across(padj,  format, digits = 3)) %>% 
   mutate(across(Description, str_remove, " .Source.*")) %>% 
   knitr::kable()
 ```
@@ -114,15 +117,15 @@ group <- sampleinfo %>%
   mutate(Group=str_c(Status, ".", TimePoint)) %>% 
   pull(Group)
 
-de <- as.integer(shrinkTab.11$FDR <= 0.05 & !is.na(shrinkTab.11$FDR))
+de <- as.integer(shrinkTab.11$padj <= 0.05 & !is.na(shrinkTab.11$padj))
 
 normCounts <- rlog(ddsObj) %>% 
   assay()
 
 glXYPlot(
-  x = shrinkTab.11$logFC,
+  x = shrinkTab.11$log2FoldChange,
   y = -log10(shrinkTab.11$pvalue),
-  xlab = "logFC",
+  xlab = "log2FoldChange",
   ylab = "FDR",
   main = "Infected v Uninfected - day 11",
   counts = normCounts,
@@ -296,7 +299,7 @@ analysis such as the fold-change and significance.
 First we create a data frame for just the DE genes.
 
 ```{r tableOfDEGenes}
-sigGenes <- filter(shrinkTab.11, FDR <= 0.01)
+sigGenes <- filter(shrinkTab.11, padj <= 0.01)
 message("Number of significantly DE genes: ", nrow(sigGenes))
 head(sigGenes)
 ```
@@ -366,10 +369,10 @@ range into 10 equal bins.
 
 ```{r createPalette}
 rbPal <- colorRampPalette(c("red", "blue"))
-logFC <- pmax(sigRegions$logFC, -5)
-logFC <- pmin(logFC , 5)
+log2FoldChange <- pmax(sigRegions$log2FoldChange, -5)
+log2FoldChange <- pmin(log2FoldChange , 5)
 
-Cols <- rbPal(10)[as.numeric(cut(logFC, breaks = 10))]
+Cols <- rbPal(10)[as.numeric(cut(log2FoldChange, breaks = 10))]
 ```
 
 The colours and score have to be saved in the GRanges object as `score` and
@@ -380,7 +383,7 @@ Now we can export the signifcant results from the DE analysis as a `.bed` track
 using `rtracklayer`. You can load the resulting file in IGV, if you wish.
 
 ```{r addMetaData}
-mcols(sigRegions)$score <- -log10(sigRegions$FDR)
+mcols(sigRegions)$score <- -log10(sigRegions$padj)
 mcols(sigRegions)$itemRgb <- Cols
 sigRegions
 ```
@@ -410,7 +413,7 @@ library(GenomicAlignments)
 In the directory `small_bams` there should be `.bam` files for some of the
 samples in the example study. The workflow to produce these files is described
 in a [supplmentary
-page](../Supplementary_Materials/S1_Getting_raw_reads_from_SRA.nb.html) for the
+page](S1_Getting_raw_reads_from_SRA.html) for the
 course. In brief, the raw reads (`fastq`) were downloaded from the Short Read
 Archive (SRA) and aligned with `hisat2`. Each bam file was named according to
 the file name in SRA, but we have renamed the files according to their name in
@@ -498,7 +501,7 @@ library(ggbio)
 set.seed(144032) 
 sigRegions.200 <- sigRegions[sample(length(sigRegions), 200)] 
 
-plotGrandLinear(sigRegions.200 , aes(y = logFC))
+plotGrandLinear(sigRegions.200 , aes(y = log2FoldChange))
 ```
 
 `ggbio` has alternated the colours of the chromosomes. However, an appealing
@@ -508,10 +511,10 @@ between up- and down-regulated genes. The variables used for aesthetic mapping
 must be present in the `mcols` section of your ranges object.
 
 ```{r manPlot2, fig.width=12, fig.height=5}
-mcols(sigRegions.200)$UpRegulated <- mcols(sigRegions.200)$logFC > 0
+mcols(sigRegions.200)$UpRegulated <- mcols(sigRegions.200)$log2FoldChange > 0
 
 plotGrandLinear(sigRegions.200,
-                aes(y = logFC, shape = UpRegulated, fill = UpRegulated),
+                aes(y = log2FoldChange, shape = UpRegulated, fill = UpRegulated),
                 size = 4) +
     scale_shape_manual(values=c(25, 24)) +
     scale_colour_manual(values=rep(c("white", "black"), 10))

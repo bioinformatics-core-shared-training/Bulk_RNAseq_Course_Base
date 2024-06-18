@@ -7,8 +7,14 @@ output:
     toc: yes
   html_document:
     toc: yes
+    toc_float: true
 bibliography: ref.bib
 ---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
+knitr::opts_knit$set(root.dir = here::here("course_files"))
+```
 
 # Introduction
 
@@ -31,7 +37,7 @@ sample swaps.
 
 Due to time constraints we are not able to cover all the ways we might do this,
 so additional information on initial data exploration are available in the
-[supplementary materials](Markdowns/S4_Additional_Data_Exploration.html).
+[supplementary materials](S5_Additional_Data_Exploration.html).
 
 In this session we will:
 
@@ -46,7 +52,7 @@ analysis
 
 First, let's load all the packages we will need to analyse the data.
 
-```{r setup, message = FALSE}
+```{r packages, message = FALSE}
 library(tximport)
 library(DESeq2)
 library(tidyverse)
@@ -89,7 +95,7 @@ arrange(sampleinfo, Status, TimePoint, Replicate)
 
 Salmon [@Patro2017] was used to quantify gene expression from raw reads against
 the Ensembl transcriptome GRCm38 version 102 (as described in 
-[the previous session](05_Quantification_with_Salmon_practical.html)).
+[the previous session](03_Quantification_with_Salmon_practical.html)).
 
 First we need to read the data into R from the `quant.sf` files under the 
 *salmon* directory. To do this we use the `tximport` function. We need to create

@@ -5,6 +5,7 @@ date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
   html_document:
     toc: yes
+    toc_float: true
   pdf_document:
     toc: yes
 bibliography: ref.bib
@@ -12,10 +13,10 @@ bibliography: ref.bib
 
 ```{r setup, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
-knitr::opts_knit$set(root.dir = here::here("Course_Materials"))
+knitr::opts_knit$set(root.dir = here::here("course_files"))
 ```
 
-```{r packages, message=FALSE, warning=F}
+```{r packages, message=FALSE, warning=FALSE}
 library(AnnotationHub)
 library(AnnotationDbi)
 library(ensembldb)
@@ -239,7 +240,7 @@ shrinkTab.11 <- as.data.frame(ddsShrink.11) %>%
 
 MA plots are a common way to visualize the results of a differential analysis.
 We met them briefly towards the end of [the DESeq2
-session](10_DE_analysis_with_DESeq2.html). This plot shows the log-Fold Change
+session](08_DE_analysis_with_DESeq2.html). This plot shows the log-Fold Change
 for each gene against its average expression across all samples in the two
 conditions being contrasted. `DESeq2` has a handy function for plotting this.
 Let's use it too compare the shrunk and un-shrunk fold changes.
