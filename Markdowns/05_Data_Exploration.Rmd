@@ -154,7 +154,7 @@ We will encounter a few more `dplyr` commands during the course, we will explain
 their use as we come to them.
 
 If you are familiar with R but not `dplyr` or `tidyverse` then we have a very
-brief introduction [here](../extended_html/02a_A_brief_intro_to_dplyr.html). A more detailed 
+brief introduction [here](S4_A_brief_intro_to_dplyr.html). A more detailed 
 introduction can be found in our [online R course](https://bioinformatics-core-shared-training.github.io/r-intro/week4.html)
 
 # Prepare count matrix
