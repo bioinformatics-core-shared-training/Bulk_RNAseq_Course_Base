@@ -31,7 +31,7 @@ Oocysts*](https://www.frontiersin.org/articles/10.3389/fmicb.2020.570903/full)
 The raw data (sequence reads) can be downloaded from SRA under under the 
 bio-project number PRJNA483261.
 
-## Downloading     raw data from SRA
+## Downloading raw data from SRA
 
 Raw reads from sequencing experiments tend to be distributed through the
 Sequence Read Archive [SRA](https://trace.ncbi.nlm.nih.gov/Traces/sra/)). SRA
