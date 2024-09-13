@@ -16,29 +16,20 @@ bamDir=${1}
 lineNumb=${SLURM_ARRAY_TASK_ID}
 inBam=`ls ${bamDir}/*bam | sed "${lineNumb}q;d"`
 
-output=${inBam/.bam/.RNAseqMetrics.txt}
+output=${inBam/.bam/.RNA_metrics.txt}
 
-refFasta="${wkDir}/references/homo_sapiens/GRCh38/fasta/hsa.GRCh38.fa"
-refFlat="${wkDir}/references/homo_sapiens/GRCh38/annotation/hsa.GRCh38.txt"
-rRNA="${wkDir}/references/ribsosomal_RNA.GRCh38.108.intervals_list"
+refFlat="materials_build/salmon_ref/GRCm39.M35.refFlat.txt"
 
-tempDir=${wkDir}/tmp_RNAmtr
-mkdir -p ${tempDir}
+# Activate the conda environment
+set +xu
+source ${condaBin}/activate bulkRNAseq_build
+set -xu
 
- singularity exec \
-    -B ${wkDir} \
-    ${wkDir}/${simg} \
-    java -Djava.io.tmpdir="${tempDir}" \
-        -Xms4032m -Xmx4032m \
-        -jar /usr/local/lib/picard.jar CollectRnaSeqMetrics \
+picard CollectRnaSeqMetrics \
         INPUT=${inBam} \
         OUTPUT=${output} \
-        REFERENCE_SEQUENCE=${refFasta} \
         REF_FLAT=${refFlat} \
-        RIBOSOMAL_INTERVALS=${rRNA} \
-        STRAND_SPECIFICITY=SECOND_READ_TRANSCRIPTION_STRAND \
-        ASSUME_SORTED=true \
-        VALIDATION_STRINGENCY=SILENT \
-        TMP_DIR="$TMPDIR"
+        STRAND_SPECIFICITY=NONE \
+        VALIDATION_STRINGENCY=SILENT
 
 echo "Done!"
