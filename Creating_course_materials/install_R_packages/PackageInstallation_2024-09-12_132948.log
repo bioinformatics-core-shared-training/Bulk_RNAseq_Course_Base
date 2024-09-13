@@ -1,0 +1,25 @@
+
+> library(purrr)
+
+> library(stringr)
+
+> installPackage <- function(pkg) {
++     message("Attempting to install package ", pkg)
++     status <- tryCatch({
++         BiocManager::install(pkg, ask = FALSE)
++         status <- "success"
++     }, error = function(e) {
++         message("ERROR: FAILED TO INSTALL PACKAGE ", pkg)
++         message(conditionMessage(e))
++         return("FAILED")
++     })
++     message("----------------------------------------\n")
++     str_c(pkg, ": ", status)
++ }
+
+> packages <- read_lines("Packages.txt")
+
+> pkgs <- setdiff(packages, rownames(installed.packages()))
+
+> map_chr(pkgs, installPackage)
+character(0)
