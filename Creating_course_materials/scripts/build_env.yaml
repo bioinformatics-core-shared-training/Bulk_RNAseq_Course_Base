@@ -1,0 +1,13 @@
+name: bulkRNAseq_build 
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+  - r
+dependencies:
+  - sra-tools
+  - seqtk
+  - salmon
+  - samtools
+  - picard
+  - multiqc
