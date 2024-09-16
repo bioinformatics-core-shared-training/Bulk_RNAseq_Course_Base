@@ -3,13 +3,18 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: QC of raw reads with FastQC
 output:
   html_document: default
-  pdf_document: default
 ---
 
 In our intial QC of the raw fastq file we will be interested in gathering
 various metrics, such as the total number of reads, sequence length, or GC
 content.  We will also want to summarise such things as base quality scores and
-make assessments of the contamination of the reads with adapter sequence. 
+make assessments of the contamination of the reads with adapter sequence.
+
+For this (and the next couple of sessions) we will working at the command line.
+If you are unfamiliar with the command line and "bash" shell command language,
+there is nice basic cheat sheet with the most commonly used commands here:
+
+https://icosbigdatacamp.github.io/2018-summer-camp/slides/BASH_Cheat_Sheet.pdf
 
 [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) is a
 quality control tool for high throughput sequence data that is maintained
@@ -89,4 +94,9 @@ Note that the output directory must already exist, FastQC will not create it.
 >           B) Does the quality score vary through the read length?  
 >           C) How is the data's quality?  
 
+Note: In practice you would actually end up running FastQC on both read 1 and read 2
+of every sample. This would usually results in large number of reports. Rather than
+having to open and inspect each one individually, we would normally gather them all
+together into a single report using the program **MultiQC**. We will cover
+MultiQC in the later session "QC of alignment".
 -------------------------------------------------------------------
