@@ -11,7 +11,7 @@ output:
 Once we have aligned our reads and quantified gene expression with Salmon, it is
 then possible to run some additional quality checks on our data. We will use a 
 tool call [Picard](https://broadinstitute.github.io/picard/) to gather some 
-information about duplication reates and the distribution of reads within each
+information about duplication rates and the distribution of reads within each
 gene in order to assess RNA integrity. We will also gather some QC metrics from
 the Salmon outputs, such as alignment rate and insert size.
 
@@ -19,7 +19,7 @@ the Salmon outputs, such as alignment rate and insert size.
 
 [**Picard Tools**](https://broadinstitute.github.io/picard/) is a suite of
 tools for analysing and manipulating sequencing data. It is maintained by the
-Broad Institute and comprises 88 different tools for doing jobs such as
+Broad Institute and comprises many different tools for doing jobs such as
 generating QC metrics, modifying bam files in various ways, or converting files
 between different formats.
 
@@ -52,14 +52,15 @@ actually performs two tasks.
 First, Picard reads through the bam file and finds any duplicate reads - these
 are reads with the same genomic location at the 5' end. For each group of
 duplicate reads, Picard selects a "primary" read based on the base quality
-scores and then marks all other reads in the group as "duplicates" by adding
-**1024** to the sam flag. For paired end reads, the entire fragment is
-considered, this essentially means both ends must be duplicated for the read
-pair to be marked as a duplicate.
+scores and then marks all other reads in the group as "duplicates".  For paired
+end reads, the entire fragment is considered, this essentially means both ends
+must be duplicated for the read pair to be marked as a duplicate.
 
 Once the duplicate reads are marked, Picard outputs a new bam file in which the 
 duplicate reads are marked and then also generates a metrics file that contains
 information about the duplication rate.
+
+
 
 ### Exercise 1
 
@@ -84,14 +85,15 @@ session.
 > **Note**: The `\` at the end of each line tells the terminal that when you 
 > press `Enter`, you have not yet finished typing the command. You can if you
 > wish, type the whole command on a single line, omitting the `\`. The command
-> is written across > multiple lines here just to make it easier to read.
+> is written across multiple lines here just to make it easier to read.
 >
 > Q. What is the duplication rate for this bam file? You'll need to look at the
-> metrics file. The easiest way is to open in a spreadsheet. On the course 
+> metrics file. The easiest way is to open it in a spreadsheet. On the course 
 > machines we have LibreOffice Calc. You can find this in the launcher bar at 
 > the bottom or side of the desktop, e.g.:
 ![](images/Launcher_bar_cacl.png)
-
+> You can find details about the contents of the metrics file in the 
+> [Picard documentation](https://broadinstitute.github.io/picard/picard-metric-definitions.html#DuplicationMetrics).
 
 ### RNA alignment metrics
 
@@ -109,42 +111,42 @@ The `CollectRnaSeqMetrics` requires four pieces of information to run:
 3. A file containing gene annotations in a format called **RefFlat**, which is
    defined
    [here](http://genome.ucsc.edu/goldenPath/gbdDescriptionsOld.html#RefFlat).
-4. A parameter for strand specificity. Strand specificity is factor of the
+4. A parameter for strand specificity. Strand specificity is determined by the
    library prep chemistry. There are three possible options:  
-        a) Forward stranded library prep, i.e. the reads are on the
-           transcription strand - FIRST_READ_TRANSCRIPTION_STRAND   
-        b) Reverse stranded library prep, i.e. the reads are on the reverse
-           strand - SECOND_READ_TRANSCRIPTION_STRAND  
-        c) Unstranded library prep, i.e. the reads may be on either strand -
-           NONE  
+        a) FIRST_READ_TRANSCRIPTION_STRAND - Forward stranded library prep, i.e. the reads are on the
+           transcription strand   
+        b) SECOND_READ_TRANSCRIPTION_STRAND - Reverse stranded library prep, i.e. the reads are on the reverse
+           strand   
+        c) NONE - Unstranded library prep, i.e. the reads may be on either strand    
     With your own data you would need to find this information out from whoever
     has prepared the library. In this case our library prep is unstranded, so we
     will use `NONE`.
 
-#### Generate the refFlat file
+#### Generate the RefFlat file
   
-The first thing we will need to do is construct the refFlat file. 
+The first thing we will need to do is construct the RefFlat file. 
 If we had aligned our reads to the genome, we would then need gene annotations
 to identify the coding regions of the genome. 
 
-The refFlat file is one format of gene annotation, where each line contains the
-information for a single transcript, including contig/sequence (chromosome) on
-which the gene is located, the start and end locations on the conig for the
-transcript, and the start and end locations for each exonof the trancscript. The
-Picard tool `CollectRnaSeqMetrics` normally uses this refFlat file to translate
-the genomic alignments of reads into details of the gene encoded by the
-transcript molecule from which the reads originated.
+The RefFlat file is one of a variety of formats for describing gene annotation. 
+in RefFlat format each line contains the information for a single transcript,
+including contig/sequence (chromosome) on which the gene is located, the start
+and end locations on the conig for the transcript, and the start and end
+locations for each exon of the trancscript. The Picard tool
+`CollectRnaSeqMetrics` normally uses this refFlat file to translate the genomic
+alignments of reads into details of the gene encoded by the transcript molecule
+from which the reads originated.
 
 To analyse the alignments from Salmon, we still need to provide a refFlat file,
 but in this case each contig/sequence in the reference is a transcript with a
 single "exon" (the transcriptome fasta does not include introns). We can use the
 sequence information that is stored in the header of the bam file to generate
-this refFlat file.
+this RefFlat file.
 
 We can do this using the data contained in the bam file header. The file
 `create_refflat_from_sam_header.py` in the **scripts** directory is a python
 script that will read a Salmon mappings BAM file and generate the required
-refFlat file from the header.
+RefFlat file from the header.
 
 For future reference, you can download the script from our [GitHub
 repository](https://github.com/crukci-bioinformatics/BamHeaderToRefflat).In
@@ -171,7 +173,7 @@ transcriptome reference.
 ### Exercise 2
 
 > 1. Run Picard's `CollectRnaSeqMetrics` tool on the sorted bam file using the
->    following command:  
+>    following arguments:  
 >       * INPUT - The bam file
 >       * OUTPUT - `salmon_qc_demo/SRR7657883/SRR7657883.salmon.RNA_metrics.txt`
 >       * REF_FLAT - the refFlat reference file
