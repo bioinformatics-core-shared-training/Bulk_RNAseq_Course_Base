@@ -272,15 +272,16 @@ pre code {
 </ol>
 </blockquote>
 <p>Salmon creates a separate output directory for each sample analysed. This directory contains a number of files; the file that contains the quantification data is called <code>quant.sf</code>.</p>
-<div id="sam-to-bam-with-samtools" class="section level3">
-<h3>3.1 SAM to BAM with samtools</h3>
+</div>
+</div>
+<div id="sam-to-bam-with-samtools" class="section level1">
+<h1>3 SAM to BAM with samtools</h1>
 <p>We can transform from SAM to BAM using <code>samtools</code>. <code>samtools</code> is a toolkit that provides a number of useful tools for working with SAM/BAM files. The BAM file format is a binary (not human readable) file and is considerably smaller than the same data stored in SAM format. We will also sort the alignment entries by location (Contig/Chromosome name and the location on the contig), this further improves the compression of the SAM to BAM. We will use the <code>samtools sort</code> function.</p>
 <p>The general command is:</p>
 <p><code>samtools sort -O BAM -o my_sample.sorted.bam my_sample.sam</code></p>
 <p>Where the <code>-o</code> option is used to provide the output file name. There are many other options, e.g. reads can be sorted by the read name instead of the position or we can specify the number of parallel threads to be used - to find out more use <code>samtools sort --help</code>.</p>
-</div>
-<div id="exercise-3" class="section level3">
-<h3>Exercise 3</h3>
+<div id="exercise-3" class="section level2">
+<h2>Exercise 3</h2>
 <blockquote>
 <ol style="list-style-type: decimal">
 <li>Sort and transform your aligned SAM file into a BAM file called <code>SRR7657883.salmon.sorted.bam</code>. Use the option <code>-@ 7</code> to use 7 cores, this vastly speeds up the compression.</li>
@@ -291,9 +292,28 @@ pre code {
 <li>Use, for example, <code>samtools view my_sample.sorted.bam</code> to check your BAM file</li>
 </ol>
 </blockquote>
+</div>
+</div>
+<div id="make-transcript-to-gene-table" class="section level1">
+<h1>4 Make transcript to gene table</h1>
+<p>Salmon quantifies gene expression at the transcript level. When we come to do our differential gene expression analysis in R, we will want to summarise this to the gene level. To do this we need a table that links transcript IDs to gene IDs. We have already created this for you, but, for reference, the code below was used to generate this table from the sequence headers in the transcriptome reference file.</p>
+<p><strong>You do not need to run this code, we have already done this for you.</strong></p>
+<pre class="bash"><code>echo -e &quot;TxID\tGeneID&quot; &gt; salmon_outputs/tx2gene.tsv
+zcat references/Mus_musculus.GRCm38.cdna.all.fa.gz |
+  grep &quot;^&gt;&quot; | 
+  head |
+  cut -f 1,4 -d &#39; &#39; | 
+  sed -e &#39;s/^&gt;//&#39; -e &#39;s/gene://&#39; -e &#39;s/\.[0-9]*$//&#39; |
+  tr &#39; &#39; &#39;\t&#39; \ 
+  &gt;&gt; salmon_outputs/tx2gene.tsv</code></pre>
+<ol style="list-style-type: decimal">
+<li><code>zcat references/Mus_musculus.GRCm38.cdna.all.fa.gz</code> - read the zipped fasta</li>
+<li><code>grep &quot;^&gt;&quot;</code> - find the sequence headers, they all start with ‘&gt;’</li>
+<li><code>cut -f 1,4 -d &#39; &#39;</code> - extract the 1st and 4th entries on each line - transcript ID and gene ID</li>
+<li><code>sed -e &#39;s/^&gt;//&#39; -e &#39;s/gene://&#39; -e &#39;s/\.[0-9]*$//&#39;</code> - remove the “&gt;” from the beginning of the line, the “gene:” from the beginning of the gene ID, and the trailing “.x” number which indicates that version of the gene annotation</li>
+<li><code>tr &#39; &#39; &#39;\t&#39;</code> - replace spaces with tabs so that the table is tab delimited</li>
+</ol>
 <hr />
-</div>
-</div>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1 class="unnumbered">References</h1>

@@ -208,7 +208,7 @@ Salmon creates a separate output directory for each sample analysed. This
 directory contains a number of files; the file that contains the quantification
 data is called `quant.sf`.
 
-### 3.1 SAM to BAM with samtools
+# 3 SAM to BAM with samtools
 
 We can transform from SAM to BAM using `samtools`. `samtools` is a toolkit that
 provides a number of useful tools for working with SAM/BAM files. The BAM file
@@ -227,13 +227,42 @@ other options, e.g. reads can be sorted by the read name instead of the position
 or we can specify the number of parallel threads to be used -  to find out more
 use `samtools sort --help`.
 
-### Exercise 3
+## Exercise 3
 
 > 1. Sort and transform your aligned SAM file into a BAM file called
 > `SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this
 > vastly speeds up the compression.
 
 > 2. Use, for example, `samtools view my_sample.sorted.bam` to check your BAM file
+
+# 4 Make transcript to gene table
+
+Salmon quantifies gene expression at the transcript level. When we come to do
+our differential gene expression analysis in R, we will want to summarise this
+to the gene level. To do this we need a table that links transcript IDs to gene
+IDs. We have already created this for you, but, for reference, the code below
+was used to generate this table from the sequence headers in the transcriptome
+reference file.
+
+**You do not need to run this code, we have already done this for you.**
+
+```{bash eval=FALSE}
+echo -e "TxID\tGeneID" > salmon_outputs/tx2gene.tsv
+zcat references/Mus_musculus.GRCm38.cdna.all.fa.gz |
+  grep "^>" | 
+  head |
+  cut -f 1,4 -d ' ' | 
+  sed -e 's/^>//' -e 's/gene://' -e 's/\.[0-9]*$//' |
+  tr ' ' '\t' \ 
+  >> salmon_outputs/tx2gene.tsv
+```
+
+1. `zcat references/Mus_musculus.GRCm38.cdna.all.fa.gz` - read the zipped fasta
+1. `grep "^>"` - find the sequence headers, they all start with ‘>’
+1. `cut -f 1,4 -d ' '` - extract the 1st and 4th entries on each line - transcript ID and gene ID
+1. `sed -e 's/^>//' -e 's/gene://' -e 's/\.[0-9]*$//'` - remove the “>” from the beginning of the line, the “gene:” from the beginning of the gene ID, and the trailing “.x” number which indicates that version of the gene annotation
+1. `tr ' ' '\t'` - replace spaces with tabs so that the table is tab delimited
+
 
 ----------------------------------------------------------
 
