@@ -2,7 +2,6 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quantification of Gene Expression with Salmon
 output:
-  pdf_document: default
   html_document: default
 ---
 
@@ -64,7 +63,8 @@ salmon index \
 
 ## Exercise 2 - Quantify with Salmon
 
-> 1. Make directory called `salmon_output`
+> 1. There should already be a directory called `salmon_output` in the
+>    `Course_materials` directory. If not, create it.
 ```{bash eval=FALSE}
 mkdir salmon_output
 ```
