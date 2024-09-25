@@ -124,12 +124,15 @@ The `CollectRnaSeqMetrics` requires four pieces of information to run:
 
 #### Generate the RefFlat file
   
-The first thing we will need to do is construct the RefFlat file. 
-If we had aligned our reads to the genome, we would then need gene annotations
-to identify the coding regions of the genome. 
+The first thing we will need to do is construct the RefFlat file.  If we had
+aligned our reads to the genome, each read in our bam file would have a genomic
+location - a chromosome and a position on that chromosome. We would then need 
+an annotation file that contained the genomic locations of the genes in the
+genome in order to translate the genomic locations of the reads into gene based
+information.
 
 The RefFlat file is one of a variety of formats for describing gene annotation. 
-in RefFlat format each line contains the information for a single transcript,
+In RefFlat format each line contains the information for a single transcript,
 including contig/sequence (chromosome) on which the gene is located, the start
 and end locations on the conig for the transcript, and the start and end
 locations for each exon of the trancscript. The Picard tool
