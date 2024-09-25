@@ -165,20 +165,24 @@ the GTF file. We can then use `seqtk` to extract the sequences.
 
 ```
 zcat ${salRefDir}/gencode.vM35.basic.annotation.gtf.gz |
-    awk '($1 == "chr14" && $3 = "transcript") {print $10}' |
-    sed 's/[";]//g' |
+    grep "^chr14" |
+    grep "transcript_id" |
+    sed -e 's/.*transcript_id "//' -e 's/".*//' |
     sort |
     uniq > ${salRefDir}/chr14_transcripts.txt
+zcat ${salRefDir}/gencode.vM35.transcripts.fa.gz |
+    grep -f ${salRefDir}/chr14_transcripts.txt |
+    sed 's/^>//' > ${salRefDir}/chr14_transcripts.names.txt
 seqtk subseq ${salRefDir}/gencode.vM35.transcripts.fa.gz \
-    ${salRefDir}/chr14_transcripts.txt |
-    gzip -c - > ${salRefDir}/gencode.vM35.transcripts.chr14_transcripts.fa.gz
+    ${salRefDir}/chr14_transcripts.names.txt |
+    gzip -c - > ${salRefDir}/gencode.vM35.transcripts.chr14.fa.gz
 ```
---> materials_build/salmon_ref/gencode.vM35.transcripts.chr14_transcripts.fa.gz
+--> materials_build/salmon_ref/gencode.vM35.transcripts.chr14.fa.gz
 
 Check that we can create the chr14 index in a reasonable time for the course.
 
 ```
-cat ${salRefDir}/gencode.vM35.transcripts.chr14_transcripts.fa.gz \
+cat ${salRefDir}/gencode.vM35.transcripts.chr14.fa.gz \
     ${salRefDir}/GRCm39.genome.chr14.fa.gz \
     > ${salRefDir}/gentrome.chr14.fa.gz
 echo "chr14" >> ${salRefDir}/decoys.chr14.txt
@@ -189,6 +193,7 @@ Worked fine. Less than a minute.
 
 ```
 rm -f ${salRefDir}/chr14_transcripts.txt
+rm -f ${salRefDir}/chr14_transcripts.names.txt
 rm -f ${salRefDir}/gentrome.chr14.fa.gz
 rm -f ${salRefDir}/decoys.chr14.txt
 rm -rf ${salRefDir}/salmon_index_chr14
@@ -212,12 +217,21 @@ sbatch --array=1-12 saSalmonQuant.sh \
 --> materials_build/salmon_results/SRR{*}.SRR7657882.salmon.bam
 --> materials_build/salmon_results/SRR{*}.SRR7657882.salmon.bam.bai
 
+# 70. Make downsamples fastq
+
+For the Salmon practical we need smaller fastq files in order to run
+Salmon in a reasonably small time.
+
+```
+
+```
+
 # 5. Run Picard for alignment QC
 
 ## a) Add read group to bam files
 
-It seems Picard is now throwing an error if the read group is not present in the
-BAM file. We will add the read group to the BAM files.
+It seems Picard MarkDuplicates is now throwing an error if the read group is not
+present in the BAM file. We will add the read group to the BAM files.
 
 ```
 sbatch --array=1-12 saAddReadGroup.sh ${quantDir}
@@ -226,7 +240,56 @@ sbatch --array=1-12 saAddReadGroup.sh ${quantDir}
 ## a) Duplication Metrics
 
 ```
-quantDir=${matDir}/salmon_results
 sbatch --array=1-12 saDuplicationMetrics.sh ${quantDir}
 ```
+--> materials_build/salmon_results/SRR{*}.salmon.mkdup.bai
+--> materials_build/salmon_results/SRR{*}.salmon.mkdup.bam
+--> materials_build/salmon_results/SRR{*}.salmon.mkdup_metrics.txt
 
+```
+rm -f ${quantDir}/*.salmon.mkdup.ba[mi]
+```
+
+## b) Make RefFlat file
+
+We need a RefFlat file for the Picard CollectRnaSeqMetrics tool. We will use the
+bam header to create the RefFlat file.
+
+```
+BamHeaderToRefflat.R \
+    -b materials_build/salmon_results/SRR7657872.salmon.bam \
+    -o materials_build/salmon_ref/GRCm39.M35.refFlat.txt
+```
+
+## c) Collect RNASeq Metrics
+
+```
+sbatch --array=1-12 saRNAseqMetrics.sh ${quantDir}
+```
+
+# 161. Create the Course_Materials directory and populate it with the necessary files
+
+```
+mkdir ${matDir}/Course_Materials
+```
+
+## a) Fastq files
+
+```
+cp -r ${matDir}/fastq/SRR7657883* ${matDir}/Course_Materials/.
+mkdir ${matDir}/Course_Materials/references
+```
+
+## b) References
+
+```
+cp -r ${salRefDir}/*14* ${matDir}/Course_Materials/references/.
+cp -r ${salRefDir}/salmon_index ${matDir}/Course_Materials/references/.
+```
+
+## c) Salmon results
+
+```
+mkdir ${matDir}/Course_Materials/salmon
+cp -pvr ${quantDir}/* ${matDir}/Course_Materials/salmon/.
+```

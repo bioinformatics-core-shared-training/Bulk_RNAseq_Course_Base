@@ -11,3 +11,5 @@ dependencies:
   - samtools
   - picard
   - multiqc
+  - fastqc
+  - fontconfig

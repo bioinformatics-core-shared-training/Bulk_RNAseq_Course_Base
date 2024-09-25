@@ -5,3 +5,6 @@ conda activate bulkRNAseq_build
 export matDir=`readlink -f materials_build`
 export salRefDir=${matDir}/salmon_ref/
 export quantDir=${matDir}/salmon_results
+
+# Alias for conda environment
+alias cabrb='conda activate bulkRNAseq_build'
