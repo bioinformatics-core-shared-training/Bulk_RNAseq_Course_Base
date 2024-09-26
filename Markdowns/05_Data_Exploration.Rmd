@@ -382,7 +382,7 @@ replicate. If the PCA plot showed separation of samples by time, it might be
 worthwhile including time in the downstream analysis to account for the
 time-based effect.
 
-## Hierachical clustering
+# Hierachical clustering
 
 Earlier, we used principle component analysis to assess sources of variation
 in the data set and the relationship between the samples. Another method for
