@@ -8,7 +8,6 @@ output:
   html_document:
     toc: yes
     toc_float: yes
-layout: page
 ---
 
 ### Data 
@@ -45,43 +44,7 @@ rlogcounts <- rlog(filtCounts)
 pcDat <- prcomp(t(rlogcounts))
 ```
 
-### Exercise 1
->
-> We have loaded in the raw counts here. These are what we need for the 
-> differential expression analysis. For other investigations we might want 
-> counts normalised to library size. `tximport` allows us to import 
-> "transcript per million" (TPM) scaled counts instead.
->
-> 1. Create a new object called `tpm` that contains length scaled TPM 
->    counts. You will need to add an extra argument to the command. Use the help
->    page to determine how you need to change the code: `?tximport`.
-
-```{r, solutionExercise1}
-tpm <- tximport(files, type = "salmon", tx2gene = tx2gene, 
-                countsFromAbundance = "lengthScaledTPM")
-```
-
-### Exercise 2
->
-> 1. Use the `DESeq2` function `rlog` to transform the count data. This function
-> also normalises for library size.
-> 2. Plot the count distribution boxplots with this data.
-> How has this effected the count distributions?
-
-```{r, message=FALSE}
-rlogcounts <- rlog(filtCounts)
-
-# Check distributions of samples using boxplots
-boxplot(rlogcounts, 
-        xlab="", 
-        ylab="Log2(Counts)",
-        las=2,
-        col=statusCols)
-# Let's add a blue horizontal line that corresponds to the median logCPM
-abline(h=median(as.matrix(rlogcounts)), col="blue")
-```
-
-### Exercise 3
+### Exercise
 >
 > The plot we have generated shows us the first two principle components. This
 > shows us the relationship between the samples according to the two greatest
