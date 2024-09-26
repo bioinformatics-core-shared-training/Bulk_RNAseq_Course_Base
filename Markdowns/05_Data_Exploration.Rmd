@@ -11,9 +11,8 @@ output:
 bibliography: ref.bib
 ---
 
-```{r setup, echo=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
-knitr::opts_knit$set(root.dir = here::here("course_files"))
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 6, fig.height = 5)
 ```
 
 # Introduction
@@ -43,10 +42,9 @@ In this session we will:
 
 * import our counts into R  
 * filter out unwanted genes  
-* look at the effects of variance and how to mitigate this with data 
-transformation
+* transform the data to mitigate the effects of variance  
 * do some initial exploration of the raw count data using principle component 
-analysis  
+analysis and hierarchical clustering  
 
 # Data import
 
@@ -118,23 +116,8 @@ head(txi$counts)
 
 Save the `txi` object for use in later sessions.
 
-```{r saveData, eval=FALSE}
+```{r saveData, eval = FALSE}
 saveRDS(txi, file = "salmon_outputs/txi.rds")
-```
-
-### Exercise 1
->
-> We have loaded in the raw counts here. These are what we need for the 
-> differential expression analysis. For other investigations we might want 
-> counts normalised to library size. `tximport` allows us to import 
-> "transcript per million" (TPM) scaled counts instead.
->
-> 1. Create a new object called `tpm` that contains length scaled TPM 
->    counts. You will need to add an extra argument to the command. Use the help
->    page to determine how you need to change the code: `?tximport`.
-
-```{r solutionExercise1}
-
 ```
 
 ### A quick intro to `dplyr`
@@ -170,24 +153,20 @@ rawCounts <- round(txi$counts, 0)
 
 ## Filtering the genes
 
-<!-- prefiltering -->
+Many, if not most, of the genes in our annotation will not have been detected at
+meaningful levels in our samples - very low counts are most likely technical
+noise rather than biology. For the purposes of visualization it is important to
+remove the genes that are not expressed in order to avoid them dominating the
+patterns that we observe.
 
-For many analysis methods it is advisable to filter out as many genes as 
-possible before the analysis to decrease the impact of multiple testing
-correction on false discovery rates. This is normally done
-by filtering out genes with low numbers of reads and thus likely to be 
-uninformative.
-
-With `DESeq2` this is however not necessary as it applies `independent
-filtering` during the analysis. On the other hand, some filtering for 
-genes that are very lowly expressed does reduce the size of the data matrix, 
-meaning that less memory is required and processing steps are carried out 
-faster. Furthermore, for the purposes of visualization it is important to remove
-the genes that are not expressed in order to avoid them dominating the patterns
-that we observe.
-
-We will keep all genes where the total number of reads across all samples is 
-greater than 5.
+The level at which you filter at this stage will not effect the differential
+expression analysis. The cutoff used for filtering is a balance between removing
+noise and keeping biologically relevant information. A common approach is to
+remove genes that have less than a certain number of reads across all samples.
+The exact level is arbitrary and will depend to some extent on nature of the
+dataset (overall read depth per sample, number of samples, balance of read depth
+between samples etc). We will keep all genes where the total number of reads
+across all samples is greater than 5.
 
 ```{r filterGenes}
 # check dimension of count matrix
@@ -196,7 +175,7 @@ dim(rawCounts)
 # keeping outcome in vector of 'logicals' (ie TRUE or FALSE, or NA)
 keep <- rowSums(rawCounts) > 5
 # summary of test outcome: number of genes in each class:
-table(keep, useNA="always") 
+table(keep, useNA = "always") 
 # subset genes where test was TRUE
 filtCounts <- rawCounts[keep,]
 # check dimension of new count matrix
@@ -212,9 +191,9 @@ but for visualization purposes we use transformed counts.
 
 Why not raw counts? Two issues:
 
-* Raw counts range is very large
-* Variance increases with mean gene expression, this has impact on assessing
-  the relationships.
+* The range of values in raw counts is very large with many small values and a few
+  genes with very large values. This can make it difficult to see patterns in the
+  data.
 
 ```{r raw_summary}
 summary(filtCounts)
@@ -222,103 +201,56 @@ summary(filtCounts)
 
 ```{r raw_boxplot}
 # few outliers affect distribution visualization
-boxplot(filtCounts, main='Raw counts', las=2)
+boxplot(filtCounts, main = 'Raw counts', las = 2)
 ```
+
+* Variance increases with mean gene expression, this has impact on assessing
+  the relationships, e.g. by clustering.
 
 ```{r raw_mean_vs_sd}
 # Raw counts mean expression Vs standard Deviation (SD)
 plot(rowMeans(filtCounts), rowSds(filtCounts), 
-     main='Raw counts: sd vs mean', 
-     xlim=c(0,10000),
-     ylim=c(0,5000))
+     main = 'Raw counts: sd vs mean', 
+     xlim = c(0, 10000),
+     ylim = c(0, 5000))
 ```
 
 ## Data transformation
 
-To avoid problems posed by raw counts, they can be [transformed](http://www.bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization).
-Several transformation methods exist to limit the dependence of variance on mean gene expression:
+To avoid problems posed by raw counts, they can be
+[transformed](http://www.bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization).
+A simple log2 transformation can be used to overcome the issue of the range of
+values. Note, when using a log transformation, it is important to add a small
+"pseudocount" to the data to avoid taking the log of zero.
 
-* Simple log2 transformation
-* VST : variance stabilizing transformation
-* rlog : regularized log transformation
-
-### log2 transformation
-
-Because some genes are not expressed (detected) in some samples, their count are `0`. As log2(0) returns -Inf in R which triggers errors by some functions, we add 1 to every count value to create 'pseudocounts'. The lowest value then is 1, or 0 on the log2 scale (log2(1) = 0).
-
-```{r logTransform}
-# Get log2 counts
-logcounts <- log2(filtCounts + 1)
+```{r log2}
+logCounts <- log2(filtCounts + 1)
+boxplot(logCounts, main = 'Log2 counts', las = 2)
 ```
 
-We will check the distribution of read counts using a boxplot and add some
-colour to see if there is any difference between sample groups.
+However, this transformation does not account for the variance-mean
+relationship. DESeq2 provides two additional functions for transforming the
+data:
 
-```{r plotLogCounts}
-# make a colour vector
-statusCols <- case_when(sampleinfo$Status=="Infected" ~ "red", 
-                        sampleinfo$Status=="Uninfected" ~ "orange")
+* `VST` : variance stabilizing transformation
+* `rlog` : regularized log transformation
 
-# Check distributions of samples using boxplots
-boxplot(logcounts,
-        xlab="",
-        ylab="Log2(Counts)",
-        las=2,
-        col=statusCols,
-        main="Log2(Counts)")
-# Let's add a blue horizontal line that corresponds to the median
-abline(h=median(logcounts), col="blue")
+As well as log2 transforming the data, both transformations produce data which
+has been normalized with respect to library size and deal with the mean-variance
+relationship. The effects of the two transformations are similar. `rlog` is
+preferred when there is a large difference in library size between samples,
+however, it is considerably slower than `VST` and is not recommended for large
+datasets. For more information on the differences between the two
+transformations see the
+[paper](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8)
+and the DESeq2 vignette.
+
+Our data set is small, so we will use `rlog` for the transformation.
+
+```{r rlog}
+rlogcounts <- rlog(filtCounts)
+boxplot(rlogcounts, main = 'rlog counts', las = 2)
 ```
-
-From the boxplots we see that overall the density distributions of raw
-log-counts are not identical but still not very different. If a sample is really
-far above or below the blue horizontal line (overall median) we may need to
-investigate that sample further.
-
-```{r log2_mean_vs_sd}
-# Log2 counts standard deviation (sd) vs mean expression
-plot(rowMeans(logcounts), rowSds(logcounts), 
-     main='Log2 Counts: sd vs mean')
-```
-
-In contrast to raw counts, with log2 transformed counts lowly expressed genes show higher variation.
-
-### VST : variance stabilizing transformation
-
-Variance stabilizing transformation (VST) aims at generating a matrix of values for which variance is constant across the range of mean values, especially for low mean.
-
-The `vst` function computes the fitted dispersion-mean relation, derives the transformation to apply and accounts for library size.
-
-```{r vst_counts, message=FALSE}
-vst_counts <- vst(filtCounts)
-
-# Check distributions of samples using boxplots
-boxplot(vst_counts, 
-        xlab="", 
-        ylab="VST counts",
-        las=2,
-        col=statusCols)
-# Let's add a blue horizontal line that corresponds to the median
-abline(h=median(vst_counts), col="blue")
-```
-
-```{r vst_mean_vs_sd}
-# VST counts standard deviation (sd) vs mean expression
-plot(rowMeans(vst_counts), rowSds(vst_counts), 
-     main='VST counts: sd vs mean')
-```
-
-### Exercise 2
->
-> 1. Use the `DESeq2` function `rlog` to transform the count data. This function
-> also normalises for library size.
-> 2. Plot the count distribution boxplots with this data  
->    How has this affected the count distributions?
-
-```{r solutionExercise2}
-
-```
-
 
 # Principal Component Analysis
 
@@ -345,7 +277,7 @@ is able to recognise common statistical objects such as PCA results or linear
 model results and automatically generate summary plot of the results in an
 appropriate manner.
 
-```{r pcaPlot, message = FALSE, fig.width=6.5, fig.height=5, fig.align="center"}
+```{r pcaPlot, message = FALSE, fig.width = 6.5, fig.height = 5, fig.align = "center"}
 library(ggfortify)
 
 rlogcounts <- rlog(filtCounts)
@@ -359,15 +291,15 @@ autoplot(pcDat)
 We can use colour and shape to identify the Cell Type and the Status of each
 sample.
 
-```{r pcaPlotWiColor, message = FALSE, fig.width=6.5, fig.height=5, fig.align="center"}
+```{r pcaPlotWiColor, message = FALSE, fig.width = 6.5, fig.height = 5, fig.align = "center"}
 autoplot(pcDat,
          data = sampleinfo, 
-         colour="Status", 
-         shape="TimePoint",
-         size=5)
+         colour = "Status", 
+         shape = "TimePoint",
+         size = 5)
 ```
 
-### Exercise 3
+### Exercise
 >
 > The plot we have generated shows us the first two principle components. This
 > shows us the relationship between the samples according to the two greatest
@@ -392,16 +324,16 @@ Let's identify these samples. The package `ggrepel` allows us to add text to
 the plot, but ensures that points that are close together don't have their
 labels overlapping (they *repel* each other).
 
-```{r badSamples, fig.width=6.5, fig.height=5, fig.align="center"}
+```{r badSamples, fig.width = 6.5, fig.height = 5, fig.align = "center"}
 library(ggrepel)
 
 # setting shape to FALSE causes the plot to default to using the labels instead of points
 autoplot(pcDat,
          data = sampleinfo,  
-         colour="Status", 
-         shape="TimePoint",
-         size=5) +
-    geom_text_repel(aes(x=PC1, y=PC2, label=SampleName), box.padding = 0.8)
+         colour = "Status", 
+         shape = "TimePoint",
+         size = 5) +
+    geom_text_repel(aes(x = PC1, y = PC2, label = SampleName), box.padding = 0.8)
 ```
 
 The mislabelled samples are *SRR7657882*, which is labelled as *Infected* but
@@ -411,7 +343,7 @@ should be *Infected*. Let's fix the sample sheet.
 We're going to use another `dplyr` command `mutate`. 
 
 ```{r correctSampleSheet}
-sampleinfo <- mutate(sampleinfo, Status=case_when(
+sampleinfo <- mutate(sampleinfo, Status = case_when(
                                           SampleName=="SRR7657882" ~ "Uninfected",
                                           SampleName=="SRR7657873" ~ "Infected", 
                                           TRUE ~ Status))
@@ -419,18 +351,18 @@ sampleinfo <- mutate(sampleinfo, Status=case_when(
 
 ...and export it so that we have the correct version for later use.
 
-```{r, exportSampleSheet, eval=FALSE}
+```{r, exportSampleSheet, eval = FALSE}
 write_tsv(sampleinfo, "results/SampleInfo_Corrected.txt")
 ```
 
 Let's look at the PCA now.
 
-```{r correctedPCA, fig.width=6.5, fig.height=5, fig.align="center"}
+```{r correctedPCA, fig.width = 6.5, fig.height = 5, fig.align = "center"}
 autoplot(pcDat,
          data = sampleinfo, 
-         colour="Status", 
-         shape="TimePoint",
-         size=5)
+         colour = "Status", 
+         shape = "TimePoint",
+         size = 5)
 ```
 
 Replicate samples from the same group cluster together in the plot, while 
@@ -467,7 +399,7 @@ library(ggdendro)
 hclDat <-  t(rlogcounts) %>%
    dist(method = "euclidean") %>%
    hclust()
-ggdendrogram(hclDat, rotate=TRUE)
+ggdendrogram(hclDat, rotate = TRUE)
 ```
 
 We really need to add some information about the sample groups. The simplest way
@@ -479,8 +411,9 @@ sample meta data table. We can just substitute in columns from the metadata.
 ```{r}
 hclDat2 <- hclDat
 hclDat2$labels <- str_c(sampleinfo$Status, ":", sampleinfo$TimePoint)
-ggdendrogram(hclDat2, rotate=TRUE)
+ggdendrogram(hclDat2, rotate = TRUE)
 ```
+
 We can see from this that the infected and uninfected samples cluster separately
 and that day 11 and day 33 samples cluster separately for infected samples, but
 not for uninfected samples.
