@@ -15,7 +15,7 @@ bibliography: ref.bib
 knitr::opts_chunk$set(echo = TRUE, fig.width = 6, fig.height = 5)
 ```
 
-# Introduction
+# 1. Introduction
 
 In this section we will begin the process of analyzing the RNAseq data in R. In
 the next section we will use
@@ -46,7 +46,7 @@ In this session we will:
 * do some initial exploration of the raw count data using principle component 
 analysis and hierarchical clustering  
 
-# Data import
+# 2. Data import
 
 First, let's load all the packages we will need to analyse the data.
 
@@ -140,7 +140,7 @@ If you are familiar with R but not `dplyr` or `tidyverse` then we have a very
 brief introduction [here](S4_A_brief_intro_to_dplyr.html). A more detailed 
 introduction can be found in our [online R course](https://bioinformatics-core-shared-training.github.io/r-intro/week4.html)
 
-# Prepare count matrix
+# 3. Prepare count matrix
 
 ## Create a raw counts matrix for data exploration
 
@@ -182,7 +182,7 @@ filtCounts <- rawCounts[keep,]
 dim(filtCounts)
 ```
 
-# Count distribution and Data transformations
+# 4. Count distribution and Data transformations
 
 Differential expression calculations with DESeq2 uses raw read counts as input,
 but for visualization purposes we use transformed counts.
@@ -252,7 +252,7 @@ rlogcounts <- rlog(filtCounts)
 boxplot(rlogcounts, main = 'rlog counts', las = 2)
 ```
 
-# Principal Component Analysis
+# 5. Principal Component Analysis
 
 A principal component analysis (PCA) is an example of an unsupervised analysis,
 where we don't specify the grouping of the samples. If the experiment is well
@@ -299,7 +299,7 @@ autoplot(pcDat,
          size = 5)
 ```
 
-### Exercise
+## Exercise
 >
 > The plot we have generated shows us the first two principle components. This
 > shows us the relationship between the samples according to the two greatest
@@ -382,7 +382,7 @@ replicate. If the PCA plot showed separation of samples by time, it might be
 worthwhile including time in the downstream analysis to account for the
 time-based effect.
 
-# Hierachical clustering
+# 6. Hierachical clustering
 
 Earlier, we used principle component analysis to assess sources of variation
 in the data set and the relationship between the samples. Another method for
@@ -419,5 +419,3 @@ and that day 11 and day 33 samples cluster separately for infected samples, but
 not for uninfected samples.
 
 --------------------
-
-# References

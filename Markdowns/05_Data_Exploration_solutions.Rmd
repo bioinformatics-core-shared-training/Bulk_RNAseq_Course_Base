@@ -10,8 +10,6 @@ output:
     toc_float: yes
 ---
 
-### Data 
-
 ```{r setup, message = FALSE}
 library(tximport)
 library(DESeq2)
@@ -44,7 +42,9 @@ rlogcounts <- rlog(filtCounts)
 pcDat <- prcomp(t(rlogcounts))
 ```
 
-### Exercise
+# 5. Principal Component Analysis
+
+## Exercise
 >
 > The plot we have generated shows us the first two principle components. This
 > shows us the relationship between the samples according to the two greatest
