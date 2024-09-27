@@ -3,141 +3,273 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Differential Expression of RNA-seq data
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  html_document: default
-  pdf_document: default
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: true
 ---
 
-```{r setup, echo=FALSE, message=FALSE}
-options(tibble.print_max = 4, tibble.print_min = 4, max.print=40, 
-        tibble.max_extra_cols=2)
-library(tidyverse)
+```{r setup, echo = FALSE, message = FALSE}
+options(tibble.print_max = 4,
+        tibble.print_min = 4,
+        max.print = 40,
+        tibble.max_extra_cols = 2)
+library(DT)
 library(DESeq2)
-```
-### Exercise 1
-
-> Now we have made our results table using our simple model, let have a look at which
-> genes are changing and how many pass our 0.05 threshold. Why might this not be
-> straigtforward?
->
->
-
-```{r eval=FALSE}
-sum(results.simple$padj < 0.05)
+library(tidyverse)
+library(patchwork)
+knitr::opts_chunk$set(cache=TRUE)
 ```
 
-```{r eval=FALSE}
-sum(is.na(results.simple$padj))
-```
->
-> a) how many genes are significantly (with an FDR < 0.05) up-regulated?
->
->
->
-
-```{r eval=FALSE}
-sum(results.simple$padj < 0.05 & results.simple$log2FoldChange > 0, na.rm = TRUE)
-```
->
-> b) how many genes are significantly (with an FDR < 0.05) down-regulated?
->
->
-
-```{r eval=FALSE}
-sum(results.simple$padj < 0.05 & results.simple$log2FoldChange < 0, na.rm = TRUE)
-
-```
-
-### Exercise 2
-
-> So far we have fitted a simple model considering just "Status", but in reality 
-> we want to model the effects of both "Status" and "Time Point".
-> 
-> Let's start with the model with only main effects - an additive model with no 
-> interaction. The main assumption here is that the effects of Status and the
-> effects of Time Point are indepedent.
-> 
-> Recapitulate the above steps to generate a new DESeq2 object with
-> the additive model. Then we will extract the results table as above.
-> 
-> #### Load the raw data, remembering to set the factor on the Status so that
-> "Uninfected" will be set as the intercept:    
->   
-```{r}
+```{r loadData, echo = FALSE, message = FALSE}
 txi <- readRDS("RObjects/txi.rds")
-sampleinfo <- read_tsv("data/samplesheet_corrected.tsv", col_types="cccc") %>% 
-                   mutate(Status = fct_relevel(Status, "Uninfected"))
+sampleinfo <- read_tsv("data/samplesheet_corrected.tsv", col_types = "cccc")
 ```
-> 
-> #### Create the model:
-> 
-```{r}
-additive.model <- as.formula(~ TimePoint + Status)
+
+# 3. Creating the design model formula
+
+## Exercise 1
+
+> This time create and investigate the model matrix for the variable "Status".
+> 1. Create a model formula to investigate the effect of “Status” on gene expression.
+
+```{r statusSimpleModel}
+simple.model <- as.formula(~ Status)
 ```
-> 
-> #### Then build the DESeq from the raw data, the sample meta data and the model:
-> 
-```{r}
+
+What does this look like as a model matrix?
+
+```{r modelMatrix}
+model.matrix(simple.model, data = sampleinfo)
+```
+
+> 2. Look at the model matrix and identify which is the reference group in your model.
+
+The $\beta_1$ coeffient is encoded in the second column of the model matrix. 
+The column header tell us that this is `StatusUninfected`, therefore, logically,
+the reference must be `StatusUninfected`.
+
+```{r setFactors, echo = FALSE}
+sampleinfo <- mutate(sampleinfo, Status = fct_relevel(Status, "Uninfected"))
+```
+
+# 4. Build a DESeq2DataSet
+
+```{r makeDDSObj, echo = FALSE}
 ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
-                                      colData = sampleinfo,
-                                      design = additive.model)
-```
-> 
-> #### Filter the data set:
->
-```{r}
+                                       colData = sampleinfo,
+                                       design = simple.model)
 keep <- rowSums(counts(ddsObj.raw)) > 5
 ddsObj.filt <- ddsObj.raw[keep,]
+ddsObj <- DESeq(ddsObj.filt)
+results.simple <- results(ddsObj, alpha = 0.05)
+results.simple
 ```
+
+## Exercise 2
+
+> Now we have made our results table using our simple model, let have a look at which
+> genes are changing and how many pass our 0.05 threshold.
 >
+> a) how many genes are significantly (with an FDR < 0.05) up-regulated?
+
+```{r upreg}
+sum(results.simple$padj < 0.05 & results.simple$log2FoldChange > 0, na.rm = TRUE)
+```
+
+> b) how many genes are significantly (with an FDR < 0.05) down-regulated?
+
+```{r dnred}
+sum(results.simple$padj < 0.05 & results.simple$log2FoldChange < 0, na.rm = TRUE)
+```
+
+> c) Here is the results table for two of the genes:
+>
+> ```{r echo = FALSE, eval = !knitr::is_latex_output()}
+> goi <- c("ENSMUSG00000053747", "ENSMUSG00000048763")
+> as.data.frame(results.simple[goi, ]) %>%
+>     mutate(across(-baseMean, ~signif(.x, 3))) %>%
+>     mutate(across(baseMean, ~round(.x, 3))) %>%
+>     datatable(options = list(dom = "t"))
+> ```
+> 
+> ```{r echo = FALSE, eval = knitr::is_latex_output()}
+> goi <- c("ENSMUSG00000053747", "ENSMUSG00000048763")
+> as.data.frame(results.simple[goi, ]) %>%
+>     mutate(across(-baseMean, ~signif(.x, 3))) %>%
+>     mutate(across(baseMean, ~round(.x, 3))) %>%
+>     knitr::kable()
+> ```
+>
+> One of these is strongly downregulated with log2(fold-change) of $-2.46$. On a
+> linear scale this is $2^{2.46} = 5.5$ times more highly expressed in the
+> uninfected group relative to the infected group, but its adjusted p-value
+> is $0.27$.  By contrast, the other gene has a lower LFC ~ $-1.61$ (on a linear
+> scale $2^{1.61} = 3.05$), but it's adjusted p-value is 0.0023.
+>
+> How can you explain this apparent contradiction?
+
+The statistical significance embodied by the p-value is factor of both the mean
+effect size - here this is the log2FoldChange - and the error or variance around
+this mean - in this case the standard error of the log2FoldChange. Although the
+fold change of the first gene is considerably higher the standard error is much
+larger relative to the fold change and therefore we can less certain that this
+mean is a true measure of the difference between our populations.
+
+We can look at this with by plotting the read counts for these two genes:
+
+```{r fig.width = 8, fig.height = 4, echo = FALSE}
+set.seed(234)
+p1d <- plotCounts(ddsObj, gene = goi[1], intgroup = "Status", returnData = TRUE)
+p1m <- summarise(p1d, count = mean(count), .by = Status)
+p1 <- ggplot(p1d, aes(x = Status, y = log2(count))) +
+    geom_jitter(aes(fill = Status), shape = 21, size = 2, width = 0.1) +
+    geom_point(data = p1m, fill = "#839583", shape = 23, size = 3) +
+    expand_limits(y = 0) +
+    labs(title = goi[1]) +
+    guides(fill = "none") +
+    theme_minimal()
+
+p2d <- plotCounts(ddsObj, gene = goi[2], intgroup = "Status", returnData = TRUE)
+p2m <- summarise(p2d, count = mean(count), .by = Status)
+p2 <- ggplot(p2d, aes(x = Status, y = log2(count))) +
+    geom_jitter(aes(fill = Status), shape = 21, size = 2, width = 0.1) +
+    geom_point(data = p2m, fill = "#839583", shape = 23, size = 3) +
+    expand_limits(y = 0) +
+    labs(title = goi[2]) +
+    guides(fill = "none") +
+    theme_minimal()
+
+p1 + p2
+```
+
+The grey diamonds show the mean values for each group, the points are counts for
+individual samples. The points for individual samples have been "jittered"
+around the x-axis so that overlapping points are visible. You can see that for
+both groups the values for individual samples are much closer to the mean for
+ENSMUSG00000053747 than for ENSMUSG00000048763. The code for this plot has been
+omitted, but we will see how to plot something similar in the visualisation
+section of the course.
+
+# 7. The additive model
+
+```{r}
+additive.model <- as.formula(~ TimePoint + Status)
+ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
+                                       colData = sampleinfo,
+                                       design = additive.model)
+keep <- rowSums(counts(ddsObj.raw)) > 5
+ddsObj.filt <- ddsObj.raw[keep, ]
+```
+
+## Exercise 3
+
 > You are now ready to run the differential gene expression analysis
 > Run the DESeq2 analysis
 > 
 > 1. Run the size factor estimation, dispersion estimation and modelling steps 
-> using the `DESeq` command as above. 
->
-```{r}
+> using the `DESeq` command as above.
+
+```{r ex3a}
 ddsObj <- DESeq(ddsObj.filt)
 ```
 
-> 
 > 2. Extract the default contrast using the `results` command into a new object 
 > called `results.additive`
->
-```{r}
-results.additive <- results(ddsObj, alpha=0.05)
+
+```{r e32}
+results.additive <- results(ddsObj, alpha = 0.05)
+```
+
+
+> Questions:
+>     a) How many coefficients are there in the additive model?
+
+To view the coefficients, generate the model matrix:
+
+```{r e2a}
+model.matrix(additive.model, data = sampleinfo)
+```
+
+So we have three coefficients:
+
+* `Intercept`
+* `TimePointd33`
+* `StatusInfected`
+
+>     b) What is the reference group in the additive model?
+
+Based on the above the reference (`Intercept`) must be day 11 and uninfected.
+
+>     c) What contrasts could we perform using this model? 
+
+We can perform two contrasts:
+
+* $TimePoint_{d33}$ vs $TimePoint_{d11}$
+* $Status_{Infected}$ vs $Status_{Uninfected}$
+
+>     d) What contrast does the `results.additive` object represent?
+
+If we look a the top of the results
+
+```{r e2d}
 results.additive
 ```
->
-> a) What contrast are these results for? If you have constructed the model 
->    correctly, then it should be the same as previous `results.simple`
-Again this results table is for the contrast Infected v Uninfected.
-> b) How many genes have an adjusted p-value of less than 0.05
-```{r}
+
+We can see that the contrast that has been selected is "Status Infected v
+Uninfected".
+
+By default the `results` function has returned the contrast from the last
+coefficient in the model.
+
+>     e) How many genes have an adjusted p-value of less than 0.05
+ 
+```{r e2e}
 sum(results.additive$padj < 0.05, na.rm = TRUE)
 ```
 
+## Exercise 4
 
-### Exercise 3
+```{r resultsNames}
+resultsNames(ddsObj)
+```
+
+> How do the named coefficients above relate to $\beta_i$ coefficients in the
+> design formula:
+>
+> $$
+> expression = \beta_0 + \beta_1 \cdot TimePoint_{d33} + \beta_2 \cdot Status_{Infected}
+> $$
+
+* The $\beta_0$ coefficient is the `Interecept`
+* The $\beta_1$ coefficient gives us the change related to the contrast
+  "TimePoint_d33_vs_d11"
+* The $\beta_2$ coefficient gives us the change related to the contrast 
+  "Status_Infected_vs_Uninfected"
+
+## Exercise 5
 
 > If we want a different contrast we can just pass the `results` function the 
 > **name** of the contrast, as given by `resultsNames(ddsObj)`.
 > Look at the help page for the `results` command to see how to do this.
 >
 > 1. Retrieve the results for the contrast of d33 versus d11. 
-```{r}
-results.d33vd11 <- results(ddsObj, name= "TimePoint_d33_vs_d11", alpha=0.05)
+
+```{r 5e1}
+results_d33_v_d11 <- results(ddsObj, name = "TimePoint_d33_vs_d11")
 ```
 
 > 2. How many differentially expressed genes are there at FDR < 0.05?
-```{r}
-sum(results.d33vd11$padj < 0.05, na.rm = TRUE)
+
+```{r 5e2}
+sum(results_d33_v_d11$padj < 0.05, na.rm = TRUE)
 ```
 
-### Exercise 4
->
-> When we looked at the PCA it did seem that an interaction model might be
-> warranted. Let's test that.  
->  
+# 8. The interaction model 
+
+## Exercise 6
+
 > 1. Create a new DESeq2 object using a model with an interaction between 
 >    TimePoint and Status. The model formula should be 
 >
@@ -150,8 +282,8 @@ sum(results.d33vd11$padj < 0.05, na.rm = TRUE)
 > e.g. `~TimePoint * Status`, however, writing out in long form is clearer here.
 >
 > Remember to filter to remove uninformative genes.
->
-```{r}
+
+```{r 8e1}
 interaction.model <- as.formula(~ TimePoint * Status)
 ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
                                       colData = sampleinfo,
@@ -159,61 +291,120 @@ ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
 keep <- rowSums(counts(ddsObj.raw)) > 5
 ddsObj.filt <- ddsObj.raw[keep,]
 ```
+
+
 > 2. Run the statistical analysis using the `DESeq` command and create a new
 >    analysis object called `ddsObj.interaction`.
-```{r}
+
+```{r 8e2}
 ddsObj.interaction <- DESeq(ddsObj.filt)
 ```
-> 3. Use the LRT to compare this to the simpler additive model 
->    (`~TimePoint + Status`)
-```{r}
-ddsObj.LRT <- DESeq(ddsObj.interaction, test="LRT", reduced=additive.model)
-results.Interaction_v_Additive <- results(ddsObj.LRT)
-```
-> 4. Extract a table of results using `results`. 
-> For how many genes is interaction model a better fit?  
-```{r}
-table(results.Interaction_v_Additive$padj < 0.05)
+
+> 3. Extract a table of results using the default `results` command. What is
+>    the contrast that these results are for?
+
+```{r 8e3}
+results.int <- results(ddsObj.interaction)
+results.int
 ```
 
-### Exercise 5
+If we look at the results names we can relate this to the model equation:
+
+$$
+expression = \beta_0 + \beta_1 \cdot TimePoint_{d33} + \beta_2 \cdot Status_{Infected} + \beta_3 \cdot TimePoint_{d33} \cdot Status_{Infected} 
+$$
+
+```{r 8e3rn}
+resultsNames(ddsObj.interaction)
+```
+
+* $\beta_0$ = `Intercept`
+* $\beta_1$ = `TimePoint_d33_vs_d11`
+* $\beta_2$ = `Status_Infected_vs_Uninfected`
+* $\beta_3$ = `TimePointd33.StatusInfected`
+
+So, the results we've obtained are for the interaction term $\beta_3$. The 
+adjusted p_values show whether or not the $\beta_3$ coefficient is reliably
+different from $0$, i.e. how likely it is that there is an interaction between
+Status and TimePoint for each gene. The log2FoldChange shows the degree to which
+the main effects ($\beta_1$ and $\beta_2$) should be adjusted in order to 
+compensate for this interaction, i.e. the bigger the fold change the greater the
+interaction between the two factors.
+
+# 9. Extracting specific contrasts from an interaction model
+
+```{r, resIntTP, echo = FALSE}
+results.interaction.11 <- results(ddsObj.interaction, 
+                                  name = "Status_Infected_vs_Uninfected",
+                                  alpha = 0.05)
+results.interaction.33 <- results(ddsObj.interaction, 
+                                  contrast = list(c("Status_Infected_vs_Uninfected",
+                                                    "TimePointd33.StatusInfected")),
+                                  alpha = 0.05)
+```
+
+```{r nSigIntd11}
+sum(results.interaction.11$padj < 0.05, na.rm = TRUE)
+```
+
+Number of genes with padj < 0.05 for Test v Control at day 33:
+
+```{r nSigIntd33}
+sum(results.interaction.33$padj < 0.05, na.rm = TRUE)
+```
+
+We can see that there is a strong difference in the effects of infection on 
+gene expression between days 11 and 33.
+
+## Exercise 7
 >
 > Let's investigate the uninfected mice
 >  
-> 1. Extract the results for d33 v d11 for Uninfected mice. 
-The the intercept is Uninfected mice at 11 days post infection, so the main 
-effect `TimePoint_d33_vs_d11` is the result that we want.
-```{r}
-results.d33_v_d11_uninfected <- results(ddsObj.interaction, 
-                                        name="TimePoint_d33_vs_d11",
-                                        alpha = 0.05)
+> 1. Extract the results for d33 v d11 for Infected mice.  
+```{r, 7e1, echo = FALSE}
+results.int.Inf <- results(ddsObj.interaction,
+                           contrast = list(c("TimePoint_d33_vs_d11",
+                                             "TimePointd33.StatusInfected")),
+                           alpha = 0.05)
+```
+
+> How many genes have an adjusted p-value less than 0.05?  
+
+```{r 7e1a}
+sum(results.int.Inf$padj < 0.05, na.rm = TRUE)
+```
+
+> 2. Extract the results for d33 v d11 for Uninfected mice.  
+
+```{r 7e2}
+results.int.Uninf <- results(ddsObj.interaction, 
+                             name = "TimePoint_d33_vs_d11",
+                             alpha = 0.05)
+
 ```
 > How many genes have an adjusted p-value less than 0.05?  
-```{r}
-table(results.d33_v_d11_uninfected$padj < 0.05)
+
+```{r 7e2a}
+sum(results.int.Uninf$padj < 0.05, na.rm = TRUE)
 ```
+
 > Is this remarkable?  
-Maybe not. Do we really expect vast gene expression differences between the 
-brains of mice that are slightly older than one another? It is possible that 
-there could have been confounding factors, such as changes in enviromental 
-conditions such as temperature or feeding regime, that may have effected gene
-expression. In which case it was important to set the experiment up with 
-control for both time points.
->
-> 2. Extract the results for d33 v d11 for Infected mice. 
-The the intercept is Uninfected mice at 11 days post infection, so the main 
-effect `TimePoint_d33_vs_d11` is the result that we want.
-```{r}
-results.d33_v_d11_infected <- results(ddsObj.interaction, 
-      contrast = list(c("TimePoint_d33_vs_d11", "TimePointd33.StatusInfected")),
-                                        alpha = 0.05)
-```
-> How many genes have an adjusted p-value less than 0.05?  
-```{r}
-table(results.d33_v_d11_infected$padj < 0.05)
-```
->
-> Do these results suggest another approach to analysing this data set?   
-Could we possibly treat the six uninfected samples as a single group with six
-replicates and then just have 1 factor with 3 levels: Control, d11.Infected,
-d33.Infected? This is really a biological question and not a statistical one.
+
+There's only 1 significant gene, however, perhaps this is not surprising as these
+samples are all from normal adult mouse brain tissue, just that in one group the
+mice were a few weeks older. 
+
+> Do these results suggest another approach to analysing this data set?
+
+Whilst we see a great difference in the infected mice between the two time points, 
+there is apparently no difference in the gene expression in the brains of the two
+groups of uninfected mice. Perhaps we don't need to treat the two control time
+points as separate groups and could just consider 3 experimental conditions:
+
+* Control (6 samples)
+* Acute Infected (3 samples)
+* Chronic Infected (3 samples)
+
+This would reduce the number of coeffients we are estimating by 25% and might
+increase our statistical power, however, this decision would need to be based on
+both our biological knowledge and our analysis of the data.
