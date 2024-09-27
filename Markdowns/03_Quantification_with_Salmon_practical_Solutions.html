@@ -242,6 +242,8 @@ div.tocify {
 </div>
 
 
+<div id="indexing-the-transcriptome-for-salmon" class="section level1">
+<h1>1. Indexing the transcriptome for Salmon</h1>
 <div id="exercise-1---create-salmon-index" class="section level2">
 <h2>Exercise 1 - Create Salmon index</h2>
 <blockquote>
@@ -296,6 +298,9 @@ Command Line Options:
     -p 7 \
     -i references/salmon_index_chr14</code></pre>
 </div>
+</div>
+<div id="gene-expression-quantification" class="section level1">
+<h1>2. Gene expression quantification</h1>
 <div id="exercise-2---quantify-with-salmon" class="section level2">
 <h2>Exercise 2 - Quantify with Salmon</h2>
 <blockquote>
@@ -328,8 +333,12 @@ Command Line Options:
     --writeMappings=salmon_output/SRR7657883/SRR7657883.salmon.sam \
     --gcBias \
     -p 7</code></pre>
-<div id="exercise-3" class="section level3">
-<h3>Exercise 3</h3>
+</div>
+</div>
+<div id="sam-to-bam-with-samtools" class="section level1">
+<h1>3. SAM to BAM with samtools</h1>
+<div id="exercise-3" class="section level2">
+<h2>Exercise 3</h2>
 <blockquote>
 <ol style="list-style-type: decimal">
 <li>Sort and transform your aligned SAM file into a BAM file called <code>SRR7657883.salmon.sorted.bam</code>. Use the option <code>-@ 7</code> to use 7 cores, this vastly speeds up the compression.</li>

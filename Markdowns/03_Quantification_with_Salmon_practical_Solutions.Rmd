@@ -9,6 +9,8 @@ output:
     toc_float: yes
 ---
 
+# 1. Indexing the transcriptome for Salmon
+
 ## Exercise 1 - Create Salmon index
 > 1. Create concatenated trancriptome/genome reference file
 > ```{bash eval=FALSE}
@@ -65,6 +67,8 @@ salmon index \
     -i references/salmon_index_chr14
 ```
 
+# 2. Gene expression quantification
+
 ## Exercise 2 - Quantify with Salmon
 
 > 1. There should already be a directory called `salmon_output` in the
@@ -100,7 +104,9 @@ salmon quant \
     -p 7
 ```
 
-### Exercise 3
+# 3. SAM to BAM with samtools
+
+## Exercise 3
 
 > 1. Sort and transform your aligned SAM file into a BAM file called
 > `SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this vastly

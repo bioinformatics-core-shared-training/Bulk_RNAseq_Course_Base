@@ -213,7 +213,7 @@ Salmon creates a separate output directory for each sample analysed. This
 directory contains a number of files; the file that contains the quantification
 data is called `quant.sf`.
 
-# 3 SAM to BAM with samtools
+# 3. SAM to BAM with samtools
 
 We can transform from SAM to BAM using `samtools`. `samtools` is a toolkit that
 provides a number of useful tools for working with SAM/BAM files. The BAM file
