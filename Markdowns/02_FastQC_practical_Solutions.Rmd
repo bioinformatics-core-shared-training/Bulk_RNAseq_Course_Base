@@ -9,7 +9,9 @@ output:
     toc_float: yes
 ---
 
-### Exercise
+# 1. Using FastQC to QC raw reads
+
+## Exercise 1
 
 1. 
       a) Check the location of the current directory using the command `pwd`  

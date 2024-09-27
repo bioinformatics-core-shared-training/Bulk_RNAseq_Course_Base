@@ -242,6 +242,8 @@ div.tocify {
 </div>
 
 
+<div id="using-fastqc-to-qc-raw-reads" class="section level1">
+<h1>1. Using FastQC to QC raw reads</h1>
 <p>In our intial QC of the raw fastq file we will be interested in gathering various metrics, such as the total number of reads, sequence length, or GC content. We will also want to summarise such things as base quality scores and make assessments of the contamination of the reads with adapter sequence.</p>
 <p>For this (and the next couple of sessions) we will working at the command line. If you are unfamiliar with the command line and “bash” shell command language, there is nice basic cheat sheet with the most commonly used commands here:</p>
 <p><a href="https://icosbigdatacamp.github.io/2018-summer-camp/slides/BASH_Cheat_Sheet.pdf" class="uri">https://icosbigdatacamp.github.io/2018-summer-camp/slides/BASH_Cheat_Sheet.pdf</a></p>
@@ -259,8 +261,8 @@ div.tocify {
 <pre><code>fastqc -o QC fastq/my_fastq_file.fastq.gz</code></pre>
 <p>In this case the above command will generate a report for the file <strong>my_fastq_file.fastq.gz</strong>, which is in the folder <strong>fastq</strong>, and will have the report written into a directory called <strong>QC</strong>.</p>
 <p>Note that the output directory must already exist, FastQC will not create it.</p>
-<div id="exercise" class="section level3">
-<h3>Exercise</h3>
+<div id="exercise-1" class="section level2">
+<h2>Exercise 1</h2>
 <blockquote>
 <ol style="list-style-type: decimal">
 <li><ol style="list-style-type: lower-alpha">
@@ -292,6 +294,7 @@ C) How is the data’s quality?</li>
 </ol>
 </blockquote>
 <p>Note: In practice you would actually end up running FastQC on both read 1 and read 2 of every sample. This would usually results in large number of reports. Rather than having to open and inspect each one individually, we would normally gather them all together into a single report using the program <strong>MultiQC</strong>. We will cover MultiQC in the later session “QC of alignment”. ——————————————————————-</p>
+</div>
 </div>
 
 

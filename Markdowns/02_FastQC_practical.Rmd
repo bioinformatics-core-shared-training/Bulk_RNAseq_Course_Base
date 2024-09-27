@@ -9,6 +9,8 @@ output:
     toc_float: yes
 ---
 
+# 1. Using FastQC to QC raw reads
+
 In our intial QC of the raw fastq file we will be interested in gathering
 various metrics, such as the total number of reads, sequence length, or GC
 content.  We will also want to summarise such things as base quality scores and
@@ -61,7 +63,7 @@ report written into a directory called **QC**.
 
 Note that the output directory must already exist, FastQC will not create it.
 
-### Exercise
+## Exercise 1
 
 > 1. 
 >       a) Check the location of the current directory using the command `pwd`  
