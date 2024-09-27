@@ -2,7 +2,11 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quantification of Gene Expression with Salmon
 output:
-  html_document: default
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
 bibliography: ref.bib
 ---
 
@@ -120,6 +124,7 @@ itself.
 >zcat references/Mus_musculus.GRCm38.cdna.chr14.fa.gz | head -n 2
 >```
 ![](images/03_header_of_transcript_fasta.png)
+>
 > and then the genome:
 >
 >```{bash eval=FALSE}
