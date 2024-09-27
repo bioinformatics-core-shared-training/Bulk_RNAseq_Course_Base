@@ -2,8 +2,11 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Quality Control
 output:
-  html_document: default
-  pdf_document: default
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
 ---
 
 # Checking the quality of the data
@@ -60,8 +63,6 @@ Once the duplicate reads are marked, Picard outputs a new bam file in which the
 duplicate reads are marked and then also generates a metrics file that contains
 information about the duplication rate.
 
-
-
 ### Exercise 1
 
 For the purposes of this exercise we will work with a bam file that only
@@ -91,7 +92,7 @@ session.
 > metrics file. The easiest way is to open it in a spreadsheet. On the course 
 > machines we have LibreOffice Calc. You can find this in the launcher bar at 
 > the bottom or side of the desktop, e.g.:
-![](images/Launcher_bar_cacl.png)
+![](images/04_Launcher_bar_calc.png)
 > You can find details about the contents of the metrics file in the 
 > [Picard documentation](https://broadinstitute.github.io/picard/picard-metric-definitions.html#DuplicationMetrics).
 
