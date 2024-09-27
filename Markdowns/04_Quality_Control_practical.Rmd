@@ -47,7 +47,7 @@ command:
 java -jar picard/picard.jar PicardToolName --help
 ```
 
-### Duplication metrics
+# 1. Duplication metrics
 
 The first tool we are going to use is `MarkDuplicates`. This tool
 actually performs two tasks. 
@@ -63,7 +63,7 @@ Once the duplicate reads are marked, Picard outputs a new bam file in which the
 duplicate reads are marked and then also generates a metrics file that contains
 information about the duplication rate.
 
-### Exercise 1
+## Exercise 1
 
 For the purposes of this exercise we will work with a bam file that only
 contains 2 million reads. Running Picard on the full bam file would take too
@@ -96,7 +96,7 @@ session.
 > You can find details about the contents of the metrics file in the 
 > [Picard documentation](https://broadinstitute.github.io/picard/picard-metric-definitions.html#DuplicationMetrics).
 
-### RNA alignment metrics
+# 2. RNA alignment metrics
 
 The `CollectRnaSeqMetrics` tool produces metrics describing the distribution of
 the reads across different genomic locations - intronic, exonic, intergenic,
@@ -123,7 +123,7 @@ The `CollectRnaSeqMetrics` requires four pieces of information to run:
     has prepared the library. In this case our library prep is unstranded, so we
     will use `NONE`.
 
-#### Generate the RefFlat file
+## Generate the RefFlat file
   
 The first thing we will need to do is construct the RefFlat file.  If we had
 aligned our reads to the genome, each read in our bam file would have a genomic
@@ -174,7 +174,7 @@ Note that we only have to do this once, we do not need to create a separate
 refFlat file for each sample as they have all been quantified using the same
 transcriptome reference.
 
-### Exercise 2
+## Exercise 2
 
 > 1. Run Picard's `CollectRnaSeqMetrics` tool on the sorted bam file using the
 >    following arguments:  
@@ -204,7 +204,7 @@ java -jar picard/picard.jar CollectRnaSeqMetrics \
 > The results of this analysis are best viewed graphically, we will do this in
 > the next exercise.
 
-## Visualising QC results with MultiQC
+# 3. Visualising QC results with MultiQC
 
 [MultiQC](https://multiqc.info/) is a tool for collating multiple QC results
 files into a single report. Its use is simple, you just run the command
@@ -217,7 +217,7 @@ multiqc <directory containing metrics files>
 We will add a couple of options to control the output directory and the name
 of the report.
 
-### Exercise 3
+## Exercise 3
 
 > 1. Run multiqc on the salmon directory: 
 > ```{bash eval=FALSE}
@@ -235,7 +235,7 @@ of the report.
 >    `xdg-open salmon_qc_demo/Salmon_QC_Report.html`, which will open the report
 >    in a web browser.
 
-### Exercise 4
+## Exercise 4
 
 > In the `salmon` directory you should find Salmon outputs, duplication metrics
 > and RNAseq metrics for all of the samples from the study.  
