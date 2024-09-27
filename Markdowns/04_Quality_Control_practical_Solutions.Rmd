@@ -9,9 +9,9 @@ output:
     toc_float: yes
 ---
 
-## Duplication metrics
+# 1. Duplication metrics
 
-### Exercise 1
+## Exercise 1
 
 > 1. Run Picard's MarkDuplicates tool on the sorted bam file using the
 >    following command:
@@ -55,9 +55,9 @@ percent. Just an odd quirk of Picard:
 
 ![](images/04_Picard_Percentages_Note.png)
 
-## RNA alignment metrics
+# 2. RNA alignment metrics
 
-### Generate the refFlat file
+## Generate the refFlat file
 
 ```
 ./scripts/create_refflat_from_sam_header.py \
@@ -66,7 +66,7 @@ percent. Just an odd quirk of Picard:
 ```
 > $\Rightarrow$ references/GRCm38_transriptome_refFlat.txt
 
-### Exercise 2
+## Exercise 2
 
 > 1. Run Picard's `CollectRnaSeqMetrics` tool on the sorted bam file providing
 >    the following options:
@@ -87,9 +87,9 @@ java -jar picard/picard.jar CollectRnaSeqMetrics \
 > The results of this analysis are best viewed graphically, we will do this in
 > the next exercise.
 
-## 3. Visualising QC results with MultiQC
+# 3. Visualising QC results with MultiQC
 
-### Exercise 3
+## Exercise 3
 
 > 1. Run multiqc on the `salmon_qc_demo` directory: 
 > ```{bash eval=FALSE}
@@ -107,7 +107,7 @@ java -jar picard/picard.jar CollectRnaSeqMetrics \
 > a web browser.
 
 
-### Exercise 4
+## Exercise 4
 
 > In the `salmon` directory you should find Salmon outputs, duplication metrics
 > and RNAseq metrics for all of the samples from the study.  
