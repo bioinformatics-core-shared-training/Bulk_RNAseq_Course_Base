@@ -2,7 +2,11 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: QC of raw reads with FastQC - Solutions
 output:
-  html_document: default
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
 ---
 
 ### Exercise
