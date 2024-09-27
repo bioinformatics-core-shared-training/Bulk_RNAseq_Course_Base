@@ -2,12 +2,14 @@
 title: "Introduction to Bulk RNAseq data analysis"
 subtitle: QC of Aligned Reads - exercise solutions
 output:
-  html_document: default
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
 ---
 
-## More detailed metrics with Picard Tools
-
-### Duplication metrics
+## Duplication metrics
 
 ### Exercise 1
 
@@ -53,9 +55,9 @@ percent. Just an odd quirk of Picard:
 
 ![](images/04_Picard_Percentages_Note.png)
 
-### RNA alignment metrics
+## RNA alignment metrics
 
-#### Generate the refFlat file
+### Generate the refFlat file
 
 ```
 ./scripts/create_refflat_from_sam_header.py \
