@@ -1,0 +1,432 @@
+---
+title: "Introduction to Bulk RNAseq data analysis"
+subtitle: Visualisation of Differential Expression Results
+date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+  pdf_document:
+    toc: yes
+bibliography: ref.bib
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 4, fig.height = 3)
+```
+
+# Visualisation
+
+In this section we will consider various ways in which we can visualise the
+results of our differential expression analysis. We will use the `DESeq2`
+results from the interaction model for Infected vs Uninfected at day 11.
+
+```{r packages, message=FALSE, warning=FALSE}
+library(DESeq2)
+library(tidyverse)
+
+results.d11 <- readRDS("RObjects/DESeqResults.interaction_d11.rds")
+```
+
+
+## P-value histogram
+
+A quick and easy "sanity check" for our DE results is to generate a p-value 
+histogram. What we should see is a high bar at `0 - 0.05` and then a roughly
+uniform tail to the right of this. There is a nice explanation of other possible
+patterns in the histogram and what to do when you see them in [this 
+post](http://varianceexplained.org/statistics/interpreting-pvalue-histogram/).
+
+```{r pvalHist, fig.align="center"}
+hist(results.d11$pvalue)
+```
+
+## Shrinking the log2FoldChange
+
+`DESeq2` provides a function called `lfcShrink` that shrinks log-Fold Change 
+(LFC) estimates towards zero using an empirical Bayes procedure. The reason for
+doing this is that there is high variance in the LFC estimates when counts are 
+low and this results in lowly expressed genes appearing to show greater
+differences between groups than highly expressed genes. The `lfcShrink` method
+compensates for this and allows better visualisation and ranking of genes. There
+a few different shrinkage methods available, we will use the `ashr` method.
+
+To run the shrinkage algorithm we will also need the `DESeq2 Dataset` object
+that was used to generate the results. We will also want to add gene symbols
+to the shrunk results for easier interpretation.
+
+```{r shrinkLFC}
+ddsObj <- readRDS("RObjects/DESeqDataSet.interaction.rds")
+annot <- readRDS("RObjects/Ensembl_annotations.rds")
+
+shrink.11 <- lfcShrink(ddsObj, 
+                          res = results.d11,
+                          type = "ashr")
+
+shrinkTab.11 <- as.data.frame(shrink.11) %>%
+    rownames_to_column("GeneID") %>% 
+    left_join(annot, "GeneID")
+```
+
+Note that it is important to provide both the `DESeq2` object and the `DESeq2
+results` object to the `lfcShrink` function. It is not necessary to provide the
+`DESeq2 results` object, we can instead just provide a contrast to create the
+shrunk results for, however, if we do this the function will recalculate the
+p-values and padj, but this time the alpha for independent filtering will be set
+to the default of 0.1 and so the adjusted p-values will be different.
+
+Let's save the shrunk results to a file so we can use them later.
+
+```{r saveShrunkResults, eval=FALSE}
+saveRDS(shrinkTab.33, file="results/Shrunk_Results.d33.rds")
+```
+
+## MA plots
+
+MA plots are a common way to visualize the results of a differential analysis.
+We met them briefly towards the end of [the DESeq2
+session](08_DE_analysis_with_DESeq2.html). This plot shows the log-Fold Change
+for each gene against its average expression across all samples in the two
+conditions being contrasted. `DESeq2` has a handy function for plotting this.
+Let's use it too compare the shrunk and un-shrunk fold changes.
+
+```{r maPlotDESeq2, fig.align="center", fig.width=10, fig.height=5}
+par(mfrow=c(1,2))
+plotMA(results.d11, alpha=0.05)
+plotMA(shrink.11, alpha=0.05)
+```
+
+The DESeq2 in `plotMA` function is fine for a quick look, but these inbuilt
+functions aren't easy to customise, make changes to the way it looks or add
+things such as gene labels. For this we would recommend using the ggplot
+package.
+
+## Volcano Plots
+
+Another common visualisation is the 
+[*volcano plot*](https://en.wikipedia.org/wiki/Volcano_plot_(statistics)) which
+displays a measure of significance on the y-axis and fold-change on the x-axis.
+We will use ggplot to create this.
+
+### A Brief Introduction to `ggplot2`
+
+The [`ggplot2`](http://ggplot2.tidyverse.org/) package has emerged as an 
+attractive alternative to the traditional plots provided by base R. A full 
+overview of all capabilities of the package is available from the 
+[cheatsheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf).
+
+In brief:-
+
+- `shrinkTab.11` is our data frame containing the variables we wish to plot
+- `aes` creates a mapping between the variables in our data frame to the 
+**_aes_**thetic properties of the plot:
+    + the x-axis will be mapped to `log2FoldChange`
+    + the y-axis will be mapped to the `-log10(pvalue)`
+- `geom_point` specifies the particular type of plot we want (in this case a 
+scatter plot)
+- `geom_text` allows us to add labels to some or all of the points
+    + see 
+    [the cheatsheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf) 
+    for other plot types
+
+The real advantage of `ggplot2` is the ability to change the appearance of our 
+plot by mapping other variables to aspects of the plot. For example, we could 
+colour the points based on the sample group. To do this we can add metadata from
+the `sampleinfo` table to the data. The colours are automatically chosen by
+`ggplot2`, but we can specify particular values. For the volcano plot we will
+colour according whether the gene has a pvalue below 0.05. We use a `-log10`
+transformation for the y-axis; it's commonly used for p-values as it means that
+more significant genes have a higher scale.
+
+```{r volcano11Plot, fig.align="center", fig.width=5, fig.height=5}
+ggplot(shrinkTab.11, aes(x = log2FoldChange, y = -log10(pvalue))) +
+    geom_point(aes(colour = padj < 0.05), size=1) +
+    geom_text(data = ~top_n(.x, 1, wt = -padj), aes(label = Symbol)) +
+    labs(x = "log2(fold change)", y = "-log10(p-value)", colour = "FDR < 5%",
+         title = "Infected vs Uninfected (day 11)")
+```
+
+## Exercise 1 - Volcano plot for 33 days
+
+> We just made the volcano plot for the 11 days contrast, you will make the one
+> for the 33 days contrast.
+
+> First load in the results for the 33 days contrast.
+
+```{r}
+results.d33 <- readRDS("RObjects/DESeqResults.interaction_d33.rds")
+```
+
+> (a)
+> Shrink the results for the 33 days contrast and add the annotation.
+
+```{r, echo=FALSE}
+shrink.33 <- lfcShrink(ddsObj,
+                       res = results.d33,
+                       type = "ashr")
+
+shrinkTab.33 <- as.data.frame(shrink.33) %>%
+    rownames_to_column("GeneID") %>% 
+    left_join(annot, "GeneID")
+```
+
+> (b) 
+> Create a plot with points coloured by padj < 0.05 similar to how we did in 
+> the first volcano plot
+
+```{r echo=FALSE, eval=FALSE}
+ggplot(shrinkTab.33, aes(x = log2FoldChange, y = -log10(pvalue))) + 
+    geom_point(aes(colour = padj < 0.05), size=1) +
+    labs(x = "log2(fold change)", y = "-log10(p-value)", colour = "FDR < 5%",
+         title = "Infected vs Uninfected (day 33)")
+```
+
+> (c)
+> Compare these two volcano plots, what differences can you see between the two contrasts?
+
+
+## Exercise 2 - MA plot for day 33 with ggplot2
+
+> For this exercise create an MA plot for day 33 like the ones we plotted with 
+> `plotMA` from **DESeq2** but this time using ggplot2. 
+>
+> The x-axis should be the log2 of the mean gene expression across all 
+> samples, and the y-axis should be the log2 of the fold change between Infected
+> and Uninfected.
+
+## Strip Charts for gene expression
+
+Before following up on the DE genes with further lab work, a recommended *sanity
+check* is to have a look at the expression levels of the individual samples for 
+the genes of interest. We can quickly look at grouped expression by using 
+`plotCounts` function of `DESeq2` to  retrieve the normalised expression values 
+from the `ddsObj` object and then plotting with  `ggplot2`.
+
+We are going investigate the Il10ra gene:
+
+
+```{r plotGeneCounts}
+geneID <- filter(shrinkTab.11, Symbol=="Il10ra") %>% pull(GeneID)
+
+plotCounts(ddsObj, 
+           gene = geneID, 
+           intgroup = c("TimePoint", "Status", "Replicate"),
+           returnData = T) %>% 
+    ggplot(aes(x=Status, y=log2(count))) +
+      geom_point(aes(fill=Replicate), shape=21, size=2) +
+      facet_wrap(~TimePoint) +
+      expand_limits(y=0) +
+      labs(title = "Normalised counts - Interleukin 10 receptor, alpha")
+```
+
+## Exercise 3
+
+> For this exercise create another strip chart for the gene Jchain.
+
+
+## Venn Diagram
+
+In the paper you may notice they have presented a Venn diagram of the results. 
+
+![](../images/Venn.png)
+
+We will recreate it with our analysis. To do this we are using the package
+`ggvenn` which is an extension to `ggplot` from Linlin Yan.
+
+```{r}
+library(ggvenn)
+```
+
+We want to plot four "sets" on the venn diagram:
+
+* Significantly up-regulated on day 11
+* Significantly down-regulated on day 11
+* Significantly up-regulated on day 33
+* Significantly down-regulated on day 33
+
+Each comprising genes at that statistically significant at a 5% FDR level for the
+respective contrast.
+
+There are two ways of providing the data to `ggvenn`. The first is to provide a 
+table with features (genes) in the rows and the sets (contrasts) in the columns, and
+`TRUE` or `FALSE` in the cells to indicate whether the features is in that set.
+For our data the table would look like this:
+
+```{r echo=FALSE}
+tibble(Geneid=rownames(results.d11)) %>% 
+  mutate(Upregulated_11 = results.d11$padj < 0.05 & 
+         !is.na(results.d11$padj) & 
+         results.d11$log2FoldChange > 0) %>% 
+  mutate(Downregulated_11 = results.d11$padj < 0.05 & 
+         !is.na(results.d11$padj) & 
+         results.d11$log2FoldChange < 0) %>%
+  mutate(Upregulated_33 = results.d33$padj < 0.05 & 
+         !is.na(results.d33$padj) & 
+         results.d33$log2FoldChange > 0) %>%
+  mutate(Downregulated_33 = results.d33$padj < 0.05 & 
+         !is.na(results.d33$padj) & 
+         results.d33$log2FoldChange < 0) 
+```
+
+The second is to provide a list with one element for each set. Each element is then
+a vector of the features in that set. For our data this would look like this:
+
+```{r echo=FALSE}
+getGenes <- function(shrTab, direction = "up") {
+  sign <- ifelse(direction == "up", 1, -1)
+  shrTab %>% 
+    filter(padj < 0.05) %>% 
+    filter(sign * log2FoldChange > 0) %>% 
+    pull("GeneID")
+}
+
+myList <- list(Upregulated_11 = getGenes(shrinkTab.11, "up"),
+     Downregulated_11 = getGenes(shrinkTab.11, "down"),
+     Upregulated_33 = getGenes(shrinkTab.33, "up"),
+     Downregulated_33 = getGenes(shrinkTab.33, "down"))
+str(myList)
+```
+
+We will use the list option as the code for builing the list is more concise.
+
+The code for building each list is basically the same with a couple of minor changes,
+rather the repeating the code we can create a function to do this for us.
+
+To build up the function, first, let's see how we would do this for the up-regulated
+genes on day 11.
+
+```{r geneListUpRegd11}
+shrinkTab.11 %>%
+    filter(padj < 0.05) %>%
+    filter(log2FoldChange > 0) %>%
+    pull("GeneID")
+```
+
+The functions is just a generalisation of this code. We want to be able to do the same 
+using different tables (day 11 and day 33), and we also need to be able to get the
+up- or down-regulated genes. We can do this by passing the table and the direction
+as arguments to the function. To change the direction of the regulation, we can
+leave the boolean filter as `log2FoldChange > 0` and multiply the `log2FoldChange`
+by 1 or -1 depending on the direction we want. 
+
+```{r}
+getGenes <- function(shrTab, direction = "up") {
+    sign <- ifelse(direction == "up", 1, -1)
+    shrTab %>%
+        filter(padj < 0.05) %>%
+        filter(sign * log2FoldChange > 0) %>%
+        pull("GeneID")
+}
+
+vennList <- list(Upregulated_11 = getGenes(shrinkTab.11, "up"),
+                 Downregulated_11 = getGenes(shrinkTab.11, "down"),
+                 Upregulated_33 = getGenes(shrinkTab.33, "up"),
+                 Downregulated_33 = getGenes(shrinkTab.33, "down"))
+
+str(vennList)
+```
+
+Now we just pass the list to the `ggvenn` function.
+
+```{r vennPlot}
+ggvenn(vennList, set_name_size = 4)
+```
+
+## Heatmap
+
+We're going to use the package `ComplexHeatmap` [@Gu2016]. We'll also use
+`circlize` to generate a colour scale [@Gu2014].
+
+```{r complexHeatmap, message=F}
+library(ComplexHeatmap)
+library(circlize)
+```
+
+We can't plot the entire data set, let's just select the top 300 by false discovery rate (`padj`). We'll
+want to use normalised expression values, so we'll use the `vst` function.
+
+```{r selectGenes}
+# get the top genes
+sigGenes <- shrinkTab.11 %>% 
+    top_n(300, wt = -padj) %>% 
+    pull("GeneID")
+
+# filter the data for the top 300 by padj
+plotDat <- vst(ddsObj)[sigGenes,] %>% 
+  assay()
+```
+
+The range expression values for different genes can vary widely. Some genes will
+have very high expression. Our heatmap is going to be coloured according to gene
+expression. If we used a colour scale from 0 (no expression) to the maximum 
+expression, the scale will be dominated by our most extreme genes and it will be
+difficult to discern any difference between most of the genes.
+
+To overcome this we will z-scale the counts. This scaling method results in 
+values for each that show the number of standard deviations the gene expression
+is from the mean for that gene across all the sample - the mean will be '0', '1'
+means 1 standard deviation higher than the mean, '-1' means 1 standard deviation
+lower than the mean.
+
+```{r z-scale}
+z.mat <- t(scale(t(plotDat), center=TRUE, scale=TRUE))
+```
+
+```{r colourScale}
+# colour palette
+myPalette <- c("royalblue3", "ivory", "orangered3")
+myRamp <- colorRamp2(c(-2, 0, 2), myPalette)
+```
+
+```{r heatmap, fig.width=5, fig.height=8}
+Heatmap(z.mat, name = "z-score",
+        col = myRamp,
+        show_row_names = FALSE)
+```
+
+we can also split the heat map into clusters and add some annotation.
+
+```{r splitHeatmap, fig.width=5, fig.height=8}
+ha1 = HeatmapAnnotation(df = colData(ddsObj)[,c("Status", "TimePoint")])
+
+Heatmap(z.mat, name = "z-score",
+        col = myRamp,            
+        show_row_name = FALSE,
+        split=3,
+        rect_gp = gpar(col = "lightgrey", lwd=0.3),
+        top_annotation = ha1)
+```
+
+Whenever we teach this session several student always ask how to set the
+colours of the bars at the top of the heatmap. This is shown below.
+
+```{r ColouredsplitHeatmap, fig.width=5, fig.height=8}
+ha1 = HeatmapAnnotation(df = colData(ddsObj)[,c("Status", "TimePoint")], 
+                        col = list(Status = c("Uninfected" = "darkgreen", 
+                                              "Infected" = "palegreen"), 
+                                   TimePoint = c("d11" = "lightblue", 
+                                                 "d33" = "darkblue")))
+
+Heatmap(z.mat, name = "z-score",
+        col = myRamp,            
+        show_row_name = FALSE,
+        split=3,
+        rect_gp = gpar(col = "lightgrey", lwd=0.3),
+        top_annotation = ha1)
+```
+
+
+```{r saveEnvironment, eval=FALSE}
+saveRDS(results.d11, file="results/Annotated_Results.d11.rds")
+saveRDS(shrinkTab.11, file="results/Shrunk_Results.d11.rds")
+saveRDS(results.d33, file="results/Annotated_Results.d33.rds")
+saveRDS(shrinkTab.33, file="results/Shrunk_Results.d33.rds")
+```
+
+```{r saveObjects, eval=TRUE, echo=FALSE}
+# pre-processed course files
+saveRDS(results.d11, file="RObjects/Annotated_Results.d11.rds")
+saveRDS(shrinkTab.11, file="RObjects/Shrunk_Results.d11.rds")
+# saveRDS(results.d33, file="RObjects/Annotated_Results.d33.rds")
+saveRDS(shrinkTab.33, file="RObjects/Shrunk_Results.d33.rds")
+```
