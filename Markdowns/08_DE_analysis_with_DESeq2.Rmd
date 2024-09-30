@@ -7,6 +7,7 @@ output:
     toc: yes
   html_document:
     toc: yes
+    toc_float: true
 bibliography: ref.bib
 ---
 
@@ -531,11 +532,11 @@ gene expression between days 11 and 33.
 >
 > Let's investigate the uninfected mice
 >  
-> 1. Extract the results for d33 v d11 for Uninfected mice.  
+> 1. Extract the results for d33 v d11 for Infected mice.  
+> How many genes have an adjusted p-value less than 0.05?  
+> 2. Extract the results for d33 v d11 for Uninfected mice.  
 > How many genes have an adjusted p-value less than 0.05?  
 > Is this remarkable?  
-> 2. Extract the results for d33 v d11 for Infected mice.  
-> How many genes have an adjusted p-value less than 0.05?  
 >
 > Do these results suggest another approach to analysing this data set?
 
