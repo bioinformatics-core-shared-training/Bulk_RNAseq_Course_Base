@@ -219,17 +219,17 @@ duplicates. Another option for resolving duplicates is to keep the one with the
 highest count in the DESeq2 results. There is no ideal solution here and it is
 up to the researcher to decide what to do.
 
-For now we will leave the duplicates in place, remembering that we will have to
-deal with them later on in any downstream analysis that requires Entrez IDs.
+To save time we have already created an annotation in which the problems with
+duplicate annotations have been resolved. We will load this annotation and use
+it for the rest of the course.
+
+```{r loadAnnot}
+annot <- readRDS("RObjects/Ensembl_annotations.rds")
+```
 
 # Annotation our DE results
 
 ```{r addAnnotation, message=FALSE}
-annot <- annot %>%
-    rename(GeneID = gene_id,
-           Symbol = gene_name,
-           Description = description,
-           Entrez = entrezid)
 results.d11 <- as.data.frame(results.d11) %>%
     rownames_to_column("GeneID") %>%
     left_join(annot, "GeneID")
