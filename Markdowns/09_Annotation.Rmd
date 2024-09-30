@@ -1,6 +1,6 @@
 ---
 title: "Introduction to Bulk RNAseq data analysis"
-subtitle: Annotation and Visualisation of Differential Expression Results
+subtitle: Annotation of Differential Expression Results
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
   html_document:
