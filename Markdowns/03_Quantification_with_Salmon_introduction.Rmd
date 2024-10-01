@@ -111,14 +111,14 @@ Switch to *quasi-mapping* (Salmon) or *pseudo-alignment* (Kallisto)
     * quantifies using simple counting procedure
     * Pros: Intuitive
     * Cons: Slow and can not correct biases in RNAseq data
-    * Tools: HTseq, SubRead etc. 
+    * Tools: RSEM (accounts for isoforms), HTseq, SubRead, etc. 
   
   * Alignment-free:
     * Also called quasi-mapping or pseudoalignment
     * Starts from fastq files and base-to-base alignment of the reads is avoided
     * Pros: Very fast and removes biases
     * Cons: Not intuitive
-    * Tools: Kallisto, Sailfish, **Salmon** etc 
+    * Tools: Kallisto, **Salmon** etc 
     
     
 ## What is read quantification?
