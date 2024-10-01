@@ -1,6 +1,6 @@
 ---
 title: "Alignment and Quantification of Gene Expression with Salmon"
-date: "March 2023"
+date: "October 2024"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -15,14 +15,14 @@ bibliography: ref.bib
 
 <div style="line-height: 50%;"><br></div>
 
-<img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+<img src="images/01s_workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
 
 
 ## Alignment and Quantification overview {#less_space_after_title}
 
 <div style="line-height: 10%;"><br></div>
 
-<img src="images/aln_quant_overview.png" class="centerimg" style="width: 48%; margin-top: 60px;">
+<img src="images/03s_aln_quant_overview.svg" class="centerimg" style="width: 48%; margin-top: 60px;">
 
 
 ## Traditional Alignment
@@ -30,11 +30,11 @@ bibliography: ref.bib
 AIM: Given a reference sequence and a set of short reads, align each read to
 the reference sequence finding the most likely origin of the read sequence.
 
-<img src="images/SRAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
+<img src="images/03s_SRAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
 
 ## Alignment - Splicing aware alignment
 
-<img src="images/GappedAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
+<img src="images/03s_GappedAlignment.svg" class="centerimg" style="width: 100%; margin-top: 60px;">
 
 Aligners: STAR, HISAT2
 
@@ -45,13 +45,13 @@ Aligners: STAR, HISAT2
 * It is (relatively) slow and computationally intensive
 
     
-<img src="images/quasi_mapping_1.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+<img src="images/03s_quasi_mapping_1.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 ## Alignment
 * Traditional alignment perform base-by-base alignment
 * Traditional alignment is (relatively) slow and computationally intensive
     
-<img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+<img src="images/03s_quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 
 
@@ -61,18 +61,46 @@ Aligners: STAR, HISAT2
 * Traditional alignment perform base-by-base alignment
 * Traditional alignment is (relatively) slow and computationally intensive
     
-<img src="images/quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+<img src="images/03s_quasi_mapping_2.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
         
-Switch to *quasi-mapping* (Salmon) or *pseudo-alignment* (Kallisto)
 
+## BAM/SAM file format
+
+**S**equence **A**lignment/**M**ap (SAM) format is the standard format for files
+containing aligned reads.
+
+Definition of the format is available at https://samtools.github.io/hts-specs/SAMv1.pdf.
+
+Two main parts:  
+
+* Header  
+  	- contains meta data (source of the reads, reference genome, aligner, etc.)  
+  	- header lines start with “@”
+  	- header fields have standardized two-letter codes
+  	- `@RG` for read group, used for merging BAMs together
+  	
+* Alignment section  
+    - 1 line for each alignment  
+    - contains details of alignment position, mapping, base quality etc.  
+    - 11 required fields, but other content may vary depending on aligner and other
+      tools used to create the file
+
+* BAM is a binary version of SAM (not human readable)
+
+## BAM/SAM format - What does it look like?
+
+<img src="images/03s_SAM_alignment_1c.png" class="centerimg" style="width: 100%; margin-top: 10px;">
 
 ## Why are Pseudo-alignment methods faster?
+
+Switch to *quasi-mapping* (Salmon) or *pseudo-alignment* (Kallisto)
+
 * These tools avoids base-to-base alignment of the reads
 * ~ 20 times faster than the traditional alignment tools like STAR, HISAT2 etc
 * Unlike alignment based methods, pseudo-alignment methods focus on transcriptome (~2% of genome in human)
 * Use exact kmer matching rather than aligning whole reads with mismatches and indels
     
-<img src="images/quasi_mapping_3.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
+<img src="images/03s_quasi_mapping_3.svg" class="centerimg" style="width: 90%; margin-top: 40px;">
 
 
 ## Quantification tools
@@ -106,7 +134,7 @@ file (e.g. GFF or GTF)
 
 So the simplest approach is to count how many reads overlap each gene.
 
-<img src="images/Read_counting_2.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
+<img src="images/03s_Read_counting_2.svg" class="centerimg" style="width: 90%; margin-top: 20px;">
 
 ## What is read quantification?
 
@@ -124,60 +152,19 @@ Salmon also takes account of biases:
 * Because salmon searches transcription, not genome, it's not the right tool for finding new genes or isoforms
 
 
+## Salmon
 
-## Salmon workflow
-* Salmon essential steps
-  1. Salmon indexing
-  2. Quasi-mapping and abundance quantification
-<img src="images/Salmon_workflow_2.png" class="centerimg" style="width: 40%;">
+Two essential steps
 
-<div style="text-align: right">
-  Patro *et al.* (2017) Nature Methods doi:10.1038/nmeth.4197
-</div>
+1. Create transcriptome index
 
+* This makes downstream quasi-mapping and quantification step efficient and faster
+* Once you create an index, you can use it again and again
+* Consider the Kmer size (default 31 for >75bp)
+* Adding decoy sequences to filter contaminants 
+      
+2. Quasi-mapping and quantification    
 
-## Salmon: Salmon indexing
-
-* Two essential steps
-  1. Create transcriptome index
-    * This makes downstream quasi-mapping and quantification step efficient and faster
-    * Once you create an index, you can use it again and again
-    * Salmon indexing has two components
-      * Creates the reference transcriptome suffix array (SA)
-      * Each transcript in the reference transcriptome is mapped to its location in the SA using a hash table
-  2. Quasi-mapping and quantification    
-
-
-## Salmon: Quasi-mapping
-<div class="columns-2">
-<img src="images/quasi-mapping_overview.png" class="centerimg" style="width: 100%; height: 100%">
-
-  * The transcriptome (consisting of transcripts $t1,...,t6$) is converted into a \$ separated string "T" 
-  * On "T" suffix array, SA[T], and a hash table, h , are constructed (in indexing step).
-  * The mapping operation begins with a k-mer (here, k = 3) 
-  * From left to right, the read is scanned until a k-mer appears in the hash table.
-  * All suffixes containing the k-mer are found in the hash table and the SA intervals are retrieved
-  * The maximal matching prefix (MMP) is determined by finding the longest read sequence that exactly matches the reference suffix
-  * This process is repeated until the end of the read
-  * The final mapping is generated by determining the transcripts that appear in all MMPs for the read
-
-</div>
-
-\
-
-Avi Srivastava *et al.* (2016) Bioinformatics 2016 Jun 15;32(12)
-
-
-## Abundance estimation
-
-* With the quasi-mapping method, the best mapping is determined for each read
-* After modeling sample-specific parameters and biases, salmon will generate transcript abundance estimates
-* A read that maps equally to more than one transcript will have its count divided among them (Isoform information not lost)
-* A variety of complex modeling approaches are used to estimate transcript abundances, including Expectation Maximization (EM), which corrects for sample-specific biases.
-  * GC bias
-  * Positional bias
-  * Fragment length bias
-  * Sequence-based bias
   
   
 ## Practical

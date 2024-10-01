@@ -1,6 +1,6 @@
 ---
 title: "Introduction to RNAseq Methods"
-date: "March 2023"
+date: "October 2024"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -93,7 +93,7 @@ output:
 
             
 <div class="wkfthree2">
-<span style="color: #8b0000;">**Experimental Design**</span>
+<span style="color: #2e2892;">**Experimental Design**</span>
 </div>
 
 <div class="wkfthree2">
@@ -112,61 +112,23 @@ output:
 <div style="margin-left: 60px;
             float: none;">  
             
-<img src="images/RNAseq_WorkFlow.png" style="width: 48%; margin-left: auto; margin-right: auto; display: block;">
+<img src="images/01s_RNAseq_WorkFlow.png" style="width: 48%; margin-left: auto; margin-right: auto; display: block;">
 </div>
 
 <div style="text-align: right">
 <p style="font-size: 14px">Image adapted from: Wang, Z., et al. (2009), Nature Reviews Genetics, 10, 57–63.</p>
 </div>
 
-
-
-<!-- ## Designing the right experiment -->
-
-<!-- <img src="images/Experimental_Design-C_Ambrosino.jpg" class="centerimg" style="width: 90%"> -->
-
-<!-- <div style="text-align: right"> -->
-<!-- <p style="font-size: 14px">Comic by Christine Ambrosino http://www.hawaii.edu/fishlab/Nearside.htm</p> -->
-<!-- </div> -->
-
-## Designing the right experiment
-
-<!-- ### Key aspects of experimental design: -->
-
-<!-- * Experimental variables -->
-
-<!-- * Power: variance and replicates -->
-
-<!-- * Bias: confounding factors, randomisation, controls -->
-
-### A good experiment should:
-
-* Have clear objectives
-
-* Have sufficient power
-
-* Be amenable to statisical analysis
-
-* Be reproducible
-
-* More on experimental design later
-
-
-## Designing the right experiment
-
-### Practical considerations for RNAseq
-
+## Practical considerations for RNAseq
+      
 * Coverage: how many reads? 
-
+        
 * Read length & structure: Long or short reads? Paired or Single end?  
-
-* Controlling for batch effects
-
+      
 * Library preparation method: Poly-A, Ribominus, other? 
-
-## Designing the right experiment - How many reads do we need?
-
-
+        
+## How many reads do we need?
+        
 <div style="line-height: 50%;"><br></div>
 The coverage is defined as:
 
@@ -176,191 +138,24 @@ $\frac{Read\,Length\;\times\;Number\,of\,Reads}{Length\,of\,Target\,Sequence}$
 </p>
 </div>
 
-The amount of sequencing needed for a given sample is determined by the goals of
-the experiment and the nature of the RNA sample.
-
-
 * For a general view of differential expression: 5–25 million reads per sample
 * For alternative splicing and lowly expressed genes: 30–60 million reads per sample.
 * In-depth view of the transcriptome/assemble new transcripts: 100–200 million reads
 * Targeted RNA expression requires fewer reads. 
 * miRNA-Seq or Small RNA Analysis require even fewer reads.
-
+            
 ## Designing the right experiment - Read length
 
-### Long or short reads? Paired or Single end?
+Long or short reads? Paired or Single end?
 
 The answer depends on the experiment:
 
 * Gene expression – typically just a short read e.g. 50/75 bp; SE or PE.
 * kmer-based quantification of Gene Expression (Salmon etc.) - benefits from PE.
 * Transcriptome Analysis – longer paired-end reads (such as 2 x 75 bp).
-* Small RNA Analysis – short single read, e.f. SE50 - will need trimming.
-
-
-
-
-## Designing the right experiment - Replication
-
-### Biological Replication
-
-* Measures the biological variations between individuals
-
-* Accounts for sampling bias
-
-### Technical Replication
-
-* Measures the variation in response quantification due to imprecision in the
-technique
-
-* Accounts for technical noise
-
-
-## Designing the right experiment - Replication
-
-### Biological Replication
-
-<div style="width: 45%;
-            float: left;">
-Each replicate is from an indepent biological individual
-
-* *In Vivo*:
-
-    * Patients
-    * Mice
+* Small RNA Analysis – short single read, e.g. SE50 - will need trimming.
+         
     
-* *In Vitro*:
-
-    * Different cell lines
-    * Different passages
-    
-</div>
-
-<div style="width: 45%;
-            float: right;">
-<img src="images/BioRep.jpg" class="centerimg" style="width: 95%">
-</div>
-
-## Designing the right experiment - Replication
-
-### Technical Replication
-
-
-Replicates are from the same individual but processed separately
-
-* Experimental protocol
-* Measurement platform
-</div>
-
-<div style="width: 45%;
-            float: right;">
-<img src="images/TechRep.jpg" class="centerimg" style="width: 55%">
-</div>
-
-## Designing the right experiment - Batch effects 
-
-* Batch effects are sub-groups of measurements that have qualitatively different behavior across conditions and are unrelated to the biological or scientific variables in a study.
-
-* Batch effects are problematic if they are confounded with the experimental variable.
-
-## Designing the right experiment - Batch effects
-
-<img src="images/BatchEffecta.svg" class="centerimg" style="width: 95%">
-
-## Designing the right experiment - Batch effects
-
-<img src="images/BatchEffectb.svg" class="centerimg" style="width: 95%">
-
-## Designing the right experiment - Batch effects 
-
-* Batch effects are sub-groups of measurements that have qualitatively different behavior across conditions and are unrelated to the biological or scientific variables in a study.
-
-* Batch effects are problematic if they are confounded with the experimental variable.
-
-* Batch effects that are randomly distributed across experimental variables can be controlled for.
-
-## Designing the right experiment - Batch effects 
-
-* Batch effects are sub-groups of measurements that have qualitatively different behavior across conditions and are unrelated to the biological or scientific variables in a study.
-
-* Batch effects are problematic if they are confounded with the experimental variable.
-
-* Batch effects that are randomly distributed across experimental variables can be controlled for.
-
-* Randomise all technical steps in data generation in order to avoid batch effects.
-
-<img src="images/PlateEmpty.svg" class="centerimg" style="width: 40%">
-
-## Designing the right experiment - Batch effects 
-
-* Batch effects are sub-groups of measurements that have qualitatively different behavior across conditions and are unrelated to the biological or scientific variables in a study.
-
-* Batch effects are problematic if they are confounded with the experimental variable.
-
-* Batch effects that are randomly distributed across experimental variables can be controlled for.
-
-* Randomise all technical steps in data generation in order to avoid batch effects.
-
-<img src="images/PlateBad.svg" class="centerimg" style="width: 40%">
-
-## Designing the right experiment - Batch effects 
-
-* Batch effects are sub-groups of measurements that have qualitatively different behavior across conditions and are unrelated to the biological or scientific variables in a study.
-
-* Batch effects are problematic if they are confounded with the experimental variable.
-
-* Batch effects that are randomly distributed across experimental variables can be controlled for.
-
-* Randomise all technical steps in data generation in order to avoid batch effects.
-
-<img src="images/PlateGood.svg" class="centerimg" style="width: 40%">
-
-## Designing the right experiment - Batch effects 
-
-* Batch effects are sub-groups of measurements that have qualitatively different behavior across conditions and are unrelated to the biological or scientific variables in a study.
-
-* Batch effects are problematic if they are confounded with the experimental variable.
-
-* Batch effects that are randomly distributed across experimental variables can be controlled for.
-
-* Randomise all technical steps in data generation in order to avoid batch effects
-
-* **Record everything**: Age, sex, litter, cell passage .. 
-
-
-## RNAseq Workflow
-
-
-<div style="width: 40%; 
-            float: left"> 
-
-            
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Experimental Design**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #8b0000;">**Library Preparation**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Sequencing**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Bioinformatics Analysis**</span>
-</div>
-</div>
-
-<div style="margin-left: 60px;
-            float: none;">  
-            
-<img src="images/RNAseq_WorkFlow.png" style="width: 48%; margin-left: auto; margin-right: auto; display: block;">
-</div>
-
-<div style="text-align: right">
-<p style="font-size: 14px">Image adapted from: Wang, Z., et al. (2009), Nature Reviews Genetics, 10, 57–63.</p>
-</div>
 
 ## Library preparation
 
@@ -372,7 +167,7 @@ Replicates are from the same individual but processed separately
             position: absolute;
             top: 0px;
             left: 0px">
-<img src="images/RNA_Extraction.svg" class="centerimg" style="width: 80%">
+<img src="images/01s_RNA_Extraction.svg" class="centerimg" style="width: 80%">
 </div>
 
 <div style="z-index: 2;
@@ -380,13 +175,13 @@ Replicates are from the same individual but processed separately
             bottom: 0px;
             left: 0px;">
 <div>
-<img src="images/rRNA.svg" style="width: 8%"> - Ribosomal RNA
+<img src="images/01s_libprep_rRNA.svg" style="width: 8%"> - Ribosomal RNA
 </div>
 <div>
-<img src="images/mRNA.svg" style="width: 8%"> - Poly-A transcripts
+<img src="images/01s_libprep_/mRNA.svg" style="width: 8%"> - Poly-A transcripts
 </div>
 <div>
-<img src="images/OtherRNA.svg" style="width: 8%"> - Other RNAs e.g. tRNA, miRNA etc.
+<img src="images/01s_libprep_OtherRNA.svg" style="width: 8%"> - Other RNAs e.g. tRNA, miRNA etc.
 </div>
 </div>
 
@@ -406,7 +201,7 @@ Replicates are from the same individual but processed separately
 </div>
 <div style="padding-top: 20px;
             padding-bottom: 20px;">
-<img src="images/polyA_selection.svg" class="centerimg" style="width: 95%">
+<img src="images/01s_polyA_selection.svg" class="centerimg" style="width: 95%">
 </div>  
 <div>
 Poly-A transcripts e.g.:
@@ -424,7 +219,7 @@ Poly-A transcripts e.g.:
 </div>
 <div style="padding-top: 20px;
             padding-bottom: 20px;">
-<img src="images/ribominus_selection.svg" class="centerimg" style="width: 95%">
+<img src="images/01s_ribominus_selection.svg" class="centerimg" style="width: 95%">
 </div>  
 <div>
 Poly-A transcripts + Other mRNAs e.g.:
@@ -435,43 +230,9 @@ Poly-A transcripts + Other mRNAs e.g.:
 </div>
 </div>
 
-## RNAseq Workflow
+## Sequencing by Synthesis
 
-
-<div style="width: 40%; 
-            float: left"> 
-
-            
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Experimental Design**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Library Preparation**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #8b0000;">**Sequencing**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Bioinformatics Analysis**</span>
-</div>
-</div>
-
-<div style="margin-left: 60px;
-            float: none;">  
-            
-<img src="images/RNAseq_WorkFlow.png" style="width: 48%; margin-left: auto; margin-right: auto; display: block;">
-</div>
-
-<div style="text-align: right">
-<p style="font-size: 14px">Image adapted from: Wang, Z., et al. (2009), Nature Reviews Genetics, 10, 57–63.</p>
-</div>
-
-## Sequencing by synthesis 
-
-A complimentary strand is synthesized using the cDNA fragment as template. 
+A complimentary strand is synthesized using the cDNA fragment as template.
 
 Each nucleotide includes a fluorescent tag and as the new strand is synthesized,
 the colour of the fluorescence indicates which base is being added.
@@ -479,98 +240,26 @@ the colour of the fluorescence indicates which base is being added.
 The sequencer records the order of these flashes of light and translates them to
 a base sequence.  
 
-[see this animation](https://emea.illumina.com/science/technology/next-generation-sequencing/sequencing-technology.html)
-
-<div style="width: 45%; float: left;">
-  <img src="images/Illumina_SBS.A.png" class="centerimg" style="width: 70%">
-</div>
-
-<div style="width: 45%; float: right;">
-  <img src="images/Illumina_SBS.B.png" class="centerimg" style="width: 70%">
-</div>
-
-## Sequencing by synthesis - sequencing errors
 
 Sequencing errors cause uncertainty in calling the nucleotide at a given
-location. These reductions in confidence would be reflected int he quality
+location. These reductions in confidence would be reflected in the quality
 scores in your fastq output.
 
-<div style="width: 40%; 
-    float: left;
-    border-style: solid; 
-    border-width: 1px;
-    border-radius: 28px; 
-    padding: 20px;
-    display: block;
-    height: 300px;
-    margin-left: 1.6%;
-    margin-top: 20px">
-
-If a probe doesn't shine as bright as it should, the sequencer is less confident
-in calling that base.
-
-<img src="images/seq_error.A.svg" class="centerimg" style="width: 70%">
-
-
+<div style="width: 40%; float: left;">
+  <img src="images/01s_Illumina_SBS.1.png" class="centerimg" style="width: 70%">
 </div>
 
-<div style="width: 40%; 
-    float: right;
-    border-style: solid; 
-    border-width: 1px;
-    border-radius: 28px; 
-    padding: 20px;
-    display: block;
-    height: 300px;
-    margin-top: 20px">
-
-If there are lots of probes the same colour in the same region the sequencer
-finds it harder to identify the individual reads.
-
-<img src="images/seq_error.B.svg" class="centerimg" style="width: 70%">
-
+<div style="width: 40%; float: right;">
+  <img src="images/01s_Illumina_SBS.2.png" class="centerimg" style="width: 70%">
 </div>
 
-## RNAseq Workflow
-
-
-<div style="width: 40%; 
-            float: left"> 
-
-            
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Experimental Design**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Library Preparation**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #2e2892;">**Sequencing**</span>
-</div>
-
-<div class="wkfthree2">
-<span style="color: #8b0000;">**Bioinformatics Analysis**</span>
-</div>
-</div>
-
-<div style="margin-left: 60px;
-            float: none;">  
-            
-<img src="images/RNAseq_WorkFlow.png" style="width: 48%; margin-left: auto; margin-right: auto; display: block;">
-</div>
-
-<div style="text-align: right">
-<p style="font-size: 14px">Image adapted from: Wang, Z., et al. (2009), Nature Reviews Genetics, 10, 57–63.</p>
-</div>
 
 ## Case Study 
 
-<img src="images/case_study.png" class="centerimg" style="width: 60%">
+<img src="images/01s_case_study.png" class="centerimg" style="width: 60%">
 
 ## Differential Gene Expression Analysis Workflow {#less_space_after_title}
 
 <div style="line-height: 50%;"><br></div>
 
-<img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+<img src="images/01s_workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">

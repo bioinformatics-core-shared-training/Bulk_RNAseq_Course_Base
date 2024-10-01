@@ -1,6 +1,6 @@
 ---
 title: "Basic quality control with FastQC"
-date: "March 2023"
+date: "October 2024"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -15,22 +15,22 @@ output:
 
 <div style="line-height: 50%;"><br></div>
 
-<img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+<img src="images/01s_workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
 
 ## Fastq file format
-<img src="images/fq.png" style="width: 95%">
+<img src="images/02s_fq.png" style="width: 95%">
 
 ## Fastq file format - Headers
-<img src="images/fq_headers.png" style="width: 95%">
+<img src="images/02s_fq_headers.png" style="width: 95%">
 
 ## Fastq file format - Sequences
-<img src="images/fq_seq.png" style="width: 95%">
+<img src="images/02s_fq_seq.png" style="width: 95%">
 
 ## Fastq file format - Third line 
-<img src="images/fq_3rd_line.png"style="width: 95%"> 
+<img src="images/02s_fq_3rd_line.png"style="width: 95%"> 
 
 ## Fastq file format - Quality Scores
-<img src="images/fq_quality.png" style="width: 95%">
+<img src="images/02s_fq_quality.png" style="width: 95%">
 
 ## (Phred) Quality Scores
 
@@ -45,43 +45,15 @@ Sequence quality scores are transformed and translated p-values
   * p-value of 0.01 inferred as 1 in 100 chance that called base is wrong 
 </div>
 
-## (Phred) Quality Scores  ... 
-
-
-How do we assign p-values to bases in the fastq file?
-
-<div style="width: 50%; 
-            float: left"> 
-            
-* P-vales can be many characters long (e.g.:0.000005)
-* Transform to Phred quality scores _Q_
-* $Q = -10(log_{10} P)$ (e.g.: 0.01 = Q value of 20,  0.001 = Q value of 30)
-* Translate _Q_ values to ASCII characters (adding 33) (Q value of 30 = ?, Q value of 40 = I )
-</div>
-
-<div style="margin-left: 60px;
-            float: none;">
-  
-<img src="images/ascii.png" style="width: 30%;
-                                  margin-left: auto;
-                                  margin-right: auto;
-                                  margin-bottom: auto;
-                                  display: block;">
-                                               
-</div>
-
-
-  
-
 ## QC is important
 
-Check for any problems before we put time and effort into analysing potentially bad data
+At every stage we should check for any problems before we put time and effort into analysing potentially bad data
 
 <div style="width: 40%; 
             float: left"> 
           
           
-* Start with FastQC
+* Start with FastQC on our sequencing outputs
   * Quick
   * Outputs an easy to read html report
   
@@ -90,7 +62,7 @@ Check for any problems before we put time and effort into analysing potentially 
 <div style="margin-left: 60px;
             float: none;">
   
-<img src="images/FastQC_logo.png" style="width: 25%;
+<img src="images/02s_FastQC_logo.png" style="width: 25%;
                                   margin-left: auto;
                                   margin-right: auto;
                                   display: block;">
@@ -112,7 +84,7 @@ but there are lots of other parameters which you can find to tailor your QC by t
 <div style="text-align: center;">
    <span style="color: #2e2892;">**Good Data**</span>
 </div>
-<img src="images/good1.png" style="width: 100%">
+<img src="images/02s_fastqc_good1.png" style="width: 100%">
 </div>
 
 <div style="width: 47%;
@@ -120,7 +92,7 @@ but there are lots of other parameters which you can find to tailor your QC by t
 <div style="text-align: center;">
    <span style="color: #2e2892;">**Bad Data**</span>
 </div>
-<img src="images/bad1.png" style="width: 100%">
+<img src="images/02s_fastqc_bad1.png" style="width: 100%">
 </div>
 
 ## Per base sequence content
@@ -130,7 +102,7 @@ but there are lots of other parameters which you can find to tailor your QC by t
 <div style="text-align: center;">
    <span style="color: #2e2892;">**Good Data**</span>
 </div>
-<img src="images/good2.png" style="width: 100%">
+<img src="images/02s_fastqc_good2.png" style="width: 100%">
 </div>
 
 <div style="width: 47%;
@@ -138,7 +110,7 @@ but there are lots of other parameters which you can find to tailor your QC by t
 <div style="text-align: center;">
    <span style="color: #2e2892;">**Bad Data**</span>
 </div>
-<img src="images/bad2.png" style="width: 100%">
+<img src="images/02s_fastqc_bad2.png" style="width: 100%">
 </div>
 
 ## Per sequence GC content
@@ -155,7 +127,7 @@ The spike is due to severe adapter contamination.
 <div style="text-align: center;">
    <span style="color: #2e2892;">**Good Data**</span>
 </div>
-<img src="images/good3.png" style="width: 100%">
+<img src="images/02s_fastqc_good3.png" style="width: 100%">
 </div>
 
 <div style="width: 47%;
@@ -163,7 +135,7 @@ The spike is due to severe adapter contamination.
 <div style="text-align: center;">
    <span style="color: #2e2892;">**Bad Data**</span>
 </div>
-<img src="images/bad3.png" style="width: 100%">
+<img src="images/02s_fastqc_bad3.png" style="width: 100%">
 </div> 
 
 ## Adaptor content
@@ -173,7 +145,7 @@ The spike is due to severe adapter contamination.
 <div style="text-align: center;">
    <span style="color: #2e2892;">**Good Data**</span>
 </div>
-<img src="images/good4.png" style="width: 100%">
+<img src="images/02s_fastqc_good4.png" style="width: 100%">
 </div>
 
 <div style="width: 47%;
@@ -181,7 +153,7 @@ The spike is due to severe adapter contamination.
 <div style="text-align: center;">
    <span style="color: #2e2892;">**Bad Data**</span>
 </div>
-<img src="images/bad4.png" style="width: 100%">
+<img src="images/02s_fastqc_bad4.png" style="width: 100%">
 </div> 
 
 
@@ -203,7 +175,7 @@ The spike is due to severe adapter contamination.
   - the directory structure is like a tree, you can go back with cd ..
   - Up arrows to get through history 
   - tab complete to avoid errors
-  - More to look at the files and q to exit
+  - Less or More to look at the files and q to exit
   - ctrl-c
 
 

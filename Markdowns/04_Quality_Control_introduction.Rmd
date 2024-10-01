@@ -1,6 +1,6 @@
 ---
 title: "QC of Aligned Reads"
-date: "March 2023"
+date: "October 2024"
 output:
   ioslides_presentation:
     css: css/stylesheet.css
@@ -15,7 +15,7 @@ output:
 
 <div style="line-height: 50%;"><br></div>
 
-<img src="images/workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+<img src="images/01s_workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
 
 ## QC of aligned reads
 
@@ -41,14 +41,14 @@ output:
 * Insert size is the length of the fragment of mRNA from which the reads are
 derived
 
-<img src="images/Insert_Size_QC.svg" class="centerimg">
-<img src="images/Insert_Size.svg" class="centerimg" style="width: 80%">
+<img src="images/04s_Insert_Size_QC.svg" class="centerimg">
+<img src="images/04s_Insert_Size.svg" class="centerimg" style="width: 80%">
 
 ## QC of aligned reads - Transcript coverage
 
 <div style="line-height: 50%;"><br></div>
 
-<img src="images/TranscriptCoverage.svg" class="centerimg" style="width: 80%">
+<img src="images/04s_TranscriptCoverage.svg" class="centerimg" style="width: 80%">
 
 ## QC Goals 
  

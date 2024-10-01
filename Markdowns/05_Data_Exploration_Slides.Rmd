@@ -1,0 +1,66 @@
+---
+title: "Data Exploration"
+date: "October 2024"
+output:
+  ioslides_presentation:
+    css: css/stylesheet.css
+    logo: images/CRUK_Cambridge_Institute.png
+    smaller: yes
+    widescreen: yes
+  beamer_presentation: default
+  slidy_presentation: default
+---
+
+## Differential Gene Expression Analysis Workflow {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/01s_workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+
+## Transformation {#less_space_after_title}
+
+For differential expression analyses we use raw counts but to visualise the data to explore it we use transformed data.
+
+<div style="width: 45%;
+            float: left;">
+
+<div style="padding-top: 20px;
+            padding-bottom: 20px;">
+<img src="images/05s_rawCountsBoxPlot.png" class="centerimg" style="width: 95%">
+</div>  
+<div>
+  
+* The range of raw counts is very large
+* Variance increases with mean gene expression
+</div>
+</div>
+
+<div style="width: 45%;
+            float: right;">
+
+<div style="padding-top: 20px;
+            padding-bottom: 20px;">
+<img src="images/05s_log2countsBoxPlot.png" class="centerimg" style="width: 95%">
+</div>  
+<div>
+
+* Allows us to more clearly assess differences between sample groups
+
+</div>
+</div>
+
+## Types of Transformations
+
+* Log2 
+* Rlog - Performs a log2 scale transformation in a way that compensates for differences between samples for genes with low read count and also normalizes between samples for library size.
+* VST - Variance stabilizing transformation (VST) aims at generating a matrix of values for which variance is constant across the range of mean values, especially for low mean and accounts for library size.
+
+Comparison between the two: https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#count-data-transformations
+
+## Principle Component Analysis {#less_space_after_title}
+
+* Unsupervised analysis
+* If the experiment is well controlled and has worked well, we should find that replicate samples cluster closely, whilst the greatest sources of variation in the data should be between treatments/sample groups
+ * Useful tool for checking for outliers and batch effects
+ 
+ <img src="images/05s_PCA.png" class="centerimg" style="width: 52%; margin-top: 60px;">
