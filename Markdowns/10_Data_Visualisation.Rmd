@@ -29,7 +29,7 @@ results.d11 <- readRDS("RObjects/DESeqResults.interaction_d11.rds")
 ```
 
 
-## P-value histogram
+# Histogram of p-values
 
 A quick and easy "sanity check" for our DE results is to generate a p-value 
 histogram. What we should see is a high bar at `0 - 0.05` and then a roughly
@@ -37,11 +37,11 @@ uniform tail to the right of this. There is a nice explanation of other possible
 patterns in the histogram and what to do when you see them in [this 
 post](http://varianceexplained.org/statistics/interpreting-pvalue-histogram/).
 
-```{r pvalHist, fig.align="center"}
+```{r pvalHist, fig.align="center", fig.height=5, fig.width=7}
 hist(results.d11$pvalue)
 ```
 
-## Shrinking the log2FoldChange
+# Shrinking the log2FoldChange
 
 `DESeq2` provides a function called `lfcShrink` that shrinks log-Fold Change 
 (LFC) estimates towards zero using an empirical Bayes procedure. The reason for
@@ -81,10 +81,10 @@ Let's save the shrunk results to a file so we can use them later.
 saveRDS(shrinkTab.33, file="results/Shrunk_Results.d33.rds")
 ```
 
-## MA plots
+# MA plots
 
 MA plots are a common way to visualize the results of a differential analysis.
-We met them briefly towards the end of [the DESeq2
+We met them briefly during [the DESeq2
 session](08_DE_analysis_with_DESeq2.html). This plot shows the log-Fold Change
 for each gene against its average expression across all samples in the two
 conditions being contrasted. `DESeq2` has a handy function for plotting this.
@@ -101,14 +101,14 @@ functions aren't easy to customise, make changes to the way it looks or add
 things such as gene labels. For this we would recommend using the ggplot
 package.
 
-## Volcano Plots
+# Volcano Plots
 
 Another common visualisation is the 
 [*volcano plot*](https://en.wikipedia.org/wiki/Volcano_plot_(statistics)) which
 displays a measure of significance on the y-axis and fold-change on the x-axis.
 We will use ggplot to create this.
 
-### A Brief Introduction to `ggplot2`
+## A Brief Introduction to `ggplot2`
 
 The [`ggplot2`](http://ggplot2.tidyverse.org/) package has emerged as an 
 attractive alternative to the traditional plots provided by base R. A full 
@@ -194,7 +194,7 @@ ggplot(shrinkTab.33, aes(x = log2FoldChange, y = -log10(pvalue))) +
 > samples, and the y-axis should be the log2 of the fold change between Infected
 > and Uninfected.
 
-## Strip Charts for gene expression
+# Strip Charts for gene expression
 
 Before following up on the DE genes with further lab work, a recommended *sanity
 check* is to have a look at the expression levels of the individual samples for 
@@ -224,7 +224,7 @@ plotCounts(ddsObj,
 > For this exercise create another strip chart for the gene Jchain.
 
 
-## Venn Diagram
+# Venn Diagram of differentially expressed genes
 
 In the paper you may notice they have presented a Venn diagram of the results. 
 
@@ -244,8 +244,8 @@ We want to plot four "sets" on the venn diagram:
 * Significantly up-regulated on day 33
 * Significantly down-regulated on day 33
 
-Each comprising genes at that statistically significant at a 5% FDR level for the
-respective contrast.
+Each comprising genes at that are statistically significant at a 5% FDR level
+for the respective contrast.
 
 There are two ways of providing the data to `ggvenn`. The first is to provide a 
 table with features (genes) in the rows and the sets (contrasts) in the columns, and
@@ -268,8 +268,9 @@ tibble(Geneid=rownames(results.d11)) %>%
          results.d33$log2FoldChange < 0) 
 ```
 
-The second is to provide a list with one element for each set. Each element is then
-a vector of the features in that set. For our data this would look like this:
+The second option is to provide a list with one element for each set. Each
+element is then a vector of the features in that set. For our data this would
+look like this:
 
 ```{r echo=FALSE}
 getGenes <- function(shrTab, direction = "up") {
@@ -289,28 +290,31 @@ str(myList)
 
 We will use the list option as the code for builing the list is more concise.
 
-The code for building each list is basically the same with a couple of minor changes,
-rather the repeating the code we can create a function to do this for us.
+The code for building each of the four vectors of gene ids is basically the same
+with a couple of minor changes for each set, rather the repeating the code we
+can create a function to do this for us.
 
-To build up the function, first, let's see how we would do this for the up-regulated
+To build up the function, first, let's see how we would do this for the
 genes on day 11.
 
 ```{r geneListUpRegd11}
-shrinkTab.11 %>%
+Upregulated_d11 <- shrinkTab.11 %>%
     filter(padj < 0.05) %>%
     filter(log2FoldChange > 0) %>%
     pull("GeneID")
+head(Upregulated_d11)
 ```
 
-The functions is just a generalisation of this code. We want to be able to do the same 
-using different tables (day 11 and day 33), and we also need to be able to get the
-up- or down-regulated genes. We can do this by passing the table and the direction
-as arguments to the function. To change the direction of the regulation, we can
-leave the boolean filter as `log2FoldChange > 0` and multiply the `log2FoldChange`
-by 1 or -1 depending on the direction we want. 
+The function we will create is just a generalisation of this code. We want to be
+able to do the same operation using different tables (day 11 and day 33), and we
+also need to be able to get the up- or down-regulated genes. We can do this by
+passing the table and the direction as arguments to the function. To change the
+direction of the regulation, we can leave the boolean filter as `log2FoldChange
+> 0` and multiply the `log2FoldChange` by 1 or -1 depending on the direction we
+want. 
 
 ```{r}
-getGenes <- function(shrTab, direction = "up") {
+getGenes <- function(shrTab, direction) {
     sign <- ifelse(direction == "up", 1, -1)
     shrTab %>%
         filter(padj < 0.05) %>%
@@ -318,32 +322,33 @@ getGenes <- function(shrTab, direction = "up") {
         pull("GeneID")
 }
 
-vennList <- list(Upregulated_11 = getGenes(shrinkTab.11, "up"),
-                 Downregulated_11 = getGenes(shrinkTab.11, "down"),
-                 Upregulated_33 = getGenes(shrinkTab.33, "up"),
-                 Downregulated_33 = getGenes(shrinkTab.33, "down"))
+vennList <- list(Upregulated_d11 = getGenes(shrinkTab.11, "up"),
+                 Downregulated_d11 = getGenes(shrinkTab.11, "down"),
+                 Upregulated_d33 = getGenes(shrinkTab.33, "up"),
+                 Downregulated_d33 = getGenes(shrinkTab.33, "down"))
 
 str(vennList)
 ```
 
 Now we just pass the list to the `ggvenn` function.
 
-```{r vennPlot}
+```{r vennPlot, fig.height = 7, fig.width = 9} 
 ggvenn(vennList, set_name_size = 4)
 ```
 
-## Heatmap
+# Heatmap of gene expression
 
-We're going to use the package `ComplexHeatmap` [@Gu2016]. We'll also use
-`circlize` to generate a colour scale [@Gu2014].
+Another common way to visualise differential gene expression results it to plot
+a heatmap of the normalised counts. There are many R packages that can be used
+to achieve this, we're going to use the package `pheatmap`.
 
 ```{r complexHeatmap, message=F}
-library(ComplexHeatmap)
-library(circlize)
+library(pheatmap)
 ```
 
-We can't plot the entire data set, let's just select the top 300 by false discovery rate (`padj`). We'll
-want to use normalised expression values, so we'll use the `vst` function.
+We can't (an don't want to) plot the entire data set, let's just select the top
+300 by false discovery rate (`padj`). We'll want to use normalised expression
+values, so we'll use the `vst` function.
 
 ```{r selectGenes}
 # get the top genes
@@ -362,71 +367,76 @@ expression. If we used a colour scale from 0 (no expression) to the maximum
 expression, the scale will be dominated by our most extreme genes and it will be
 difficult to discern any difference between most of the genes.
 
-To overcome this we will z-scale the counts. This scaling method results in 
-values for each that show the number of standard deviations the gene expression
-is from the mean for that gene across all the sample - the mean will be '0', '1'
-means 1 standard deviation higher than the mean, '-1' means 1 standard deviation
-lower than the mean.
+To overcome this we will z-scale the counts for each gene across the samples.
+This scaling method results in values for each gene that show the number of
+standard deviations the gene expression is from the mean for that gene across
+all the samples - the mean will be '0', '1' means 1 standard deviation higher
+than the mean, '-1' means 1 standard deviation lower than the mean. Depending on
+the package that you are using, you may have to do this yourself before plotting
+the heatmap, but `pheatmap` has a built-in function to do this.
 
-```{r z-scale}
-z.mat <- t(scale(t(plotDat), center=TRUE, scale=TRUE))
-```
+We will also create a colour palette for the heatmap. We will use a
+blue-white-red palette with blue for low expression, white for the mean and red
+for high. We just
+need to provide three colours and use the function `colorRampPalette` to create
+a function that will interpolate between these colours.
 
 ```{r colourScale}
-# colour palette
-myPalette <- c("royalblue3", "ivory", "orangered3")
-myRamp <- colorRamp2(c(-2, 0, 2), myPalette)
+colours <- c("royalblue3", "ivory", "orangered3")
+hmPalette <- colorRampPalette(colours)(100)
+hmPalette
 ```
+
+As well as scaling the gene expression values, `pheatmap` will also cluster the
+genes and samples. We could turn this off if we want to.
 
 ```{r heatmap, fig.width=5, fig.height=8}
-Heatmap(z.mat, name = "z-score",
-        col = myRamp,
-        show_row_names = FALSE)
+pheatmap(plotDat,
+         cluster_rows = TRUE,
+         cluster_cols = TRUE,
+         scale = "row",
+         show_rownames = FALSE,
+         color = hmPalette)
 ```
 
-we can also split the heat map into clusters and add some annotation.
+We can also split the heat map into clusters and add some annotation in the form
+of coloured bars at the top of the heatmap to show the status and timepoint of
+the samples.
+
+To add the annotation we simple need to create a data frame with the annotation.
 
 ```{r splitHeatmap, fig.width=5, fig.height=8}
-ha1 = HeatmapAnnotation(df = colData(ddsObj)[,c("Status", "TimePoint")])
+annot_df <- colData(ddsObj) %>%
+  as.data.frame() %>%
+  select(Status, TimePoint)
 
-Heatmap(z.mat, name = "z-score",
-        col = myRamp,            
-        show_row_name = FALSE,
-        split=3,
-        rect_gp = gpar(col = "lightgrey", lwd=0.3),
-        top_annotation = ha1)
+pheatmap(plotDat,
+         cluster_rows = TRUE,
+         cluster_cols = TRUE,
+         scale = "row",
+         show_rownames = FALSE,
+         color = hmPalette,
+         cutree_rows = 5,
+         annotation_col = annot_df)
 ```
 
-Whenever we teach this session several student always ask how to set the
-colours of the bars at the top of the heatmap. This is shown below.
+`pheatmap` has automatically selected colours for the annotation, but we can
+specify our own colours if we want.
 
 ```{r ColouredsplitHeatmap, fig.width=5, fig.height=8}
-ha1 = HeatmapAnnotation(df = colData(ddsObj)[,c("Status", "TimePoint")], 
-                        col = list(Status = c("Uninfected" = "darkgreen", 
-                                              "Infected" = "palegreen"), 
-                                   TimePoint = c("d11" = "lightblue", 
-                                                 "d33" = "darkblue")))
+annot_col <- list(Status = c("Uninfected" = "darkgreen",
+                             "Infected" = "palegreen"),
+                  TimePoint = c("d11" = "lightblue",
+                                "d33" = "darkblue"))
 
-Heatmap(z.mat, name = "z-score",
-        col = myRamp,            
-        show_row_name = FALSE,
-        split=3,
-        rect_gp = gpar(col = "lightgrey", lwd=0.3),
-        top_annotation = ha1)
+pheatmap(plotDat,
+         cluster_rows = TRUE,
+         cluster_cols = TRUE,
+         scale = "row",
+         show_rownames = FALSE,
+         color = hmPalette,
+         cutree_rows = 5,
+         annotation_col = annot_df,
+         annotation_colors = annot_col)
 ```
 
-
-```{r saveEnvironment, eval=FALSE}
-saveRDS(results.d11, file="results/Annotated_Results.d11.rds")
-saveRDS(shrinkTab.11, file="results/Shrunk_Results.d11.rds")
-saveRDS(results.d33, file="results/Annotated_Results.d33.rds")
-saveRDS(shrinkTab.33, file="results/Shrunk_Results.d33.rds")
-```
-
-```{r saveObjects, eval=TRUE, echo=FALSE}
-# pre-processed course files
-saveRDS(results.d11, file="RObjects/Annotated_Results.d11.rds")
-saveRDS(shrinkTab.11, file="RObjects/Shrunk_Results.d11.rds")
-# saveRDS(results.d33, file="RObjects/Annotated_Results.d33.rds")
-saveRDS(shrinkTab.33, file="RObjects/Shrunk_Results.d33.rds")
-```
