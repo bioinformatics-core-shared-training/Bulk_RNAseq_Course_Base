@@ -1,11 +1,13 @@
 ---
 title: "Introduction to Bulk RNAseq data analysis"
-author: "Abbi Edwards"
+subtitle: Visualisation of Differential Expression Results - Solutions
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  html_document: default
-  pdf_document: default
-subtitle: Annotation and Visualisation of Differential Expression Results - Solutions
+  html_document:
+    toc: yes
+    toc_float: true
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, echo=FALSE, cache=FALSE}
@@ -23,9 +25,7 @@ library(tidyverse)
 
 ```{r prepareData, echo=FALSE, message=FALSE, warning=FALSE}
 # First load data and annotations
-ddsObj.interaction <- readRDS("RObjects/DESeqDataSet.interaction.rds")
-results.interaction.11 <- readRDS("RObjects/DESeqResults.interaction_d11.rds")
-results.interaction.33 <- readRDS("RObjects/DESeqResults.interaction_d33.rds")
+ddsObj <- readRDS("RObjects/DESeqDataSet.interaction.rds")
 ```
 
 
@@ -37,8 +37,8 @@ If you haven't already make sure you load in our data and annotation. You can co
 
 ```{r load}
 # First load data and annotations
-results.interaction.33 <- readRDS("RObjects/DESeqResults.interaction_d33.rds")
-ensemblAnnot <- readRDS("RObjects/Ensembl_annotations.rds")
+results.d33 <- readRDS("RObjects/DESeqResults.interaction_d33.rds")
+annot <- readRDS("RObjects/Ensembl_annotations.rds")
 ```
 
 > (a)
@@ -46,13 +46,13 @@ ensemblAnnot <- readRDS("RObjects/Ensembl_annotations.rds")
 
 ```{r shrink}
 #Shrink our values
-ddsShrink.33 <- lfcShrink(ddsObj.interaction, 
-                       res = results.interaction.33,
+shrink.33 <- lfcShrink(ddsObj, 
+                       res = results.d33,
                        type = "ashr")
 
-shrinkTab.33 <- as.data.frame(ddsShrink.33) %>%
+shrinkTab.33 <- as.data.frame(shrink.33) %>%
     rownames_to_column("GeneID") %>% 
-    left_join(ensemblAnnot, "GeneID")
+    left_join(annot, "GeneID")
 ```
 
 > (b) 
@@ -77,10 +77,12 @@ ggplot(shrinkTab.33, aes(x = log2FoldChange, y = -log10(pvalue))) +
 > and Uninfected.
 
 ```{r plotMA}
-ggplot(shrinkTab.33, aes(x = log2(baseMean), y = log2FoldChange)) + 
+ggplot(shrinkTab.33, aes(x = log2(baseMean), y = log2FoldChange)) +
     geom_point(aes(colour = padj < 0.05), size = 1) +
     scale_y_continuous(limit = c(-4, 4), oob = scales::squish) +
-    labs(x = "log2(Mean Expression)", y = "log2(Fold Change)", colour = "FDR < 5%",
+    labs(x = "log2(Mean Expression)",
+         y = "log2(Fold Change)",
+         colour = "FDR < 5%",
          title = "Infected vs Uninfected (day 33)")
 ```
 
@@ -89,14 +91,14 @@ ggplot(shrinkTab.33, aes(x = log2(baseMean), y = log2FoldChange)) +
 > For this exercise create another strip chart for the gene Jchain.
 
 ```{r Exercise3}
-geneID_33 <- shrinkTab.33 %>% 
-    filter(Symbol == "Jchain") %>% 
+geneID_33 <- shrinkTab.33 %>%
+    filter(Symbol == "Jchain") %>%
     pull(GeneID)
 
-plotCounts(ddsObj.interaction, 
-           gene = geneID_33, 
+plotCounts(ddsObj,
+           gene = geneID_33,
            intgroup = c("TimePoint", "Status", "Replicate"),
-           returnData = T) %>% 
+           returnData = TRUE) %>%
     ggplot(aes(x = Status, y = log2(count))) +
     geom_point(aes(fill = Replicate), shape = 21, size = 2) +
     facet_wrap(~ TimePoint) +
