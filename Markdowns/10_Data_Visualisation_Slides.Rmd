@@ -1,0 +1,67 @@
+---
+title: "Visualisation of Differential Expression Results"
+date: "October 2024"
+output:
+  ioslides_presentation:
+    css: css/stylesheet.css
+    logo: images/CRUK_Cambridge_Institute.png
+    smaller: yes
+    widescreen: yes
+  beamer_presentation: default
+  slidy_presentation: default
+---
+
+## Differential Gene Expression Analysis Workflow {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/01s_workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+
+## Spoiler Alert: Plots we are going to make
+
+
+<img src="images/10s_plotSpoilers.svg" class="centerimg" style="width: 90%; margin-top: 60px;">
+
+## Shrinkage
+
+When counts are low the variance is high
+
+Eg.
+
+* sample 1 = 2, sample 2 = 4 (large variance)
+
+* sample 1 = 90, sample 2 = 100 (small variance)
+
+Makes those genes appear more significant than they really are on plots
+
+So we need to `shrink` the logFCs.
+
+ <img src="images/10s_MAplots.png" class="centerimg" style="width: 60%; margin-top: 10px;">
+ 
+## ggplot2 library
+
+* Basic syntax for building a plot
+
+<div style="width: 45%;
+            float: left;">
+
+<div style="padding-top: 20px;
+            padding-bottom: 20px;">
+<img src="images/10s_ggplot_1.png" class="centerimg" style="width: 95%">
+</div>  
+
+</div>
+
+<div style="width: 45%;
+            float: right;">
+
+<div style="padding-top: 20px;
+            padding-bottom: 20px;">
+<img src="images/10s_ggplot_2.png" class="centerimg" style="width: 95%">
+</div>  
+<div>
+
+
+
+
+
