@@ -113,8 +113,9 @@ and day 11.
 ## Exercise 1
 
 > This time create and investigate the model matrix for the variable "Status".
-> 1. Create a model formula to investigate the effect of “Status” on gene expression.
-> 2. Look at the model matrix and identify which is the reference group in your model.
+>
+> 1. Create a model formula to investigate the effect of “Status” on gene expression.    
+> 2. Look at the model matrix and identify which is the reference group in your model.     
 
 The intercept has been set automatically to the group in the factor that is
 alphabetically first: `Infected`.
@@ -351,11 +352,12 @@ ddsObj.filt <- ddsObj.raw[keep, ]
 > called `results.additive`
 >
 > Questions:
->     a) How many coefficients are there in the additive model?
->     b) What is the reference group in the additive model?
->     c) What contrasts could we perform using this model? 
->     d) What contrast does the `results.additive` object represent?
->     e) How many genes have an adjusted p-value of less than 0.05
+>
+>     a) How many coefficients are there in the additive model?   
+>     b) What is the reference group in the additive model?    
+>     c) What contrasts could we perform using this model?    
+>     d) What contrast does the `results.additive` object represent?   
+>     e) How many genes have an adjusted p-value of less than 0.05  
  
 ```{r echo = FALSE, message = FALSE, include = FALSE}
 additive.model <- as.formula(~ TimePoint + Status)

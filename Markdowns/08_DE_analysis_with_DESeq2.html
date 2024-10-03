@@ -269,7 +269,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Introduction to Bulk RNAseq data analysis</h1>
 <h3 class="subtitle">Differential Expression of RNA-seq data</h3>
-<h4 class="date">Last modified: 30 Sep 2024</h4>
+<h4 class="date">Last modified: 03 Oct 2024</h4>
 
 </div>
 
@@ -337,7 +337,12 @@ sampleinfo &lt;- read_tsv(&quot;data/samplesheet_corrected.tsv&quot;, col_types 
 <div id="exercise-1" class="section level2">
 <h2>Exercise 1</h2>
 <blockquote>
-<p>This time create and investigate the model matrix for the variable “Status”. 1. Create a model formula to investigate the effect of “Status” on gene expression. 2. Look at the model matrix and identify which is the reference group in your model.</p>
+<p>This time create and investigate the model matrix for the variable “Status”.</p>
+<ol style="list-style-type: decimal">
+<li>Create a model formula to investigate the effect of “Status” on gene expression.<br />
+</li>
+<li>Look at the model matrix and identify which is the reference group in your model.</li>
+</ol>
 </blockquote>
 <p>The intercept has been set automatically to the group in the factor that is alphabetically first: <code>Infected</code>.</p>
 <p>It would be nice if <code>Uninfected</code> were the base line/intercept. To get R to use <code>Uninfected</code> as the intercept we need to use a <code>factor</code>. Let’s set factor levels on Status to use <code>Uninfected</code> as the intercept.</p>
@@ -525,7 +530,12 @@ ddsObj.filt &lt;- ddsObj.raw[keep, ]</code></pre>
 <li><p>Run the size factor estimation, dispersion estimation and modelling steps using the <code>DESeq</code> command as above.</p></li>
 <li><p>Extract the default contrast using the <code>results</code> command into a new object called <code>results.additive</code></p></li>
 </ol>
-<p>Questions: a) How many coefficients are there in the additive model? b) What is the reference group in the additive model? c) What contrasts could we perform using this model? d) What contrast does the <code>results.additive</code> object represent? e) How many genes have an adjusted p-value of less than 0.05</p>
+<p>Questions:</p>
+<pre><code>a) How many coefficients are there in the additive model?   
+b) What is the reference group in the additive model?    
+c) What contrasts could we perform using this model?    
+d) What contrast does the `results.additive` object represent?   
+e) How many genes have an adjusted p-value of less than 0.05  </code></pre>
 </blockquote>
 <div id="the-default-contrast-of-results-function" class="section level3">
 <h3>The default contrast of <code>results</code> function</h3>
