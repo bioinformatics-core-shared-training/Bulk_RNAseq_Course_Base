@@ -3,6 +3,8 @@
 This page provides an index for the iterations we ran for this course. 
 We recommend looking at the latest iteration, if you want the most up-to-date version of our content.
 
+- [February 2025](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_Feb25/)
+- [November 2024](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_Nov24/)
 - [October 2024](https://bioinformatics-core-shared-training.github.io/Bulk_RNASeq_Course_Sept24/)
 - [June 2024](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_June24/)
 - [March 2024](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_March24/)
