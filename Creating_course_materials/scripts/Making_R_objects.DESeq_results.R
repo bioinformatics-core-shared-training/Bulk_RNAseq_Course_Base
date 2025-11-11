@@ -1,12 +1,19 @@
 library(DESeq2)
+library(tximport)
 library(tidyverse)
 
-# Make DESeq object
+# Make tximport object
 
-txi <- readRDS("RObjects/txi.rds")
 sampleinfo <- read_tsv("data/samplesheet_corrected.tsv", col_types="cccc") %>% 
     mutate(Status = fct_relevel(Status, "Uninfected"))
+files <- file.path("salmon", sampleinfo$SampleName, "quant.sf")
+files <- set_names(files, sampleinfo$SampleName)
+tx2gene <- read_tsv("references/tx2gene.tsv")
+txi <- tximport(files, type = "salmon", tx2gene = tx2gene)
 
+saveRDS(txi, file = "RObjects/txi.rds")
+
+# Make DESeq2 objects
 
 interaction.model <- as.formula(~ TimePoint * Status)
 ddsObj.raw <- DESeqDataSetFromTximport(txi = txi,
@@ -56,7 +63,7 @@ lfcShrink(ddsObj.interaction,
     as.data.frame() %>%
     rownames_to_column("GeneID") %>% 
     left_join(ensemblAnnot, "GeneID") %>% 
-    rename(logFC=log2FoldChange, FDR=padj) %>% 
+    # rename(logFC=log2FoldChange, FDR=padj) %>% 
     saveRDS(file="RObjects/Shrunk_Results.d11.rds")
 
 lfcShrink(ddsObj.interaction, 
@@ -65,6 +72,6 @@ lfcShrink(ddsObj.interaction,
     as.data.frame() %>%
     rownames_to_column("GeneID") %>% 
     left_join(ensemblAnnot, "GeneID") %>% 
-    rename(logFC=log2FoldChange, FDR=padj) %>% 
+    # rename(logFC=log2FoldChange, FDR=padj) %>% 
     saveRDS(file="RObjects/Shrunk_Results.d33.rds")
 
