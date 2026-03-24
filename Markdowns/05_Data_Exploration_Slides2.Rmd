@@ -1,0 +1,356 @@
+---
+title: "Data Exploration"
+date: "October 2024"
+output:
+  ioslides_presentation:
+    css: css/stylesheet.css
+    logo: images/CRUK_Cambridge_Institute.png
+    smaller: yes
+    widescreen: yes
+  beamer_presentation: default
+  slidy_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.align = "center")
+```
+
+```{r sim_data, include=FALSE}
+library(DESeq2)
+set.seed(42)
+dds <- makeExampleDESeqDataSet(n = 1000, m = 6)
+colnames(dds) <- paste0("S", 1:ncol(dds))
+dds$condition <- factor(rep(c("Control","Treated"), each = 3))
+
+# add some DEGs by multiplying counts for 100 genes in the treated samples
+rowData(dds)$multiplier <- 2^(rnorm(1000, 0, 1))
+counts(dds)[, dds$condition == "Treated"] <- round(counts(dds)[, dds$condition == "Treated"] * rowData(dds)$multiplier)
+
+filtCounts <- counts(dds)
+filtCounts <- filtCounts[rowSums(filtCounts) > 5, ]
+
+rlogcounts <- rlog(filtCounts)
+
+vstcounts <- varianceStabilizingTransformation(filtCounts)
+```
+
+## Differential Gene Expression Analysis Workflow {#less_space_after_title}
+
+<div style="line-height: 50%;"><br></div>
+
+<img src="images/01s_workflow_3Day.svg" class="centerimg" style="width: 80%; margin-top: 60px;">
+
+## Overview
+
+This session covers:
+
+1. **Why explore your data first?**
+2. **Properties of RNA-seq count data**
+3. **Normalisation: why TPM/FPKM aren't enough**
+4. **Data transformations** (rlog / VST)
+5. **Principal Component Analysis (PCA)**
+6. **Hierarchical clustering**
+7. **Interpreting (or not) clusters**
+
+<div class="notes">
+- This session sets the scene before the differential expression analysis.
+- Emphasise that EDA is not optional - it regularly catches problems that would silently corrupt downstream results.
+- The Toxoplasma gondii dataset used in the practicals has a deliberate sample swap; students will find it during the PCA exercise.
+</div>
+
+## EDA: Quality Control *and* Biological Insight
+
+**Before trusting your results, make sure your data makes sense.**
+
+Exploratory Data Analysis (EDA) serves two complementary purposes:
+
+**Quality control**
+
+- Are the samples what we think they are?
+- Are there outliers, swapped labels, or batch effects?
+- Does the overall signal look as expected?
+
+**Early biological insight**
+
+- Which experimental factors drive the largest variation?
+- Do replicates behave consistently?
+- Are there unexpected groupings that suggest confounders?
+
+<div class="notes">
+- Stress that problems found at the EDA stage can be corrected; problems found after DE analysis are much harder to unpick.
+- The "sample swap" in this dataset happens surprisingly often in multi-sample wet-lab experiments.
+- EDA is not just a box-ticking exercise; it is where you first see whether the biology is working.
+</div>
+
+## What Can Go Wrong?
+
+Exploratory analysis - boxplots, PCA, clustering - help catch issues quickly.
+
+```{r problem_examples, fig.width=9, fig.height=3.5}
+set.seed(42)
+cols   <- c("#4C72B0","#4C72B0","#4C72B0","#DD8452","#DD8452","#DD8452")
+mat <- matrix(c(
+  rnorm(100, 10, 3), rnorm(100, 10, 3), rnorm(100, 10, 3),
+  rnorm(100, 10, 3), rnorm(100, 10, 3), rnorm(100, 6, 2)
+), ncol = 6)
+colnames(mat) <- paste0("S", 1:6)
+
+par(mfrow = c(1, 2))
+boxplot(mat, col = cols, main = "Counts distribution", las = 2, ylab = "Log2(Counts)")
+
+pc_x <- c(-3, -2.5, -3.2,  2.5,  2.8, 4)
+pc_y <- c(0.2, -0.4,  0.8, 0.1, -0.2, 3)
+plot(pc_x, pc_y, 
+     col = cols, 
+     pch = 1, 
+     cex = 3, xlab = "PC1", ylab = "PC2", main = "PCA plot",
+     xlim = c(-4, 5), ylim = c(-1, 4))
+text(pc_x, pc_y, colnames(mat), cex = 1)
+```
+
+<div class="notes">
+- This is a schematic illustration, not real data
+- Common real-world problems: a mislabelled sample (our dataset!), a batch of libraries prepared on a different day, a degraded RNA sample.
+</div>
+
+## Properties of Count Data
+
+**RNA-seq produces count data:** After alignment/quantification, each transcript/gene gets a **count** - the number of reads assigned to it.
+
+Key properties of count data:
+
+- Counts are **non-negative integers**
+- Distribution is **right-skewed** - a few genes with very high counts
+- Variance is **not constant** - it scales with the mean
+
+<div class="notes">
+- Counts arise because sequencing is a sampling process: the more abundant a transcript, the more reads fall on it.
+- The non-negativity and integer nature mean that standard tools designed for normally distributed data (e.g. a t-test) are not directly appropriate.
+- The skewness and mean-variance relationship are the main practical challenges - addressed by transformations.
+</div>
+
+## Distribution Skew
+
+Raw counts have a very wide range - from zero to tens of thousands - and are heavily skewed.
+
+A simple log transformation helps to compress the range and make distribution pattern more visible.
+We often add a pseudocount of 1 to avoid the issue of log(0) = -Inf.
+
+```{r count_distribution, fig.width=9, fig.height=4}
+par(mfrow = c(1, 2))
+boxplot(filtCounts, col = cols, 
+        main = "Raw counts")
+boxplot(log2(filtCounts + 1), col = cols,
+        main = "Log2 counts")
+```
+
+## The Mean-Variance Problem
+
+In RNA-seq data, **genes with higher average expression also tend to show higher variability** between samples.
+
+Clustering and PCA are **distance-based** - highly variable genes will dominate if not taken into account.
+
+```{r mean_var, fig.width=9, fig.height=4}
+plot(rowMeans(filtCounts), rowVars(filtCounts), 
+     main = "Raw counts: mean vs variance", 
+     xlab = "Mean expression", ylab = "Variance", 
+     log = "xy", pch = 19)
+abline(0, 1, col = "#C44E52", lwd = 2)
+# right-adjusted text
+text(1500, 3, 
+     "Diagonal line: variance = mean\nGenes above line have higher variance \nthan expected from a Poisson distribution", adj = c(1, 0), 
+     cex = 1)
+```
+
+## Stabilising the Variance: rlog and VST
+
+DESeq2 provides two transformations that simultaneously:
+
+- **log-transform** the data (compresses the range)
+- **Normalise for library size** (using size factors)
+- **Stabilise variance of lowly expressed genes**
+
+| | **Regularised log** | **Variance Stabilising Transformation** |
+|---|---|---|
+| Function | `rlog()` | `vst()` |
+| Speed | Slower | Faster |
+| Best for | Small datasets, unequal library sizes | Large datasets (>30-50 samples) |
+
+<div class="notes">
+- rlog works by fitting a model and "shrinking" the log-fold-changes of low-count genes toward zero - borrowing information across genes.
+- VST uses the mathematical relationship between mean and variance to find a transformation that makes variance constant.
+- For most datasets the practical differences are small
+</div>
+
+## Before and After Transformation
+
+After transformation, genes across the expression spectrum contribute more **"equally"** to downstream analyses.
+
+```{r transform_demo, fig.width=10, fig.height=4}
+par(mfrow = c(1, 4))
+plot(rowMeans(filtCounts), rowVars(filtCounts), 
+     main = "Raw counts", 
+     xlab = "Mean expression", ylab = "Variance", 
+     log = "xy", pch = 19)
+lines(lowess(rowMeans(filtCounts), rowVars(filtCounts)), col = "#2CA02C", lwd = 2)
+plot(rowMeans(log(filtCounts + 1)), rowVars(log(filtCounts + 1)),
+     main = "Simple log-transformed",
+     xlab = "Mean expression",
+     ylab = "Variance",
+     pch = 19)
+lines(lowess(rowMeans(log(filtCounts + 1)), rowVars(log(filtCounts + 1))), col = "#2CA02C", lwd = 2)
+plot(rowMeans(rlogcounts), rowVars(rlogcounts),
+     main = "rlog counts",
+     xlab = "Mean expression",
+     ylab = "Variance",
+     pch = 19)
+lines(lowess(rowMeans(rlogcounts), rowVars(rlogcounts)), col = "#2CA02C", lwd = 2)
+plot(rowMeans(vstcounts), rowVars(vstcounts),
+     main = "VST counts",
+     xlab = "Mean expression",
+     ylab = "Variance",
+     pch = 19)
+lines(lowess(rowMeans(vstcounts), rowVars(vstcounts)), col = "#2CA02C", lwd = 2)
+```
+
+<div class="notes">
+- Left panel: genes with high mean expression have enormous SD compared to lowly expressed genes.
+- Middle panel: log transformation reduces the range but variance is disproportionally high for lowly expressed genes.
+- Right panel: after transformation, SD is largely independent of mean expression, with shrinkage on the lowly expressed genes.
+</div>
+
+## Why Not Just Use TPM or FPKM?
+
+TPM and FPKM correct for **gene length** and **sequencing depth** - but have a critical flaw for *comparing samples*.
+
+Normalising to the *total* count means a massively up-regulated gene makes all others *appear* artificially lower.
+
+See:
+
+- Evans C, Hardin J, Stoebel DM (2018). Selecting between-sample RNA-Seq normalization methods from the perspective of their assumptions. *Briefings in Bioinformatics*. https://doi.org/10.1093/bib/bbx008
+
+- Zhao S, Ye Z, Stanton R (2020). Misuse of RPKM or TPM normalization when comparing across samples and sequencing protocols. *RNA*. https://doi.org/10.1261/rna.074922.120
+
+- Zhao Y, Li MC, Konaté M, Chen L, Das B, Karlovich C, Williams PM, Evrard YA, Doroshow JH, McShane LM (2021). TPM, FPKM, or Normalized Counts? A Comparative Study of Quantification Measures for the Analysis of RNA-seq Data from the NCI Patient-Derived Models Repository. *Journal of Translational Medicine*. https://doi.org/10.1186/s12967-021-02936-w
+
+_<a href="https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/bib/19/5/10.1093_bib_bbx008/4/bbx008f1p.jpeg?Expires=1777372910&Signature=bvQp~HbGbgsQL3SHDBIHrzrtWfKwdFM7rfopQFEBYlMINOmZMuiGUhqW7Z9U~JXLp~qmkx~8k6ckVAG-nbZqcz0To9L9HGL6ayMvNbXki4V-qE54vCJfyYS1yUTP28oNszQc~l8~Xu9wmejN3biR-TTBkihNk0WlY469sFHC2SS5Ps3tOR5D0zgRgx9Eh4MwWJ-MxcnfMUmlexRXJZa~3NW7rkgfa4f2Q7fKO9dM6HwacYcHVUbmo1VS5PWFdqBun0oM09~ITQoUPRuJv9q4sWyxX39aDdMryfO~bSYib6PE1kw0ZE9BiU-zpIcbzS1QhdwlV~556p9~Jrr1mbIJsA__&Key-Pair-Id=APKAIE5G5CRDK6RD3PGA" target="_blank">Fig. 1 in Evans et al.</a> particularly illustrates the problem nicely._
+
+## DESeq2's Solution: Size Factors
+
+DESeq2 calculates **size factors** using the *median-of-ratios* method - robust to highly expressed or DE genes.
+
+**How it works:**
+
+1. For each gene, compute the **geometric mean** count across all samples
+   *(a "pseudo-reference" sample)*
+2. For each sample, divide each gene's count by its reference value
+   *(a ratio per gene per sample)*
+3. Take the **median** of all those ratios for each sample
+   *(the median resists the few genes that are truly DE)*
+4. That median is the **size factor** - divide all counts by it
+
+The key assumption: most genes are **not** differentially expressed, so the median ratio captures genuine library size differences.
+
+<div class="notes">
+- The geometric mean is used rather than arithmetic mean because it is less sensitive to very large outlier counts.
+- Because most genes are NOT DE, the median ratio represents the "typical" scaling difference between samples.
+- Genes with zero counts in any sample are excluded - another reason to filter low-count genes beforehand.
+</div>
+
+## Size Factor Example {.smaller}
+
+| Gene | Sample A | Sample B | Geometric mean | Ratio A | Ratio B |
+| ---- | -------- | -------- | -------------- | ------- | ------- |
+|  G1  | 20       | 40       | 28.3           | 0.71    | 1.41    |
+|  G2  | 40       | 80       | 56.6           | 0.71    | 1.41    |
+| G3  | 10       | 20       | 14.1           | 0.71    | 1.41    |
+| G4  | 230       | 160      | 191.8          | 1.20    | 0.83    |
+
+* Size factor A = median(Ratio A) = 0.71
+* Size factor B = median(Ratio B) = 1.41
+
+Notice how the highly expressed gene G4 has a different ratio, but it does not affect the size factor. 
+
+After dividing each sample's counts by its size factor, samples are comparable - **without assuming total counts should be equal**.
+
+## When to Use Transformed vs Raw Counts
+
+VST/rlog can be used for: 
+
+- **PCA**
+- **Hierarchical clustering**
+- **Heatmaps**
+- **Other machine learning or multivariate methods**
+
+**Differential expression** uses raw counts.
+
+For **cross-sample comparisons** avoid TPM/FPKM.
+
+## Principal component analysis (PCA)
+
+PCA is an **unsupervised** dimensionality reduction method - it finds the directions of greatest variation in high-dimensional data.
+
+PCA considers **all genes simultaneously** to capture major patterns into a small number of axes.
+
+```{r pca_intuition, fig.width=9, fig.height=4}
+par(mfrow = c(1, 2))
+plot(rlogcounts[1,], rlogcounts[2,], 
+     col = cols, pch = 19, cex = 2,
+     xlab = "Gene 1 (rlog counts)", ylab = "Gene 2 (rlog counts)", 
+     main = "Two random genes")
+
+pca_rlog <- prcomp(t(rlogcounts))
+var_explained <- pca_rlog$sdev^2 / sum(pca_rlog$sdev^2) * 100
+plot(pca_rlog$x[,1], pca_rlog$x[,2], 
+     col = cols, pch = 19, cex = 2,
+     xlab = paste0("PC1 (", round(var_explained[1]), "%)"), 
+     ylab = paste0("PC2 (", round(var_explained[2]), "%)"), 
+     main = "PCA plot")
+```
+
+## What PCA Can Reveal
+
+**A well-behaved experiment:**
+
+- Replicates cluster tightly together
+- Groups are well separated along PC1 or PC2
+- PC axes correspond to the expected biology (e.g. treatment, time point)
+
+**Warning signs to look for:**
+
+- A replicate far from its group - possible outlier or labelling error
+- Samples group by batch / processing date, not biology - **batch effect**
+
+## Alternative methods
+
+Hierarchical clustering and sample-sample correlation heatmaps are also commonly used to explore sample relationships.
+
+```{r hclust_corr, fig.width=9, fig.height=4}
+par(mfrow = c(1, 2))
+hclDat <-  t(rlogcounts) %>%
+   dist(method = "euclidean") %>%
+   hclust()
+plot(hclDat, axes = FALSE, ylab = NULL, 
+     main = NULL)
+
+corDat <- cor(rlogcounts)
+col <- colorRampPalette(c("#FFFFFF", "#77AADD", "#4477AA"))
+corrplot::corrplot(corDat,
+         method = "color",
+         addCoef.col = "black",
+         number.digits= 3,
+         order = "hclust",
+         is.corr = FALSE)
+```
+
+## What if samples don't cluster?
+
+It is not uncommon for samples not to show clear clustering by treatment group in PCA or hierarchical clustering.
+
+This can be due to:
+
+- The treatment has a subtle effect, affecting only a small number of genes. 
+- There is high biological variability (e.g. very common in non-controlled experiments, such as human samples).
+- There are technical issues (e.g. batch effects, sample swaps, outliers) that are obscuring the biological signal.
+- There is no real biological signal in the data (e.g. the treatment has no effect).
