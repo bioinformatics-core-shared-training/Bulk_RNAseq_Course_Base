@@ -8,11 +8,13 @@ output:
   html_document:
     toc: yes
     toc_float: true
+    css: ../css/boxes.css
 bibliography: ref.bib
 ---
 
 ```{r setup, echo = FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.width = 6, fig.height = 5)
+knitr::opts_knit$set(root.dir = here::here("course_files"))
 ```
 
 # 1. Introduction
@@ -43,7 +45,7 @@ In this session we will:
 * import our counts into R  
 * filter out unwanted genes  
 * transform the data to mitigate the effects of variance  
-* do some initial exploration of the raw count data using principle component 
+* do some initial exploration of the raw count data using principal component 
 analysis and hierarchical clustering  
 
 # 2. Data import
@@ -210,7 +212,7 @@ boxplot(filtCounts, main = 'Raw counts', las = 2)
 ```{r raw_mean_vs_sd}
 # Raw counts mean expression Vs standard Deviation (SD)
 plot(rowMeans(filtCounts), rowSds(filtCounts), 
-     main = 'Raw counts: sd vs mean', 
+     main = 'Raw counts: mean vs sd', 
      xlim = c(0, 10000),
      ylim = c(0, 5000))
 ```
@@ -229,28 +231,78 @@ boxplot(logCounts, main = 'Log2 counts', las = 2)
 ```
 
 However, this transformation does not account for the variance-mean
-relationship. DESeq2 provides two additional functions for transforming the
+relationship:
+
+```{r log2_meanvar}
+plot(rowMeans(logCounts), rowSds(logCounts),
+     main='Log2 counts: mean vs sd')
+```
+
+DESeq2 provides two additional functions for transforming the
 data:
 
-* `VST` : variance stabilizing transformation
-* `rlog` : regularized log transformation
+* `vst()` : variance stabilizing transformation
+* `rlog()` : regularized log transformation
 
 As well as log2 transforming the data, both transformations produce data which
 has been normalized with respect to library size and deal with the mean-variance
-relationship. The effects of the two transformations are similar. `rlog` is
+relationship. The effects of the two transformations are similar. `rlog()` is
 preferred when there is a large difference in library size between samples,
-however, it is considerably slower than `VST` and is not recommended for large
+however, it is considerably slower than `vst()` and is not recommended for large
 datasets. For more information on the differences between the two
 transformations see the
 [paper](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8)
 and the DESeq2 vignette.
 
-Our data set is small, so we will use `rlog` for the transformation.
+Our data set is small, so we will use `rlog()` for the transformation.
 
 ```{r rlog}
 rlogcounts <- rlog(filtCounts)
 boxplot(rlogcounts, main = 'rlog counts', las = 2)
 ```
+
+We can examine how the mean-variance relationship has been affected by this transformation:
+
+```{r rlog_mean_vs_sd}
+# rlog counts standard deviation (sd) vs mean expression
+plot(rowMeans(rlogcounts), rowSds(rlogcounts),
+     main='rlog counts: mean vs sd')
+```
+
+
+## Exercise 1
+
+:::exercise
+
+Above, we've applied the `rlog()` transformation to the data. 
+
+1. Apply the VST transformation using the `varianceStabilizingTransformation()` function.
+2. Examine the mean-variance relationship after the VST transformation. How does it compare to the `rlog()` transformation?
+
+<details><summary>Answer</summary>
+
+We can apply the VST transformation to our filtered counts matrix:
+
+```{r vst}
+vstCounts <- varianceStabilizingTransformation(filtCounts)
+
+# visualise as a boxplot
+boxplot(vstCounts, main = 'vst counts', las = 2)
+```
+
+We can also explore the mean-variance relationship after this transformation:
+
+```{r vst_meanvar}
+plot(rowMeans(vstCounts), rowSds(vstCounts),
+     main='VST counts: mean vs sd')
+```
+
+The mean-variance relationship after the VST transformation achieves its desired outcome: the variance is approximately constant across the range of mean expression values. 
+
+This is similar to the effect of the `rlog()` transformation, however there is no obvious shrinkage of the variance for low count genes. 
+The shrinkage of variance for lowly expressed genes is a distinctive feature of the `rlog()` transformation, which attempts to remove potential noise observed for low-count genes.
+</details>
+:::
 
 # 5. Principal Component Analysis
 
@@ -299,24 +351,57 @@ autoplot(pcDat,
          size = 5)
 ```
 
-## Exercise
->
-> The plot we have generated shows us the first two principle components. This
-> shows us the relationship between the samples according to the two greatest
-> sources of variation. Sometime, particularly with more complex experiments 
-> with more than two experimental factors, or where there might be confounding
-> factors, it is helpful to look at more principle components.
->
-> 1. Redraw the plot, but this time plot the 2nd principle component on the 
-> x-axis and the 3rd prinicple component on the y axis. To find out how to do
-> the consult the help page for the `prcomp` data method for the `autoplot`
-> function: `?autoplot.prcomp`.
+### Exercise 2
 
-```{r solutionChallenge1}
+:::exercise
 
+The plot we have generated shows us the first two principal components. This
+shows us the relationship between the samples according to the two greatest
+sources of variation. Sometimes, particularly with more complex experiments 
+with more than two experimental factors, or where there might be confounding
+factors, it is helpful to look at more principal components.
+
+1. Redraw the plot, but this time plot the 2nd principal component on the 
+x-axis and the 3rd prinicple component on the y axis. To find out how to do
+the consult the help page with `?autoplot.prcomp`.
+2. Examine the `summary(pcDat)` to find how much of the variance is explained by the principal components. Do you think 2 principal components are sufficient to capture the main sources of variation in the data? Why or why not?
+
+<details><summary>Answer</summary>
+
+Examining the help for the function we can see that we can specify which principal components to plot using the `x` and `y` arguments:
+
+```{r pc2_vs_pc3}
+autoplot(pcDat,
+         data = sampleinfo, 
+         colour = "Status", 
+         shape = "TimePoint",
+         x = 2,
+         y = 3,
+         size = 5)
 ```
 
-> ### Discussion: What do the PCA plots tell us about our samples?
+We can examine the variance explained by the principal components using the `summary` function:
+
+```{r pca_summary}
+summary(pcDat)
+```
+
+The first two principal components account for a total of 77% of the variance in the data, which is a very large proportion. 
+Further principal components account for much smaller proportions of the variance, so it is likely that the first two principal components are sufficient to capture the main sources of variation in the data.
+
+We could optionally visualise the variance explained by each principal component using a scree plot:
+
+```{r screeplot}
+plot(summary(pcDat)$importance[2,] * 100, 
+     type = "b", 
+     xlab = "Principal Component", 
+     ylab = "Percentage of Variance Explained")
+```
+
+</details> 
+:::
+
+### Discussion: What do the PCA plots tell us about our samples?
 
 <!-- amount and source of variation, sample swap, interaction -->
 
@@ -343,10 +428,11 @@ should be *Infected*. Let's fix the sample sheet.
 We're going to use another `dplyr` command `mutate`. 
 
 ```{r correctSampleSheet}
-sampleinfo <- mutate(sampleinfo, Status = case_when(
-                                          SampleName=="SRR7657882" ~ "Uninfected",
-                                          SampleName=="SRR7657873" ~ "Infected", 
-                                          TRUE ~ Status))
+sampleinfo <- mutate(sampleinfo, 
+                     Status = case_when(
+                       SampleName=="SRR7657882" ~ "Uninfected",
+                       SampleName=="SRR7657873" ~ "Infected",
+                       TRUE ~ Status))
 ```
 
 ...and export it so that we have the correct version for later use.
@@ -384,7 +470,7 @@ time-based effect.
 
 # 6. Hierachical clustering
 
-Earlier, we used principle component analysis to assess sources of variation
+Earlier, we used principal component analysis to assess sources of variation
 in the data set and the relationship between the samples. Another method for
 looking at the relationship between the samples can be to run hierarchical 
 clustering based on the Euclidean distance between the samples. Hierarchical
