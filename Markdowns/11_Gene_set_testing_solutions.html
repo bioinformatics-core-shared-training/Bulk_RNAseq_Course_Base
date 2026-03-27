@@ -2890,7 +2890,7 @@ significant at FDR &lt; 0.01</li>
 <pre class="r"><code>logFC &lt;- shrink.d11 %&gt;% 
   drop_na(padj, Entrez) %&gt;% 
   filter(padj &lt; 0.01) %&gt;% 
-  pull(log2FoldChange, Symbol) 
+  pull(log2FoldChange, Entrez) 
 
 pathview(gene.data = logFC, 
          pathway.id = &quot;mmu04659&quot;, 
