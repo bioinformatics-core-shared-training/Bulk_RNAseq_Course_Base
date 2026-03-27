@@ -76,7 +76,7 @@ session.
 >    following command:  
 > ```{bash eval=FALSE}
 > java -jar picard/picard.jar MarkDuplicates \
->          INPUT= salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
+>          INPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.sorted.bam \
 >          OUTPUT=salmon_qc_demo/SRR7657883/SRR7657883.salmon.mkdup.bam \
 >          METRICS_FILE=salmon_qc_demo/SRR7657883/SRR7657883.mkdup_metrics.txt \
 >          CREATE_INDEX=true \
