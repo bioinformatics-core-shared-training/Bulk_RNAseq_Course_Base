@@ -3,8 +3,6 @@ title: "Introduction to Bulk RNAseq data analysis"
 subtitle: Differential Expression of RNA-seq data
 date: '`r format(Sys.time(), "Last modified: %d %b %Y")`'
 output:
-  pdf_document:
-    toc: yes
   html_document:
     toc: yes
     toc_float: true
@@ -86,21 +84,23 @@ sum(results.simple$padj < 0.05 & results.simple$log2FoldChange < 0, na.rm = TRUE
 
 > c) Here is the results table for two of the genes:
 >
-> ```{r echo = FALSE, eval = !knitr::is_latex_output()}
-> goi <- c("ENSMUSG00000053747", "ENSMUSG00000048763")
-> as.data.frame(results.simple[goi, ]) %>%
->     mutate(across(-baseMean, ~signif(.x, 3))) %>%
->     mutate(across(baseMean, ~round(.x, 3))) %>%
->     datatable(options = list(dom = "t"))
-> ```
+
+```{r echo = FALSE, eval = !knitr::is_latex_output()}
+ goi <- c("ENSMUSG00000053747", "ENSMUSG00000048763")
+ as.data.frame(results.simple[goi, ]) %>%
+     mutate(across(-baseMean, ~signif(.x, 3))) %>%
+     mutate(across(baseMean, ~round(.x, 3))) %>%
+     datatable(options = list(dom = "t"))
+```
 > 
-> ```{r echo = FALSE, eval = knitr::is_latex_output()}
-> goi <- c("ENSMUSG00000053747", "ENSMUSG00000048763")
-> as.data.frame(results.simple[goi, ]) %>%
->     mutate(across(-baseMean, ~signif(.x, 3))) %>%
->     mutate(across(baseMean, ~round(.x, 3))) %>%
->     knitr::kable()
-> ```
+
+```{r echo = FALSE, eval = knitr::is_latex_output()}
+ goi <- c("ENSMUSG00000053747", "ENSMUSG00000048763")
+ as.data.frame(results.simple[goi, ]) %>%
+     mutate(across(-baseMean, ~signif(.x, 3))) %>%
+  mutate(across(baseMean, ~round(.x, 3))) %>%
+   knitr::kable()
+```
 >
 > One of these is strongly downregulated with log2(fold-change) of $-2.46$. On a
 > linear scale this is $2^{2.46} = 5.5$ times more highly expressed in the
@@ -361,7 +361,8 @@ gene expression between days 11 and 33.
 > Let's investigate the uninfected mice
 >  
 > 1. Extract the results for d33 v d11 for Infected mice.  
-```{r, 7e1, echo = FALSE}
+
+```{r, 7e1}
 results.int.Inf <- results(ddsObj.interaction,
                            contrast = list(c("TimePoint_d33_vs_d11",
                                              "TimePointd33.StatusInfected")),
