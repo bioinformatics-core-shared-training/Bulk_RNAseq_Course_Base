@@ -6,7 +6,8 @@ output:
     toc: yes
   html_document:
     toc: yes
-    toc_float: yes
+    toc_float: true
+    css: ../css/boxes.css
 bibliography: ref.bib
 ---
 
@@ -101,71 +102,114 @@ to the genomic sequences instead.
 In order that Salmon can distinguish between transcript sequences and the
 *decoys*, we need a text file that lists the names of the decoy sequences. In
 our case we are just using chromosome 14, so we just need to create a file
-containing this.  Normally this file would contain the names of all the decoy
-sequences.
+containing this number.  But normally this file would contain the names of 
+all the decoy sequences. One way to create this decoy text file in an 
+automated way is to extract the sequence names from our reference genome file
+using some command line utilities. Here is an example code for our full mouse genome:
 
-Finally, we will need to provide salmon with the name of a directory in which to
+```bash
+cat references/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa | grep ">" | sed 's/>//' > decoys.primary_assembly.txt
+```
+
+* The `cat` command is used to print the content of the file. If your reference was compressed (with `.gz` extension) you could use the `zcat` command instead.
+* The `grep` command is used to find lines that match the ">" character, i.e. our genome sequence names (usually chromosomes and possibly some unassembled scaffolds).
+* The `sed` command is used to substitute the character ">" with nothing, i.e. we want to remove that character from our text string, so we retain only the actual sequence name. 
+* With `>`, we redirect the output of these commands to a text file, which you could use as the decoy file when you build the index file. 
+
+Finally, we will need to provide salmon with the name of a directory in which to 
 create the index. We don't need to make the directory, salmon will do this
 itself.
 
 ## Exercise 1 - Create Salmon index
-> 1. Create combined trancriptome/genome FASTA file
-> We can simply con*cat*enate the two files using the `cat` command.
->```{bash eval=FALSE}
->cat references/Mus_musculus.GRCm38.cdna.chr14.fa.gz \
->    references/Mus_musculus.GRCm38.dna_sm.chr14.fa.gz \
->    > references/gentrome.chr14.fa.gz
->```
->
-> If you not familar with FASTA format, first take a look at the first couple of
-> lines of the two input fasta files. First, the transcriptome:
->
->```{bash eval=FALSE}
->zcat references/Mus_musculus.GRCm38.cdna.chr14.fa.gz | head -n 2
->```
-![](images/03_header_of_transcript_fasta.png)
->
-> and then the genome:
->
->```{bash eval=FALSE}
->zcat references/Mus_musculus.GRCm38.dna_sm.chr14.fa.gz | head -n 2
->```
-![](images/03_header_of_genome_fasta.png)
-> 
-> In each case the first line we see is the name of the sequence - in the first
-> case it is the transcript name and in the second the chromosome name - and the
-> second line is the (beginning of the) sequence itself. The decoy list needs to
-> contain the names of the genomic sequences.
-> 
-> 2. Create decoy sequence list from the genomic fasta
->
->```{bash eval=FALSE}
->echo "14" > references/decoys.txt
->```
-> 3. Use `salmon index` to create the index. You will need to provide three
->  pieces of information:
->     * the **Transcript fasta file** - *references/gentrome.chr14.fa.gz*
->     * the **decoys** - *references/decoys.txt*
->     * the **salmon index** - a directory to write the index to, use **references/salmon_index_chr14**  
->
-> Also add `-p 7` to the command to instruct salmon to parallelize the process
-over 7 cores, which is significantly faster than just doing the indexing in a
-single process on 1 core.
-> To find the flags for the other three pieces of information use:
->```{bash eval=FALSE}
->salmon index --help
->```
->
-> One thing to note here is that we have not specified the `-k` parameter. This
-> parameter sets the kmer size that the index will be based on and relates to
-> the minimum size of kmer used for quasi-mapping. The default is 31 bases, and
-> this is fine for read sizes over 75 bases. If your read size is less that 75,
-> you would need to adjust this. You should set the kmer size to slightly less
-> than half of the read length. Quasi-mapping looks for kmers that are perfect
-> match to the reference sequence. If the kmer size is more than half the read
-> length, then a read with a mismatch in the middle of the read will never be
-> able to be mapped to the transcriptome, even if all other bases are a perfect
-> match for the sequence at the location that it originated.
+
+:::exercise
+
+1. Create combined trancriptome/genome FASTA file
+We can simply con*cat*enate the two files using the `cat` command.
+
+    ```bash
+    cat references/Mus_musculus.GRCm38.cdna.chr14.fa.gz \
+      references/Mus_musculus.GRCm38.dna_sm.chr14.fa.gz \
+      > references/gentrome.chr14.fa.gz
+    ```
+
+    If you are not familar with the FASTA format, take a look at the first couple of
+    lines of the two input fasta files. First, the transcriptome:
+
+    ```bash
+    zcat references/Mus_musculus.GRCm38.cdna.chr14.fa.gz | head -n 2
+    ```
+
+    ![](images/03_header_of_transcript_fasta.png)
+
+    and then the genome:
+
+    ```bash
+    zcat references/Mus_musculus.GRCm38.dna_sm.chr14.fa.gz | head -n 2
+    ```
+
+    ![](images/03_header_of_genome_fasta.png)
+
+    In each case the first line we see is the name of the sequence - in the first
+    case it is the transcript name and in the second the chromosome name - and the
+    second line is the (beginning of the) sequence itself. The decoy list needs to
+    contain the names of the genomic sequences.
+
+2. Create decoy sequence list from the genomic fasta
+
+    ```bash
+    zcat Mus_musculus.GRCm38.dna_sm.chr14.fa.gz | grep ">" | sed "s/>//" > references/decoys.txt
+    ```
+
+3. Use `salmon index` to create the index. You will need to provide three
+ pieces of information:
+    * the **Transcript fasta file** - *references/gentrome.chr14.fa.gz*
+    * the **decoys** - *references/decoys.txt*
+    * the **salmon index** - a directory to write the index to, use **references/salmon_index_chr14**  
+
+    Also add `-p 7` to the command to instruct salmon to parallelize the process
+    over 7 cores, which is significantly faster than just doing the indexing in a
+    single process on 1 core.
+    To find the flags for the other three pieces of information use:
+
+    ```bash
+    salmon index --help
+    ```
+
+    One thing to note here is that we have not specified the `-k` parameter. This
+    parameter sets the kmer size that the index will be based on and relates to
+    the minimum size of kmer used for quasi-mapping. The default is 31 bases, and
+    this is fine for read sizes over 75 bases. If your read size is less that 75,
+    you would need to adjust this. You should set the kmer size to slightly less
+    than half of the read length. Quasi-mapping looks for kmers that are perfect
+    match to the reference sequence. If the kmer size is more than half the read
+    length, then a read with a mismatch in the middle of the read will never be
+    able to be mapped to the transcriptome, even if all other bases are a perfect
+    match for the sequence at the location that it originated.
+
+<details><summary>Answer</summary>
+
+We given the commands to achieve tasks 1 and 2. 
+After running those, we can build our `salmon index` command, following the instructions given and also using the help documentation with `salmon index --help`. 
+
+This is our command:
+
+```bash
+salmon index \
+    -t references/gentrome.chr14.fa.gz \
+    -d references/decoys.txt \
+    -p 7 \
+    -i references/salmon_index_chr14
+```
+
+* `-t` is the file we want to index. This is our "gentrome" file which includes the transcripts as well as the actual genome, which is used as a decoy to avoid false-positive matches to the transcripts. 
+* `-d` is used to tell Salmon which of the sequences in the FASTA file are "decoys".
+* `-p` indicates we want to use 7 processors for parallel processing (our training computers have 8 CPUs).
+* `-i` indicates where we want to save the index file. 
+
+</details>
+
+:::
 
 # 2. Gene expression quantification
 
@@ -190,30 +234,65 @@ The files we will use are called *SRR7657883.subset_2M....*.
 
 ## Exercise 2 - Quantify with Salmon
 
-> 1. There should already be a directory called `salmon_output` in the
->    `Course_materials` directory. If not, create it.
-> 2. Use `salmon quant` to quantify the gene expression from the raw fastq.
-> To see all the options run `salmon quant --help-reads`. There are lot of 
-> possible parameters, we will need to provide the following:
->       * **salmon index** - *references/salmon_index*
->       * `-l A` - Salmon needs to use some information about the library 
->         preparation, we could explicitly give this, but it is easy enough
->         for Salmon to **A**utomatically infer this from the data.
->       * **File containing the #1 reads** - *fastq/SRR7657883.subset_2M.sra_1.fastq.gz*
->       * **File containing the #2 reads** - *fastq/SRR7657883.subset_2M.sra_2.fastq.gz*
->       * **Output quantification directory** - *salmon_output/SRR7657883*
->       * `--writeMappings=salmon_output/SRR7657883.salmon.sam` - Instructs 
->         Salmon to output the read alignments in SAM format to the file 
->         *salmon_output/SRR7657883.salmon.sam*.
->       * `--gcBias` - salmon can optionally correct for GC content bias, it is
->         recommended to always use this
->       * **The number of threads to use** - *7*
+:::exercise
+
+1. There should already be a directory called `salmon_output` in the `Course_materials` directory. If not, create it.
+2. Use `salmon quant` to quantify the gene expression from the raw fastq.
+To see all the options run `salmon quant --help-reads`. There are lot of 
+possible parameters, we will need to provide the following:
+      * **salmon index** - *references/salmon_index*
+      * `-l A` - Salmon needs to use some information about the library 
+        preparation, we could explicitly give this, but it is easy enough
+        for Salmon to **A**utomatically infer this from the data.
+      * **File containing the #1 reads** - *fastq/SRR7657883.subset_2M.sra_1.fastq.gz*
+      * **File containing the #2 reads** - *fastq/SRR7657883.subset_2M.sra_2.fastq.gz*
+      * **Output quantification directory** - *salmon_output/SRR7657883*
+      * `--writeMappings=salmon_output/SRR7657883.salmon.sam` - Instructs 
+        Salmon to output the read alignments in SAM format to the file 
+        *salmon_output/SRR7657883.salmon.sam*.
+      * `--gcBias` - salmon can optionally correct for GC content bias, it is
+        recommended to always use this
+      * **The number of threads to use** - *7*
 
 Salmon creates a separate output directory for each sample analysed. This 
 directory contains a number of files; the file that contains the quantification
 data is called `quant.sf`.
 
-# 3. SAM to BAM with samtools
+<details><summary>Answer</summary>
+
+To create a directory we can use the standard `mkdir` command: 
+
+```bash
+mkdir salmon_output
+```
+
+Then, using the instructions given and the help documentation (`salmon quant --help`), we can build our quantification command: 
+
+```bash
+salmon quant \
+    -i references/salmon_index \
+    -l A \
+    -1 fastq/SRR7657883.subset_2M.sra_1.fastq.gz \
+    -2 fastq/SRR7657883.subset_2M.sra_2.fastq.gz \
+    -o salmon_output/SRR7657883 \
+    --writeMappings=salmon_output/SRR7657883/SRR7657883.salmon.sam \
+    --gcBias \
+    -p 7
+```
+
+* `-i` is the path to our transcriptome index, created in the previous exercise.
+* `-l` indicates we want Salmon to **A**utomatically determine the strandness of our library.
+* `-1` and `-2` are the paths to read 1 and read 2 of our sample (as we have paired-end sequencing in this case).
+* `-o` is the path to the output transcript quantification file.
+* `--writeMappings` is an optional argument specifying we want Salmon to also produce an alignment file, where our reads are aligned to the reference transcriptome (we will use this later for some QC). 
+* `--gcBias` is used to indicate we want Salmon to use the statistical model that adjusts for biases due to GC differences across transcripts. 
+* `-p` indicates we want to use 7 processors for parallel processing (our training computers have 8 CPUs).
+
+</details>
+:::
+
+
+### 3.1 SAM to BAM with samtools
 
 We can transform from SAM to BAM using `samtools`. `samtools` is a toolkit that
 provides a number of useful tools for working with SAM/BAM files. The BAM file
@@ -225,20 +304,50 @@ further improves the compression of the SAM to BAM. We will use the
 
 The general command is:
 
-`samtools sort -O BAM -o my_sample.sorted.bam my_sample.sam`
+`samtools sort -o my_sample.sorted.bam my_sample.sam`
 
-Where the `-o` option is used to provide the output file name. There are many
-other options, e.g. reads can be sorted by the read name instead of the position
-or we can specify the number of parallel threads to be used -  to find out more
-use `samtools sort --help`.
+Where the `-o` option is used to provide the output file name.
+Because we use the file extension `.bam` in our output file name, `samtools` will automatically convert the input file to the more compact BAM format. 
+There are many other options, e.g. reads can be sorted by the read name instead of the position or we can specify the number of parallel threads to be used -  to find out more use `samtools sort --help`.
 
 ## Exercise 3
 
-> 1. Sort and transform your aligned SAM file into a BAM file called
-> `SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this
-> vastly speeds up the compression.
+:::exercise 
 
-> 2. Use, for example, `samtools view my_sample.sorted.bam` to check your BAM file
+1. Sort and transform your aligned SAM file into a BAM file called
+`SRR7657883.salmon.sorted.bam`. Use the option `-@ 7` to use 7 cores, this
+vastly speeds up the compression.
+
+2. Use, for example, `samtools view my_sample.sorted.bam` to check your BAM file.
+
+<details><summary>Answer</summary>
+
+The `samtools` command we use is the following:
+
+```bash
+samtools sort \
+  -@ 7 \
+  -o salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam \
+   salmon_output/SRR7657883/SRR7657883.salmon.sam
+```
+
+* `-@` we want to use 7 processors for parallel processing (our training computers have 8 CPUs).
+* `-o` is the path for our output file. Note that we use the `.bam` extension, which will make `samtools` automatically save the output in BAM format. 
+* At the end of the command we include the SAM input file. 
+
+Once the command finishes running, we should have a BAM file in our output folder. 
+We can view the content of this file using: 
+
+```bash
+samtools view salmon_output/SRR7657883/SRR7657883.salmon.sorted.bam | less -S
+```
+
+The `less -S` command allows us to view the output in an interactive way, using the <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> arrow keys.
+You can type `Q` to **Q**uit and go back to your terminal.
+
+</details>
+
+:::
 
 # 4 Make transcript to gene table
 
@@ -251,7 +360,7 @@ reference file.
 
 **You do not need to run this code, we have already done this for you.**
 
-```{bash eval=FALSE}
+```bash
 echo -e "TxID\tGeneID" > salmon_outputs/tx2gene.tsv
 zcat references/Mus_musculus.GRCm38.cdna.all.fa.gz |
   grep "^>" | 
