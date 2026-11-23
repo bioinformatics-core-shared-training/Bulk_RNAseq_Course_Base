@@ -1,8 +1,11 @@
-# Introduction to bulk RNA-seq data analysis 
+# Introduction to bulk RNA-seq data analysis
 
-This page provides an index for the iterations we ran for this course. 
+This page provides an index for the iterations we ran for this course.
 We recommend looking at the latest iteration, if you want the most up-to-date version of our content.
 
+- [November/December 2026](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_Dec26/)
+- [November 2026](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_Nov26/)
+- [May 2026](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_May26/)
 - [January 2026](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_Jan26)
 - [November 2025](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_Nov25/)
 - [October 2025](https://bioinformatics-core-shared-training.github.io/Bulk_RNAseq_Course_Oct_25/)
